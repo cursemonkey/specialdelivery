@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://titlescreen"]
+
+[ext_resource type="Script" uid="uid://wlq7la0plku1" path="res://scripts/TitleScreen.gd" id="1"]
+
+[node name="TitleScreen" type="CanvasLayer" unique_id=1221381068]
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="." unique_id=763820890]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.06, 0.18, 0.92)
+
+[node name="Panel" type="VBoxContainer" parent="." unique_id=924205446]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -160.0
+offset_right = 200.0
+offset_bottom = 160.0
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Panel" unique_id=1361103444]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.91, 0.69, 1)
+theme_override_font_sizes/font_size = 32
+text = "🚲 COZY DELIVERY CO."
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Panel" unique_id=1446497826]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "A warm, dreamy delivery adventure"
+horizontal_alignment = 1
+
+[node name="ControlsLabel" type="Label" parent="Panel" unique_id=458532906]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.43, 1)
+theme_override_font_sizes/font_size = 12
+text = "WASD / Arrow Keys — Move & Steer
+F — Mount / Dismount Bicycle
+SPACE — Toss Package
+
+Blue squares = Speed Boost
+Red circles = Slow Trap"
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="Panel" unique_id=726550702]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Start Delivering! 📦"

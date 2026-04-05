@@ -1,0 +1,17 @@
+# Godot 4 generated files
+.godot/
+.nomedia
+
+# Export builds
+exports/
+*.exe
+*.x86_64
+*.apk
+
+# OS files
+Thumbs.db
+.DS_Store
+
+#Temporary / build files
+*.tmp
+*.log
