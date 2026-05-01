@@ -4,6 +4,7 @@ extends Node
 var cash: int = 0
 var packages: int = 0
 var day: int = 1
+var day_cash: int = 0   # earnings this day only (used for end-of-day bonus)
 var total_targets: int = 0
 var delivered_count: int = 0
 
@@ -19,6 +20,7 @@ func show_message(text: String, duration: float = 2.5) -> void:
 
 func add_cash(amount: int) -> void:
 	cash += amount
+	day_cash += amount
 	cash_changed.emit(cash)
 
 func use_package() -> bool:
@@ -41,6 +43,7 @@ func on_delivery_complete(earned: int) -> void:
 
 func start_new_day(target_count: int) -> void:
 	day += 1
+	day_cash = 0
 	delivered_count = 0
 	total_targets = target_count
 	set_packages(target_count)
@@ -50,5 +53,6 @@ func reset() -> void:
 	cash = 0
 	packages = 0
 	day = 1
+	day_cash = 0
 	total_targets = 0
 	delivered_count = 0

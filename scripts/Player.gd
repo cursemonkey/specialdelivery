@@ -3,7 +3,7 @@ extends CharacterBody2D
 # ── Constants ──────────────────────────────────────────────
 const TILE_SIZE       := 16
 const FOOT_SPEED      := 80.0
-const BIKE_MAX_SPEED  := 160.0
+const BIKE_MAX_SPEED  := 128.0
 const BIKE_ACCEL      := 5.0
 const BIKE_FRICTION   := 0.90
 const BIKE_TURN_SPEED := 1.8   # radians/sec (speed-scaled)
@@ -12,6 +12,7 @@ const SLOW_MULT       := 0.4
 const BOOST_DURATION  := 1.5
 const SLOW_DURATION   := 1.0
 const THROW_RANGE     := 5 * TILE_SIZE   # pixel range for toss
+const BIKE_MOUNT_RANGE := 3 * TILE_SIZE  # how close player must be to mount
 
 # ── State ──────────────────────────────────────────────────
 var on_bike       := false
@@ -26,15 +27,16 @@ var walk_frame    := 0
 var walk_timer    := 0.0
 
 # ── References ─────────────────────────────────────────────
-@onready var foot_sprite  : Node2D = $FootSprite
+@onready var foot_sprite  : Sprite2D = $FootSprite
 @onready var bike_sprite  : Node2D = $BikeSprite
 @onready var anim_player  : AnimationPlayer = $AnimationPlayer
 @onready var boost_aura   : Node2D = $BoostAura
 @onready var slow_aura    : Node2D = $SlowAura
 @onready var throw_marker : Node2D = $ThrowMarker
 
-# Reference set from World
+# References set from Main
 var delivery_targets : Array = []
+var world_bike       : Node2D = null
 
 # ── Signals ────────────────────────────────────────────────
 signal mounted_bike()
@@ -62,17 +64,41 @@ func _input(event: InputEvent) -> void:
 
 # ── Mode switching ─────────────────────────────────────────
 func _toggle_bike() -> void:
-	on_bike = !on_bike
 	if on_bike:
-		bike_speed = 0.0
-		bike_angle = velocity.angle() if velocity.length() > 10 else -PI / 2.0
-		mounted_bike.emit()
-		GameManager.show_message("🚲 Hopped on the bicycle!")
+		_dismount()
 	else:
+		_try_mount()
+
+func _try_mount() -> void:
+	if world_bike == null or not world_bike.visible:
+		GameManager.show_message("No bike nearby!")
+		return
+	if global_position.distance_to(world_bike.global_position) > BIKE_MOUNT_RANGE:
+		GameManager.show_message("🚲 Get closer to the bike first!")
+		return
+	on_bike = true
+	bike_speed = 0.0
+	bike_angle = velocity.angle() if velocity.length() > 10 else -PI / 2.0
+	world_bike.visible = false
+	_set_mode(true)
+	mounted_bike.emit()
+	GameManager.show_message("🚲 Hopped on the bicycle!")
+
+func _dismount() -> void:
+	on_bike = false
+	bike_speed = 0.0
+	if world_bike != null:
+		world_bike.global_position = global_position + Vector2(TILE_SIZE, 0)
+		world_bike.visible = true
+	_set_mode(false)
+	dismounted_bike.emit()
+	GameManager.show_message("🚶 Back on foot!")
+
+func force_dismount() -> void:
+	if on_bike:
+		on_bike = false
 		bike_speed = 0.0
-		dismounted_bike.emit()
-		GameManager.show_message("🚶 Back on foot!")
-	_set_mode(on_bike)
+		_set_mode(false)
 
 func _set_mode(biking: bool) -> void:
 	foot_sprite.visible = !biking
@@ -89,13 +115,13 @@ func _process_foot(delta: float) -> void:
 		walk_timer += delta
 		if walk_timer >= 0.15:
 			walk_timer = 0.0
-			walk_frame = (walk_frame + 1) % 4
+			walk_frame = (walk_frame + 1) % 6
 	else:
 		walk_timer = 0.0
 		walk_frame = 0
 
-	foot_sprite.rotation = 0.0
-	_update_foot_visual()
+	foot_sprite.flip_h = facing.x < 0
+	foot_sprite.region_rect = Rect2(walk_frame * 56, 0, 56, 130)
 
 # ── Bike movement ──────────────────────────────────────────
 func _process_bike(delta: float) -> void:
@@ -120,7 +146,7 @@ func _process_bike(delta: float) -> void:
 			bike_speed = 0.0
 
 	if abs(bike_speed) > 2.0:
-		var turn_factor: int = clamp(abs(bike_speed) / BIKE_MAX_SPEED, 0.3, 1.0)
+		var turn_factor: float = clamp(abs(bike_speed) / BIKE_MAX_SPEED, 0.3, 1.0)
 		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * sign(bike_speed) * delta
 
 	velocity = Vector2(cos(bike_angle), sin(bike_angle)) * bike_speed
@@ -184,8 +210,3 @@ func _get_dir() -> Vector2:
 	if Input.is_action_pressed("move_left"):  d.x -= 1
 	if Input.is_action_pressed("move_right"): d.x += 1
 	return d.normalized()
-
-func _update_foot_visual() -> void:
-	# Flip / frame index passed to custom draw on FootSprite
-	if foot_sprite.has_method("set_facing"):
-		foot_sprite.set_facing(facing, walk_frame)

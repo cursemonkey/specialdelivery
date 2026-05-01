@@ -9,6 +9,8 @@
 [node name="Main" type="Node2D" unique_id=5593507 groups=["main"]]
 script = ExtResource("1")
 
+[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=-447676240]
+
 [node name="WorldGenerator" parent="." unique_id=2012542759 instance=ExtResource("2")]
 
 [node name="Player" parent="." unique_id=1649275203 instance=ExtResource("3")]

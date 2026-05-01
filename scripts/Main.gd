@@ -1,60 +1,137 @@
 extends Node2D
 ## Main — wires player, world, HUD, camera, and day cycle together.
 
-const TILE          := 16
-const START_COL     := 36
-const START_ROW     := 28
+const TILE            := 16
+const START_COL       := 36
+const START_ROW       := 28
 const TARGETS_PER_DAY := 5
+const DAY_DURATION    := 360.0   # 6 minutes in seconds
 
-@onready var world   : Node2D          = $WorldGenerator
-@onready var player  : CharacterBody2D = $Player
-@onready var camera  : Camera2D        = $Player/Camera2D
-@onready var hud     : CanvasLayer     = $HUD
-@onready var title   : CanvasLayer     = $TitleScreen
+const BikeScene := preload("res://scenes/Bike.tscn")
+
+@onready var world  : Node2D          = $WorldGenerator
+@onready var player : CharacterBody2D = $Player
+@onready var camera : Camera2D        = $Player/Camera2D
+@onready var hud    : CanvasLayer     = $HUD
+@onready var title  : CanvasLayer     = $TitleScreen
+@onready var sky    : CanvasModulate  = $CanvasModulate
 
 var _current_targets : Array = []
+var _day_timer       := 0.0
+var _day_running     := false
+var _bonus_paid      := false   # prevent double bonus if signal fires twice
+var _world_bike      : Node2D = null
 
 func _ready() -> void:
-	# Camera limits
 	camera.limit_left   = 0
 	camera.limit_top    = 0
 	camera.limit_right  = 80 * TILE
 	camera.limit_bottom = 60 * TILE
 
-	# Position player
 	player.global_position = Vector2(START_COL * TILE, START_ROW * TILE)
 
-	# Wire HUD
 	hud.set_player(player)
+	hud.skip_day_pressed.connect(_on_skip_day)
+	hud.continue_playing_pressed.connect(_on_continue_playing)
 
-	# Wire GameManager
 	GameManager.all_delivered.connect(_on_all_delivered)
 	GameManager.reset()
 
-	# Show title
 	title.show_title()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_tree().quit()
+
+func _process(delta: float) -> void:
+	if not _day_running:
+		return
+	_day_timer += delta
+	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)
+	hud.update_timer(remaining)
+	_apply_sky_tint(_day_timer)
+	if _day_timer >= DAY_DURATION:
+		_day_running = false
+		_on_day_time_up()
+
+# ── Sky tint ───────────────────────────────────────────────
+func _apply_sky_tint(elapsed: float) -> void:
+	if elapsed >= 300.0:   # minute 5 → night (blue)
+		var t: float = clamp((elapsed - 300.0) / 60.0, 0.0, 1.0)
+		sky.color = Color(1.0, 0.65, 0.3).lerp(Color(0.35, 0.45, 0.85), t)
+	elif elapsed >= 240.0: # minute 4 → sunset (orange)
+		var t: float = clamp((elapsed - 240.0) / 60.0, 0.0, 1.0)
+		sky.color = Color(1.0, 1.0, 1.0).lerp(Color(1.0, 0.65, 0.3), t)
+	else:
+		sky.color = Color(1.0, 1.0, 1.0)
+
+# ── Game flow ──────────────────────────────────────────────
 func start_game() -> void:
 	title.hide_title()
 	_begin_day()
 
 func _begin_day() -> void:
 	_current_targets = world.select_targets(TARGETS_PER_DAY)
-	# Feed target list to player for throw detection
 	player.delivery_targets = _current_targets
-	GameManager.start_new_day(_current_targets.size()) if GameManager.day > 1  else _first_day_setup()
+	_day_timer  = 0.0
+	_day_running = true
+	_bonus_paid  = false
+	sky.color    = Color(1.0, 1.0, 1.0)
+
+	if GameManager.day > 1:
+		GameManager.start_new_day(_current_targets.size())
+	else:
+		_first_day_setup()
+
+	_spawn_bike()
+
 	GameManager.show_message(
 		"☀️ Day %d! Deliver %d packages. Press F for bicycle, SPACE to toss!"
 		% [GameManager.day, _current_targets.size()]
 	)
 
+func _spawn_bike() -> void:
+	if _world_bike != null:
+		_world_bike.queue_free()
+	player.force_dismount()
+	_world_bike = BikeScene.instantiate()
+	add_child(_world_bike)
+	_world_bike.global_position = player.global_position + Vector2(3 * TILE, 0)
+	player.world_bike = _world_bike
+
 func _first_day_setup() -> void:
-	GameManager.total_targets  = _current_targets.size()
+	GameManager.total_targets   = _current_targets.size()
 	GameManager.delivered_count = 0
+	GameManager.day_cash        = 0
 	GameManager.set_packages(_current_targets.size())
 
+# ── Delivery complete (early) ──────────────────────────────
 func _on_all_delivered() -> void:
-	GameManager.show_message("🎉 All delivered! Next day starting…")
+	if not _day_running or _bonus_paid:
+		return
+	_bonus_paid = true
+	var bonus := int(GameManager.day_cash * 0.25)
+	GameManager.add_cash(bonus)
+	hud.show_day_complete_prompt(bonus)
+
+# ── Prompt responses ───────────────────────────────────────
+func _on_skip_day() -> void:
+	_day_running = false
+	hud.hide_day_complete_prompt()
+	hud.update_timer(0.0)
+	await get_tree().create_timer(0.3).timeout
+	world._scatter_pickups()
+	_begin_day()
+
+func _on_continue_playing() -> void:
+	hud.hide_day_complete_prompt()
+	GameManager.show_message("🌇 Keep exploring! Next day starts when time runs out.")
+
+# ── Timer expired ──────────────────────────────────────────
+func _on_day_time_up() -> void:
+	hud.hide_day_complete_prompt()
+	hud.update_timer(0.0)
+	GameManager.show_message("⏰ Day %d over! Starting next day…" % GameManager.day)
 	await get_tree().create_timer(2.5).timeout
 	world._scatter_pickups()
 	_begin_day()
