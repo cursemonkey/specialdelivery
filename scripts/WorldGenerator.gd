@@ -186,14 +186,35 @@ func _place_buildings() -> void:
 			c += bw + 1 + _rng.randi_range(0, 1)
 
 # ── Pickup scattering ──────────────────────────────────────
+const PICKUP_MIN_SEPARATION := 6   # tiles — one minimum house width
+
 func _scatter_pickups() -> void:
 	_clear_pickups()
 	var shuffled := road_tiles.duplicate()
 	shuffled.shuffle()
-	for i in min(30, shuffled.size()):
-		_spawn_pickup(shuffled[i], Pickup.Kind.TRICK)
-	for i in range(30, min(50, shuffled.size())):
-		_spawn_pickup(shuffled[i], Pickup.Kind.TRAP)
+	var placed : Array[Vector2i] = []
+	var tricks := 0
+	var traps  := 0
+	for coord in shuffled:
+		if _pickup_too_close(coord, placed):
+			continue
+		if tricks < 30:
+			_spawn_pickup(coord, Pickup.Kind.TRICK)
+			tricks += 1
+		elif traps < 20:
+			_spawn_pickup(coord, Pickup.Kind.TRAP)
+			traps += 1
+		else:
+			break
+		placed.append(coord)
+
+func _pickup_too_close(coord: Vector2i, placed: Array[Vector2i]) -> bool:
+	for other in placed:
+		var dx := coord.x - other.x
+		var dy := coord.y - other.y
+		if dx * dx + dy * dy < PICKUP_MIN_SEPARATION * PICKUP_MIN_SEPARATION:
+			return true
+	return false
 
 func _spawn_pickup(coord: Vector2i, kind: int) -> void:
 	var p : Area2D = PickupScene.instantiate()

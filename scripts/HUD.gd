@@ -41,7 +41,7 @@ func _process(_delta: float) -> void:
 func _refresh() -> void:
 	cash_label.text  = "💰 Cash: $%d" % GameManager.cash
 	pkg_label.text   = "📫 Packages: %d" % GameManager.packages
-	day_label.text   = "📅 Day %d" % GameManager.day
+	day_label.text   = "📅 %s" % GameManager.day_name()
 	time_label.text  = "⏱ 6:00"
 
 func update_timer(remaining: float) -> void:
@@ -58,7 +58,7 @@ func hide_day_complete_prompt() -> void:
 
 func _on_cash_changed(v: int)     -> void: cash_label.text = "💰 Cash: $%d" % v
 func _on_packages_changed(v: int) -> void: pkg_label.text  = "📫 Packages: %d" % v
-func _on_day_changed(v: int)      -> void: day_label.text  = "📅 Day %d" % v
+func _on_day_changed(_v: int)     -> void: day_label.text  = "📅 %s" % GameManager.day_name()
 
 func show_message(text: String, duration: float = 2.5) -> void:
 	msg_label.text  = text

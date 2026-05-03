@@ -5,7 +5,7 @@ const TILE            := 16
 const START_COL       := 36
 const START_ROW       := 28
 const TARGETS_PER_DAY := 5
-const DAY_DURATION    := 360.0   # 6 minutes in seconds
+const DAY_DURATION    := 120.0   # 6 minutes in seconds
 
 const BikeScene := preload("res://scenes/Bike.tscn")
 
@@ -21,6 +21,7 @@ var _day_timer       := 0.0
 var _day_running     := false
 var _bonus_paid      := false   # prevent double bonus if signal fires twice
 var _world_bike      : Node2D = null
+var _first_day       := true
 
 func _ready() -> void:
 	camera.limit_left   = 0
@@ -56,11 +57,14 @@ func _process(delta: float) -> void:
 
 # ── Sky tint ───────────────────────────────────────────────
 func _apply_sky_tint(elapsed: float) -> void:
-	if elapsed >= 300.0:   # minute 5 → night (blue)
-		var t: float = clamp((elapsed - 300.0) / 60.0, 0.0, 1.0)
+	var sunset_start : float = DAY_DURATION * 0.5
+	var night_start  : float = DAY_DURATION * 0.75
+	var phase_len    : float = DAY_DURATION * 0.25
+	if elapsed >= night_start:
+		var t: float = clamp((elapsed - night_start) / phase_len, 0.0, 1.0)
 		sky.color = Color(1.0, 0.65, 0.3).lerp(Color(0.35, 0.45, 0.85), t)
-	elif elapsed >= 240.0: # minute 4 → sunset (orange)
-		var t: float = clamp((elapsed - 240.0) / 60.0, 0.0, 1.0)
+	elif elapsed >= sunset_start:
+		var t: float = clamp((elapsed - sunset_start) / phase_len, 0.0, 1.0)
 		sky.color = Color(1.0, 1.0, 1.0).lerp(Color(1.0, 0.65, 0.3), t)
 	else:
 		sky.color = Color(1.0, 1.0, 1.0)
@@ -78,16 +82,17 @@ func _begin_day() -> void:
 	_bonus_paid  = false
 	sky.color    = Color(1.0, 1.0, 1.0)
 
-	if GameManager.day > 1:
-		GameManager.start_new_day(_current_targets.size())
-	else:
+	if _first_day:
+		_first_day = false
 		_first_day_setup()
+	else:
+		GameManager.start_new_day(_current_targets.size())
 
 	_spawn_bike()
 
 	GameManager.show_message(
-		"☀️ Day %d! Deliver %d packages. Press F for bicycle, SPACE to toss!"
-		% [GameManager.day, _current_targets.size()]
+		"☀️ %s! Deliver %d packages. Press F for bicycle, SPACE to toss!"
+		% [GameManager.day_name(), _current_targets.size()]
 	)
 
 func _spawn_bike() -> void:
@@ -131,7 +136,7 @@ func _on_continue_playing() -> void:
 func _on_day_time_up() -> void:
 	hud.hide_day_complete_prompt()
 	hud.update_timer(0.0)
-	GameManager.show_message("⏰ Day %d over! Starting next day…" % GameManager.day)
+	GameManager.show_message("⏰ %s is over! Starting next day…" % GameManager.day_name())
 	await get_tree().create_timer(2.5).timeout
 	world._scatter_pickups()
 	_begin_day()

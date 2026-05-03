@@ -1,5 +1,10 @@
 extends Node
 
+const DAY_NAMES := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+func day_name() -> String:
+	return DAY_NAMES[(day - 1) % DAY_NAMES.size()]
+
 # Global game state
 var cash: int = 0
 var packages: int = 0
