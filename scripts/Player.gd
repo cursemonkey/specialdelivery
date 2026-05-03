@@ -11,8 +11,9 @@ const BOOST_MULT      := 1.8
 const SLOW_MULT       := 0.4
 const BOOST_DURATION  := 1.5
 const SLOW_DURATION   := 1.0
-const THROW_RANGE     := 5 * TILE_SIZE   # pixel range for toss
-const BIKE_MOUNT_RANGE := 3 * TILE_SIZE  # how close player must be to mount
+const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
+const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
+const TRAIL_STEP       := 12.0            # px between recorded trail positions
 
 # ── State ──────────────────────────────────────────────────
 var on_bike       := false
@@ -38,6 +39,10 @@ var walk_timer    := 0.0
 var delivery_targets : Array = []
 var world_bike       : Node2D = null
 
+# Path trail for bird following
+var path_trail       : Array[Vector2] = []
+var _last_trail_pos  : Vector2 = Vector2.ZERO
+
 # ── Signals ────────────────────────────────────────────────
 signal mounted_bike()
 signal dismounted_bike()
@@ -55,6 +60,16 @@ func _physics_process(delta: float) -> void:
 	else:
 		_process_foot(delta)
 	move_and_slide()
+	_record_trail()
+
+func _record_trail() -> void:
+	if global_position.distance_to(_last_trail_pos) >= TRAIL_STEP:
+		path_trail.append(global_position)
+		_last_trail_pos = global_position
+
+func reset_trail() -> void:
+	path_trail.clear()
+	_last_trail_pos = global_position
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("mount_bike"):

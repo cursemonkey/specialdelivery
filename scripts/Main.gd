@@ -7,7 +7,9 @@ const START_ROW       := 28
 const TARGETS_PER_DAY := 5
 const DAY_DURATION    := 120.0   # 6 minutes in seconds
 
-const BikeScene := preload("res://scenes/Bike.tscn")
+const BikeScene  := preload("res://scenes/Bike.tscn")
+const BirdScene  := preload("res://scenes/Bird.tscn")
+const BIRD_COUNT := 3
 
 @onready var world  : Node2D          = $WorldGenerator
 @onready var player : CharacterBody2D = $Player
@@ -21,6 +23,7 @@ var _day_timer       := 0.0
 var _day_running     := false
 var _bonus_paid      := false   # prevent double bonus if signal fires twice
 var _world_bike      : Node2D = null
+var _birds           : Array[Node] = []
 var _first_day       := true
 
 func _ready() -> void:
@@ -89,6 +92,8 @@ func _begin_day() -> void:
 		GameManager.start_new_day(_current_targets.size())
 
 	_spawn_bike()
+	player.reset_trail()
+	_spawn_birds()
 
 	GameManager.show_message(
 		"☀️ %s! Deliver %d packages. Press F for bicycle, SPACE to toss!"
@@ -103,6 +108,27 @@ func _spawn_bike() -> void:
 	add_child(_world_bike)
 	_world_bike.global_position = player.global_position + Vector2(3 * TILE, 0)
 	player.world_bike = _world_bike
+
+func _spawn_birds() -> void:
+	for b in _birds:
+		if is_instance_valid(b):
+			b.queue_free()
+	_birds.clear()
+
+	# Build rooftop centre positions from placed buildings
+	var rooftops : Array[Vector2] = []
+	for bldg in world.buildings:
+		rooftops.append(bldg.global_position + Vector2(bldg.tile_width * 8.0, 4.0))
+
+	for i in BIRD_COUNT:
+		var b := BirdScene.instantiate()
+		add_child(b)
+		b.global_position = Vector2(
+			randf_range(2 * TILE, 78 * TILE),
+			randf_range(2 * TILE, 58 * TILE)
+		)
+		b.perch_positions = rooftops
+		_birds.append(b)
 
 func _first_day_setup() -> void:
 	GameManager.total_targets   = _current_targets.size()
