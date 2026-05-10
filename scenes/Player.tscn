@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dyjcr6yp52dwx" path="res://scripts/Player.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://ve8d12sv14uo" path="res://assets/male_first_sprite.png" id="2"]
 [ext_resource type="Script" uid="uid://dokyyujq7ypuv" path="res://scripts/BikeSprite.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/DeliveryArrow.gd" id="4"]
 
 [sub_resource type="CircleShape2D" id="1"]
 radius = 6.0
@@ -24,6 +25,10 @@ script = ExtResource("3")
 [node name="SlowAura" type="Node2D" parent="." unique_id=1963134774]
 
 [node name="ThrowMarker" type="Node2D" parent="." unique_id=1147409415]
+
+[node name="DeliveryArrow" type="Node2D" parent="." unique_id=394827165]
+script = ExtResource("4")
+visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1037166321]
 shape = SubResource("1")

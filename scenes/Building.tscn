@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://building"]
+[gd_scene format=3 uid="uid://building"]
 
-[ext_resource type="Script" path="res://scripts/Building.gd" id="1"]
+[ext_resource type="Script" uid="uid://cf5t02lapa3sl" path="res://scripts/Building.gd" id="1"]
 
-[node name="Building" type="StaticBody2D"]
+[node name="Building" type="StaticBody2D" unique_id=1282569068]
 script = ExtResource("1")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1178328551]

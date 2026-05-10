@@ -10,8 +10,8 @@ const WANDER_MAX          := 2.2
 const REACH_THRESHOLD     := 10.0
 const PERCH_CHANCE        := 0.30
 const WORLD_MARGIN        := 24.0
-const WORLD_RIGHT         := 80 * 16 - WORLD_MARGIN
-const WORLD_BOTTOM        := 60 * 16 - WORLD_MARGIN
+const WORLD_RIGHT         := 6640 - WORLD_MARGIN
+const WORLD_BOTTOM        := 5019 - WORLD_MARGIN
 
 enum State { WANDERING, FLYING_TO_PERCH, PERCHED, FOLLOWING }
 

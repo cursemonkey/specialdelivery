@@ -10,6 +10,10 @@ const COLS          := 80
 const ROWS          := 60
 const ROAD_W        := 4
 
+# Full map bounds for pickup spawning (matches camera limits in Main.gd)
+const MAP_COLS      := 415
+const MAP_ROWS      := 313
+
 # Horizontal road top-edges (tile rows)
 const ROAD_ROWS     := [8, 20, 32, 44]
 # Vertical road left-edges (tile cols)
@@ -190,12 +194,13 @@ const PICKUP_MIN_SEPARATION := 6   # tiles — one minimum house width
 
 func _scatter_pickups() -> void:
 	_clear_pickups()
-	var shuffled := road_tiles.duplicate()
-	shuffled.shuffle()
 	var placed : Array[Vector2i] = []
-	var tricks := 0
-	var traps  := 0
-	for coord in shuffled:
+	var tricks  := 0
+	var traps   := 0
+	var attempts := 0
+	while (tricks < 30 or traps < 20) and attempts < 5000:
+		attempts += 1
+		var coord := Vector2i(randi_range(0, MAP_COLS - 1), randi_range(0, MAP_ROWS - 1))
 		if _pickup_too_close(coord, placed):
 			continue
 		if tricks < 30:
@@ -204,8 +209,6 @@ func _scatter_pickups() -> void:
 		elif traps < 20:
 			_spawn_pickup(coord, Pickup.Kind.TRAP)
 			traps += 1
-		else:
-			break
 		placed.append(coord)
 
 func _pickup_too_close(coord: Vector2i, placed: Array[Vector2i]) -> bool:

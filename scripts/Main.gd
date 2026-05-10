@@ -2,14 +2,13 @@ extends Node2D
 ## Main — wires player, world, HUD, camera, and day cycle together.
 
 const TILE            := 16
-const START_COL       := 36
-const START_ROW       := 28
+const PLAYER_START    := Vector2(1100, 550)
 const TARGETS_PER_DAY := 5
 const DAY_DURATION    := 120.0   # 6 minutes in seconds
 
 const BikeScene  := preload("res://scenes/Bike.tscn")
 const BirdScene  := preload("res://scenes/Bird.tscn")
-const BIRD_COUNT := 3
+const BIRD_COUNT := 6
 
 @onready var world  : Node2D          = $WorldGenerator
 @onready var player : CharacterBody2D = $Player
@@ -29,10 +28,10 @@ var _first_day       := true
 func _ready() -> void:
 	camera.limit_left   = 0
 	camera.limit_top    = 0
-	camera.limit_right  = 80 * TILE
-	camera.limit_bottom = 60 * TILE
+	camera.limit_right  = 6640
+	camera.limit_bottom = 5019
 
-	player.global_position = Vector2(START_COL * TILE, START_ROW * TILE)
+	player.global_position = _safe_spawn_near(PLAYER_START)
 
 	hud.set_player(player)
 	hud.skip_day_pressed.connect(_on_skip_day)
@@ -44,6 +43,24 @@ func _ready() -> void:
 	_remove_buildings_under_art()
 
 	title.show_title()
+
+func _safe_spawn_near(target: Vector2) -> Vector2:
+	if not _in_building(target):
+		return target
+	for radius in range(TILE, 300, TILE):
+		for deg in range(0, 360, 30):
+			var candidate := target + Vector2(radius, 0).rotated(deg_to_rad(float(deg)))
+			if not _in_building(candidate):
+				return candidate
+	return target
+
+func _in_building(pos: Vector2) -> bool:
+	for bldg in world.buildings:
+		var r := Rect2(bldg.global_position,
+				Vector2(bldg.tile_width * TILE, bldg.tile_height * TILE))
+		if r.has_point(pos):
+			return true
+	return false
 
 func _remove_buildings_under_art() -> void:
 	var poly_node := get_node_or_null(
@@ -149,12 +166,17 @@ func _spawn_birds() -> void:
 	for bldg in world.buildings:
 		rooftops.append(bldg.global_position + Vector2(bldg.tile_width * 8.0, 4.0))
 
+	# Include art buildings
+	var building1 := get_node_or_null("Building1")
+	if building1 != null:
+		rooftops.append(building1.global_position)
+
 	for i in BIRD_COUNT:
 		var b := BirdScene.instantiate()
 		add_child(b)
 		b.global_position = Vector2(
-			randf_range(2 * TILE, 78 * TILE),
-			randf_range(2 * TILE, 58 * TILE)
+			randf_range(TILE, 6620.0),
+			randf_range(TILE, 4999.0)
 		)
 		b.perch_positions = rooftops
 		_birds.append(b)
