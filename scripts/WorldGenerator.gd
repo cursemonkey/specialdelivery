@@ -235,11 +235,14 @@ func _clear_pickups() -> void:
 func select_targets(count: int = 5) -> Array:
 	for b in buildings:
 		b.clear_target()
+	for ab in get_tree().get_nodes_in_group("art_building"):
+		ab.clear_target()
 
 	var candidates := buildings.filter(
 		func(b): return b.building_type == Building.BuildingType.HOUSE \
 					 or b.building_type == Building.BuildingType.MANSION
 	)
+	candidates.append_array(get_tree().get_nodes_in_group("art_building"))
 	candidates.shuffle()
 	var chosen := candidates.slice(0, min(count, candidates.size()))
 	for b in chosen:
@@ -249,6 +252,8 @@ func select_targets(count: int = 5) -> Array:
 func clear_targets() -> void:
 	for b in buildings:
 		b.clear_target()
+	for ab in get_tree().get_nodes_in_group("art_building"):
+		ab.clear_target()
 
 # ── Package throwing (called from Player) ──────────────────
 func spawn_package(from: Vector2, to: Vector2, target: Node2D) -> void:

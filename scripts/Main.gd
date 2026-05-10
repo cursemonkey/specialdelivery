@@ -41,7 +41,36 @@ func _ready() -> void:
 	GameManager.all_delivered.connect(_on_all_delivered)
 	GameManager.reset()
 
+	_remove_buildings_under_art()
+
 	title.show_title()
+
+func _remove_buildings_under_art() -> void:
+	var poly_node := get_node_or_null(
+		"Background/StaticBody2D Buildings/CollisionPolygon2D_Building1"
+	) as CollisionPolygon2D
+	if poly_node == null:
+		return
+
+	# Transform polygon points into world space
+	var world_poly := PackedVector2Array()
+	for pt in poly_node.polygon:
+		world_poly.append(poly_node.to_global(pt))
+
+	var to_remove : Array = []
+	for bldg in world.buildings:
+		var bldg_poly := PackedVector2Array([
+			bldg.global_position,
+			bldg.global_position + Vector2(bldg.tile_width * TILE, 0),
+			bldg.global_position + Vector2(bldg.tile_width * TILE, bldg.tile_height * TILE),
+			bldg.global_position + Vector2(0, bldg.tile_height * TILE),
+		])
+		if not Geometry2D.intersect_polygons(world_poly, bldg_poly).is_empty():
+			to_remove.append(bldg)
+
+	for bldg in to_remove:
+		world.buildings.erase(bldg)
+		bldg.queue_free()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
