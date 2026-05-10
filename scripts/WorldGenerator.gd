@@ -15,7 +15,7 @@ const MAP_COLS      := 415
 const MAP_ROWS      := 313
 
 # Horizontal road top-edges (tile rows)
-const ROAD_ROWS     := [8, 20, 32, 44]
+const ROAD_ROWS     := [18, 50, 70, 130]
 # Vertical road left-edges (tile cols)
 const ROAD_COLS     := [8, 22, 36, 50, 64]
 
@@ -142,23 +142,23 @@ func _place_buildings() -> void:
 			continue
 		var c := c1
 		while c < c2 - 2:
-			var max_w : int = min(c2 - c, 12)
+			var max_w : int = min(c2 - c, 18)
 			var roll  := _rng.randf()
 			var btype : int
 			var bw    : int
 			var bh    : int
-			if roll < 0.10 and max_w >= 12:
+			if roll < 0.10 and max_w >= 18:
 				btype = Building.BuildingType.BUILDING
-				bw    = 12 + _rng.randi_range(0, 3)
+				bw    = 18 + _rng.randi_range(0, 4)
 				bh    = r2 - r1
-			elif roll < 0.25 and max_w >= 9:
+			elif roll < 0.25 and max_w >= 13:
 				btype = Building.BuildingType.MANSION
-				bw    = 9
-				bh    = min(r2 - r1, 6)
+				bw    = 13
+				bh    = min(r2 - r1, 9)
 			else:
 				btype = Building.BuildingType.HOUSE
-				bw    = 6
-				bh    = min(r2 - r1, 5)
+				bw    = 9
+				bh    = min(r2 - r1, 8)
 
 			bw = min(bw, c2 - c)
 			if bw < 4:
@@ -198,15 +198,15 @@ func _scatter_pickups() -> void:
 	var tricks  := 0
 	var traps   := 0
 	var attempts := 0
-	while (tricks < 30 or traps < 20) and attempts < 5000:
+	while (tricks < 90 or traps < 60) and attempts < 15000:
 		attempts += 1
 		var coord := Vector2i(randi_range(0, MAP_COLS - 1), randi_range(0, MAP_ROWS - 1))
 		if _pickup_too_close(coord, placed):
 			continue
-		if tricks < 30:
+		if tricks < 90:
 			_spawn_pickup(coord, Pickup.Kind.TRICK)
 			tricks += 1
-		elif traps < 20:
+		elif traps < 60:
 			_spawn_pickup(coord, Pickup.Kind.TRAP)
 			traps += 1
 		placed.append(coord)

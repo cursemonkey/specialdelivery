@@ -3,8 +3,8 @@ extends Node2D
 
 const TILE            := 16
 const PLAYER_START    := Vector2(1100, 550)
-const TARGETS_PER_DAY := 5
-const DAY_DURATION    := 120.0   # 6 minutes in seconds
+const TARGETS_PER_DAY := 25
+const DAY_DURATION    := 240.0   # 4 minutes in seconds
 
 const BikeScene  := preload("res://scenes/Bike.tscn")
 const BirdScene  := preload("res://scenes/Bird.tscn")
@@ -26,10 +26,11 @@ var _birds           : Array[Node] = []
 var _first_day       := true
 
 func _ready() -> void:
+	var bg_size = $Background.texture.get_size() * $Background.scale
 	camera.limit_left   = 0
 	camera.limit_top    = 0
-	camera.limit_right  = 6640
-	camera.limit_bottom = 5019
+	camera.limit_right  = int(bg_size.x)
+	camera.limit_bottom = int(bg_size.y)
 
 	player.global_position = _safe_spawn_near(PLAYER_START)
 

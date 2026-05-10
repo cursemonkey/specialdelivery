@@ -3,10 +3,10 @@ extends CharacterBody2D
 # ── Constants ──────────────────────────────────────────────
 const TILE_SIZE       := 16
 const FOOT_SPEED      := 80.0
-const BIKE_MAX_SPEED  := 128.0
+const BIKE_MAX_SPEED  := 148.0
 const BIKE_ACCEL      := 5.0
 const BIKE_FRICTION   := 0.90
-const BIKE_TURN_SPEED := 1.8   # radians/sec (speed-scaled)
+const BIKE_TURN_SPEED := 2.8   # radians/sec (speed-scaled)
 const BOOST_MULT      := 1.8
 const SLOW_MULT       := 0.4
 const BOOST_DURATION  := 1.5

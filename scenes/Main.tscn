@@ -28,8 +28,8 @@ position = Vector2(171.45525, 93.585655)
 shape = SubResource("ConvexPolygonShape2D_c01mt")
 
 [node name="CollisionPolygon2D_Building1" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=888179834]
-position = Vector2(219.64201, 894.9801)
-scale = Vector2(0.815594, 0.8881579)
+position = Vector2(280, 1328)
+scale = Vector2(1.147816, 1.1064994)
 polygon = PackedVector2Array(90.683716, 107.79285, 181.36743, -3.6334229, 277.9144, 87.13147, 267.8288, 175.33865, 200.60336, 196.20715, 90.68375, 207.10754)
 
 [node name="Building1" type="Node2D" parent="." unique_id=748293015]
