@@ -32,8 +32,17 @@ position = Vector2(280, 1328)
 scale = Vector2(1.147816, 1.1064994)
 polygon = PackedVector2Array(90.683716, 107.79285, 181.36743, -3.6334229, 277.9144, 87.13147, 267.8288, 175.33865, 200.60336, 196.20715, 90.68375, 207.10754)
 
+[node name="CollisionPolygon2D_Building_TownHall" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=838524041]
+polygon = PackedVector2Array(2593, 1884, 2766, 1879, 2874, 1723, 3020, 1736, 3025, 1854, 3243, 1856, 3193, 2115, 2588, 2087)
+
 [node name="Building1" type="Node2D" parent="." unique_id=748293015]
-position = Vector2(116, 198)
+editor_description = "THis is the door for CollisionPolygon2D_building"
+position = Vector2(489, 1487)
+script = ExtResource("6")
+
+[node name="Building_TownHall" type="Node2D" parent="." unique_id=516814554]
+editor_description = "THis is the door for CollisionPolygon2D_building"
+position = Vector2(2906, 2045)
 script = ExtResource("6")
 
 [node name="WorldGenerator" parent="." unique_id=2012542759 instance=ExtResource("2")]

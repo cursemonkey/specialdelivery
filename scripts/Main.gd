@@ -3,7 +3,7 @@ extends Node2D
 
 const TILE            := 16
 const PLAYER_START    := Vector2(1100, 550)
-const TARGETS_PER_DAY := 25
+const TARGETS_PER_DAY := 12
 const DAY_DURATION    := 240.0   # 4 minutes in seconds
 
 const BikeScene  := preload("res://scenes/Bike.tscn")

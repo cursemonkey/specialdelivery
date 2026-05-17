@@ -136,7 +136,8 @@ func _process_foot(delta: float) -> void:
 		walk_frame = 0
 
 	foot_sprite.flip_h = facing.x < 0
-	foot_sprite.region_rect = Rect2(walk_frame * 56, 0, 56, 130)
+	foot_sprite.region_rect = Rect2(walk_frame * 68, 0, 68, 60) 
+	#width?, height start, width, height
 
 # ── Bike movement ──────────────────────────────────────────
 func _process_bike(delta: float) -> void:
