@@ -169,8 +169,11 @@ func _spawn_birds() -> void:
 
 	# Include art buildings
 	var building1 := get_node_or_null("Building1")
+	var pub := get_node_or_null("Pub")
 	if building1 != null:
 		rooftops.append(building1.global_position)
+	if pub != null:
+		rooftops.append(pub.global_position)
 
 	for i in BIRD_COUNT:
 		var b := BirdScene.instantiate()

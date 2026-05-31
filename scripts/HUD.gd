@@ -7,6 +7,7 @@ extends CanvasLayer
 @onready var time_label         : Label          = $Panel/VBox/TimeLabel
 @onready var mode_label         : Label          = $StatusPanel/VBox/ModeLabel
 @onready var speed_label        : Label          = $StatusPanel/VBox/SpeedLabel
+@onready var angle_label		: Label			 = $StatusPanel/VBox/AngleLabel
 @onready var msg_label          : Label          = $MessageBox/MsgLabel
 @onready var msg_box            : PanelContainer = $MessageBox
 @onready var msg_timer          : Timer          = $MessageTimer
@@ -37,6 +38,10 @@ func _process(_delta: float) -> void:
 	var spd: int = abs(_player.bike_speed) if _player.on_bike \
 			   else _player.velocity.length()
 	speed_label.text = "Speed: %.1f" % spd
+	var angle: float = _player.bike_angle + PI / 2.0 if _player.on_bike \
+			   else 0.0	
+
+	angle_label.text = "Angle: %.1f" % angle
 
 func _refresh() -> void:
 	cash_label.text  = "💰 Cash: $%d" % GameManager.cash

@@ -19,6 +19,9 @@ const TRAIL_STEP       := 12.0            # px between recorded trail positions
 var on_bike       := false
 var bike_speed    := 0.0
 var bike_angle    := -PI / 2.0   # facing up
+var bike_frame    := 0
+var bike_timer    := 0.0
+
 
 var boost_timer   := 0.0
 var slow_timer    := 0.0
@@ -29,7 +32,9 @@ var walk_timer    := 0.0
 
 # ── References ─────────────────────────────────────────────
 @onready var foot_sprite  : Sprite2D = $FootSprite
-@onready var bike_sprite  : Node2D = $BikeSprite
+#@onready var bike_sprite  : Node2D = $BikeSprite
+@onready var bike_sprite  : Sprite2D = $BikeSprite2
+
 @onready var anim_player  : AnimationPlayer = $AnimationPlayer
 @onready var boost_aura   : Node2D = $BoostAura
 @onready var slow_aura    : Node2D = $SlowAura
@@ -160,13 +165,38 @@ func _process_bike(delta: float) -> void:
 		bike_speed *= BIKE_FRICTION
 		if abs(bike_speed) < 0.5:
 			bike_speed = 0.0
-
+			
 	if abs(bike_speed) > 2.0:
 		var turn_factor: float = clamp(abs(bike_speed) / BIKE_MAX_SPEED, 0.3, 1.0)
 		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * sign(bike_speed) * delta
 
 	velocity = Vector2(cos(bike_angle), sin(bike_angle)) * bike_speed
 	bike_sprite.rotation = bike_angle + PI / 2.0
+
+# Begin animation - bike animation
+	if bike_speed != 0.0:
+		#TBD, determine direction from angle
+		#facing = bike_angle.;
+		bike_timer += delta
+		if bike_timer >= 0.15:
+			bike_timer = 0.0
+		
+			var current_anim := 0		
+			current_anim = 1 if fmod(bike_angle, 7.0) > 0.5 else 2
+			#We're not quite there, the 
+			
+			bike_frame = (bike_frame + 1) % 5 *current_anim 
+	#	bike_frame = (bike_frame + 1) % 5
+		
+			
+	else:
+		bike_timer = 0.0
+		bike_frame = 0
+		
+	bike_sprite.region_rect = Rect2(bike_frame * 68, 0, 68, 75) 
+# end Animation
+
+
 
 # ── Throwing ───────────────────────────────────────────────
 func _try_throw() -> void:

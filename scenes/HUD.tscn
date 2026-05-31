@@ -1,113 +1,124 @@
-[gd_scene load_steps=2 format=3 uid="uid://hud"]
+[gd_scene format=3 uid="uid://hud"]
 
-[ext_resource type="Script" path="res://scripts/HUD.gd" id="1"]
+[ext_resource type="Script" uid="uid://c8ikiiq0vltgp" path="res://scripts/HUD.gd" id="1"]
 
-[node name="HUD" type="CanvasLayer"]
+[node name="HUD" type="CanvasLayer" unique_id=1353618837]
 script = ExtResource("1")
 
-[node name="Panel" type="PanelContainer" parent="."]
-anchors_preset = 0
-offset_right = 180
-offset_bottom = 105
+[node name="Panel" type="PanelContainer" parent="." unique_id=1456544209]
+offset_right = 180.0
+offset_bottom = 105.0
 
-[node name="VBox" type="VBoxContainer" parent="Panel"]
+[node name="VBox" type="VBoxContainer" parent="Panel" unique_id=1720584442]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Panel/VBox"]
-text = "📦 Cozy Delivery Co."
-theme_override_font_sizes/font_size = 13
+[node name="Title" type="Label" parent="Panel/VBox" unique_id=887459394]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.27, 0.07, 1)
+theme_override_font_sizes/font_size = 13
+text = "📦 Cozy Delivery Co."
 
-[node name="CashLabel" type="Label" parent="Panel/VBox"]
+[node name="CashLabel" type="Label" parent="Panel/VBox" unique_id=594228280]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "💰 Cash: $0"
-theme_override_font_sizes/font_size = 12
 
-[node name="PackageLabel" type="Label" parent="Panel/VBox"]
+[node name="PackageLabel" type="Label" parent="Panel/VBox" unique_id=857906849]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "📫 Packages: 0"
-theme_override_font_sizes/font_size = 12
 
-[node name="DayLabel" type="Label" parent="Panel/VBox"]
+[node name="DayLabel" type="Label" parent="Panel/VBox" unique_id=757047602]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "📅 Day 1"
-theme_override_font_sizes/font_size = 12
 
-[node name="TimeLabel" type="Label" parent="Panel/VBox"]
+[node name="TimeLabel" type="Label" parent="Panel/VBox" unique_id=892249276]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "⏱ 6:00"
-theme_override_font_sizes/font_size = 12
 
-[node name="StatusPanel" type="PanelContainer" parent="."]
+[node name="StatusPanel" type="PanelContainer" parent="." unique_id=1522901081]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -160
-offset_right = -8
-offset_bottom = 60
+offset_left = -160.0
+offset_right = -8.0
+offset_bottom = 60.0
 
-[node name="VBox" type="VBoxContainer" parent="StatusPanel"]
+[node name="VBox" type="VBoxContainer" parent="StatusPanel" unique_id=2061210521]
 layout_mode = 2
 
-[node name="ModeLabel" type="Label" parent="StatusPanel/VBox"]
+[node name="ModeLabel" type="Label" parent="StatusPanel/VBox" unique_id=228111143]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "🚶 On Foot"
-theme_override_font_sizes/font_size = 12
 
-[node name="SpeedLabel" type="Label" parent="StatusPanel/VBox"]
+[node name="SpeedLabel" type="Label" parent="StatusPanel/VBox" unique_id=894127604]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "Speed: 0.0"
-theme_override_font_sizes/font_size = 12
 
-[node name="MessageBox" type="PanelContainer" parent="."]
+[node name="AngleLabel" type="Label" parent="StatusPanel/VBox" unique_id=1253939549]
+layout_mode = 2
+
+[node name="MessageBox" type="PanelContainer" parent="." unique_id=1320000161]
+visible = false
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -180
-offset_top = -50
-offset_right = 180
-offset_bottom = -10
-visible = false
+offset_left = -180.0
+offset_top = -50.0
+offset_right = 180.0
+offset_bottom = -10.0
 
-[node name="MsgLabel" type="Label" parent="MessageBox"]
+[node name="MsgLabel" type="Label" parent="MessageBox" unique_id=237418061]
 layout_mode = 2
-text = ""
-horizontal_alignment = 1
 theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
 
-[node name="DayCompletePanel" type="PanelContainer" parent="."]
+[node name="DayCompletePanel" type="PanelContainer" parent="." unique_id=1652548112]
+visible = false
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160
-offset_top = -55
-offset_right = 160
-offset_bottom = 55
-visible = false
+offset_left = -160.0
+offset_top = -55.0
+offset_right = 160.0
+offset_bottom = 55.0
 
-[node name="VBox" type="VBoxContainer" parent="DayCompletePanel"]
+[node name="VBox" type="VBoxContainer" parent="DayCompletePanel" unique_id=1114777034]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BonusLabel" type="Label" parent="DayCompletePanel/VBox"]
+[node name="BonusLabel" type="Label" parent="DayCompletePanel/VBox" unique_id=1497519651]
 layout_mode = 2
+theme_override_font_sizes/font_size = 13
 text = "🎉 All delivered!"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 13
 
-[node name="ButtonRow" type="HBoxContainer" parent="DayCompletePanel/VBox"]
+[node name="ButtonRow" type="HBoxContainer" parent="DayCompletePanel/VBox" unique_id=1535537244]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 12
+alignment = 1
 
-[node name="SkipButton" type="Button" parent="DayCompletePanel/VBox/ButtonRow"]
+[node name="SkipButton" type="Button" parent="DayCompletePanel/VBox/ButtonRow" unique_id=839509799]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "Next Day →"
-theme_override_font_sizes/font_size = 12
 
-[node name="ContinueButton" type="Button" parent="DayCompletePanel/VBox/ButtonRow"]
+[node name="ContinueButton" type="Button" parent="DayCompletePanel/VBox/ButtonRow" unique_id=951234879]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "Keep Playing"
-theme_override_font_sizes/font_size = 12
 
-[node name="MessageTimer" type="Timer" parent="."]
+[node name="MessageTimer" type="Timer" parent="." unique_id=1508789739]
 one_shot = true
 
-[connection signal="timeout" from="MessageTimer" to="." method="_on_msg_timer_timeout"]
 [connection signal="pressed" from="DayCompletePanel/VBox/ButtonRow/SkipButton" to="." method="_on_skip_day_pressed"]
 [connection signal="pressed" from="DayCompletePanel/VBox/ButtonRow/ContinueButton" to="." method="_on_continue_pressed"]
+[connection signal="timeout" from="MessageTimer" to="." method="_on_msg_timer_timeout"]

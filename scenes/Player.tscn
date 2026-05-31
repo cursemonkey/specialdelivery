@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://player"]
 
 [ext_resource type="Script" uid="uid://dyjcr6yp52dwx" path="res://scripts/Player.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://df1hfpy0twfid" path="res://assets/herowalksouth2.png" id="2_mdl7e"]
+[ext_resource type="Texture2D" uid="uid://df1hfpy0twfid" path="res://assets/Hero/herowalksouth2.png" id="2_mdl7e"]
 [ext_resource type="Script" uid="uid://dokyyujq7ypuv" path="res://scripts/BikeSprite.gd" id="3"]
+[ext_resource type="Texture2D" uid="uid://cwr328pobshuy" path="res://assets/Hero/hero_bike_full.png" id="3_qu4a1"]
 [ext_resource type="Script" uid="uid://vql6a3yxxpgh" path="res://scripts/DeliveryArrow.gd" id="4"]
 
 [sub_resource type="CircleShape2D" id="1"]
-radius = 11.401754
+radius = 12.0415945
 
 [node name="Player" type="CharacterBody2D" unique_id=846757585]
 script = ExtResource("1")
@@ -18,7 +19,15 @@ texture = ExtResource("2_mdl7e")
 region_enabled = true
 region_rect = Rect2(0, 0, 68.6, 68)
 
+[node name="BikeSprite2" type="Sprite2D" parent="." unique_id=609091545]
+position = Vector2(5.9604645e-08, 2)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("3_qu4a1")
+region_enabled = true
+region_rect = Rect2(0, 0, 68.6, 68)
+
 [node name="BikeSprite" type="Node2D" parent="." unique_id=128394410]
+visible = false
 script = ExtResource("3")
 
 [node name="BoostAura" type="Node2D" parent="." unique_id=605046605]
@@ -32,6 +41,7 @@ visible = false
 script = ExtResource("4")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1037166321]
+position = Vector2(0, 1)
 shape = SubResource("1")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=137676064]

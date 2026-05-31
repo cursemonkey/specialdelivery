@@ -17,7 +17,7 @@ script = ExtResource("1")
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=-447676240]
 
 [node name="Background" type="Sprite2D" parent="." unique_id=294716201]
-position = Vector2(-5, -5)
+position = Vector2(0, -2)
 texture = ExtResource("2_nxtc6")
 centered = false
 
@@ -27,10 +27,43 @@ centered = false
 position = Vector2(171.45525, 93.585655)
 shape = SubResource("ConvexPolygonShape2D_c01mt")
 
+[node name="Farm" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=892441404]
+polygon = PackedVector2Array(3614, 387, 3619, 78, 4071, 73, 4068, 384)
+
+[node name="House1" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=1792907887]
+position = Vector2(-1903, 813)
+polygon = PackedVector2Array(3612, 287, 3619, 78, 3728, -48, 3818, 78, 3805, 287)
+
+[node name="House2" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=1903175858]
+position = Vector2(-3812, 1606)
+polygon = PackedVector2Array(5757, -534, 5972, -542, 5972, -678, 5882, -823, 5759, -688)
+
+[node name="Hospital" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=703863146]
+position = Vector2(-7624, 3212)
+polygon = PackedVector2Array(9995, -2103, 9988, -2304, 10214, -2304, 10229, -2424, 10437, -2429, 10435, -2100)
+
+[node name="Firehouse" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=1111365432]
+position = Vector2(-15248, 6424)
+polygon = PackedVector2Array(18393, -5310, 18413, -5666, 18674, -5664, 18661, -5307)
+
+[node name="House3" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=2032701398]
+position = Vector2(-7624, 3212)
+polygon = PackedVector2Array(11941, -2105, 12137, -2100, 12140, -2271, 12027, -2381, 11926, -2248)
+
+[node name="House4" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=1952366585]
+polygon = PackedVector2Array(702, 1551, 913, 1549, 928, 1378, 830, 1247, 694, 1390)
+
 [node name="CollisionPolygon2D_Building1" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=888179834]
 position = Vector2(280, 1328)
 scale = Vector2(1.147816, 1.1064994)
-polygon = PackedVector2Array(90.683716, 107.79285, 181.36743, -3.6334229, 277.9144, 87.13147, 267.8288, 175.33865, 200.60336, 196.20715, 90.68375, 207.10754)
+polygon = PackedVector2Array(90.683716, 107.79285, 181.36743, -3.6334229, 277.9144, 87.13147, 282.2752, 204.24768, 189.05469, 207.86267, 90.68375, 207.10754)
+
+[node name="Grocery" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=64595317]
+polygon = PackedVector2Array(1119, 1579, 1576, 1589, 1578, 1351, 1104, 1361)
+
+[node name="Pub" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=1631656444]
+position = Vector2(0, -53)
+polygon = PackedVector2Array(2352, 1559, 2673, 1564, 2673, 1348, 2342, 1346)
 
 [node name="CollisionPolygon2D_Building_TownHall" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=838524041]
 polygon = PackedVector2Array(2593, 1884, 2766, 1879, 2874, 1723, 3020, 1736, 3025, 1854, 3243, 1856, 3193, 2115, 2588, 2087)
@@ -43,6 +76,11 @@ script = ExtResource("6")
 [node name="Building_TownHall" type="Node2D" parent="." unique_id=516814554]
 editor_description = "THis is the door for CollisionPolygon2D_building"
 position = Vector2(2906, 2045)
+script = ExtResource("6")
+
+[node name="Pub" type="Node2D" parent="." unique_id=1929234090]
+editor_description = "This iis the door location for the Pub."
+position = Vector2(2490, 1472)
 script = ExtResource("6")
 
 [node name="WorldGenerator" parent="." unique_id=2012542759 instance=ExtResource("2")]
