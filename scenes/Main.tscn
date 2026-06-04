@@ -17,7 +17,7 @@ script = ExtResource("1")
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=-447676240]
 
 [node name="Background" type="Sprite2D" parent="." unique_id=294716201]
-position = Vector2(0, 16)
+position = Vector2(0, 2)
 texture = ExtResource("2_nxtc6")
 centered = false
 
@@ -179,7 +179,7 @@ polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1284, 292
 
 [node name="Library" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=416324004]
 position = Vector2(1317, 1015)
-polygon = PackedVector2Array(1054, 2041, 1387, 2055, 1392, 1823, 1094, 1814)
+polygon = PackedVector2Array(1068, 2086, 1379, 2090, 1392, 1823, 1094, 1814)
 
 [node name="School" type="CollisionPolygon2D" parent="Background/StaticBody2D Buildings" unique_id=1984680678]
 position = Vector2(1926, 1015)
@@ -212,7 +212,7 @@ script = ExtResource("6")
 
 [node name="Building_TownHall" type="Node2D" parent="." unique_id=516814554]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2906, 2045)
+position = Vector2(2898, 2070)
 script = ExtResource("6")
 
 [node name="Pub" type="Node2D" parent="." unique_id=1929234090]
@@ -232,12 +232,12 @@ script = ExtResource("6")
 
 [node name="Library" type="Node2D" parent="." unique_id=1267539702]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2543, 3041)
+position = Vector2(2543, 3096)
 script = ExtResource("6")
 
 [node name="House32" type="Node2D" parent="." unique_id=868065841]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2045, 3331)
+position = Vector2(2001, 3340)
 script = ExtResource("6")
 
 [node name="WorldGenerator" parent="." unique_id=2012542759 instance=ExtResource("2")]

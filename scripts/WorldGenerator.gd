@@ -15,7 +15,7 @@ const MAP_COLS      := 415
 const MAP_ROWS      := 313
 
 # Horizontal road top-edges (tile rows)
-const ROAD_ROWS     := [18, 50, 70, 130]
+const ROAD_ROWS     := [18, 50, 70, 110]
 # Vertical road left-edges (tile cols)
 const ROAD_COLS     := [8, 22, 36, 50, 64]
 
