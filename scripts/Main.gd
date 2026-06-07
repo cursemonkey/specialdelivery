@@ -2,7 +2,7 @@ extends Node2D
 ## Main — wires player, world, HUD, camera, and day cycle together.
 
 const TILE            := 16
-const PLAYER_START    := Vector2(1100, 550)
+const PLAYER_START    := Vector2(1819, 1635)  # south of House5
 const TARGETS_PER_DAY := 12
 const DAY_DURATION    := 240.0   # 4 minutes in seconds
 
@@ -10,12 +10,13 @@ const BikeScene  := preload("res://scenes/Bike.tscn")
 const BirdScene  := preload("res://scenes/Bird.tscn")
 const BIRD_COUNT := 6
 
-@onready var world  : Node2D          = $WorldGenerator
-@onready var player : CharacterBody2D = $Player
-@onready var camera : Camera2D        = $Player/Camera2D
-@onready var hud    : CanvasLayer     = $HUD
-@onready var title  : CanvasLayer     = $TitleScreen
-@onready var sky    : CanvasModulate  = $CanvasModulate
+@onready var world      : Node2D          = $WorldGenerator
+@onready var player     : CharacterBody2D = $Player
+@onready var camera     : Camera2D        = $Player/Camera2D
+@onready var hud        : CanvasLayer     = $HUD
+@onready var title      : CanvasLayer     = $TitleScreen
+@onready var sky        : CanvasModulate  = $CanvasModulate
+@onready var pause_menu : CanvasLayer     = get_node_or_null("PauseMenu")
 
 var _current_targets : Array = []
 var _day_timer       := 0.0
@@ -90,9 +91,6 @@ func _remove_buildings_under_art() -> void:
 		world.buildings.erase(bldg)
 		bldg.queue_free()
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		get_tree().quit()
 
 func _process(delta: float) -> void:
 	if not _day_running:
@@ -168,8 +166,8 @@ func _spawn_birds() -> void:
 		rooftops.append(bldg.global_position + Vector2(bldg.tile_width * 8.0, 4.0))
 
 	# Include art buildings
-	var building1 := get_node_or_null("Building1")
-	var pub := get_node_or_null("Pub")
+	var building1 := get_node_or_null("Doors/Building1")
+	var pub := get_node_or_null("Doors/Pub")
 	if building1 != null:
 		rooftops.append(building1.global_position)
 	if pub != null:

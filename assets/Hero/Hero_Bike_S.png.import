@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://6w2fx0e6hg26"
-path="res://.godot/imported/Hero_Bike_S.png-e6e3489b8abf3bc7bebbcd47120f68e1.ctex"
+uid="uid://ca5x84wh64sfn"
+path="res://.godot/imported/Hero_bike_S.png-ca9b5903c86174d3d83ca3f03dc4cfbb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Hero/Hero_Bike_S.png"
-dest_files=["res://.godot/imported/Hero_Bike_S.png-e6e3489b8abf3bc7bebbcd47120f68e1.ctex"]
+source_file="res://assets/Hero/Hero_bike_S.png"
+dest_files=["res://.godot/imported/Hero_bike_S.png-ca9b5903c86174d3d83ca3f03dc4cfbb.ctex"]
 
 [params]
 

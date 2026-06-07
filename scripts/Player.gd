@@ -201,12 +201,12 @@ func _process_bike(delta: float) -> void:
 		_bike_dir_index = dir_index
 		bike_sprite.texture = BIKE_TEXTURES[dir_index]
 
-	# Frame animation
+	# Frame animation — runs in reverse when backing up
 	if bike_speed != 0.0:
 		bike_timer += delta
 		if bike_timer >= 0.15:
 			bike_timer = 0.0
-			bike_frame = (bike_frame + 1) % 5
+			bike_frame = (bike_frame + 5 + int(sign(bike_speed))) % 5
 	else:
 		bike_timer = 0.0
 		bike_frame = 0

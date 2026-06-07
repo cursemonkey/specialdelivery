@@ -14,9 +14,9 @@ const ROAD_W        := 4
 const MAP_COLS      := 415
 const MAP_ROWS      := 313
 
-# Horizontal road top-edges (tile rows)
-const ROAD_ROWS     := [18, 50, 70, 110]
-# Vertical road left-edges (tile cols)
+# Horizontal road top-edges (tile rows) — 1 road = 2 row bands of buildings
+const ROAD_ROWS     := [28]
+# Vertical road left-edges (tile cols) — 5 roads = 6 column bands of buildings
 const ROAD_COLS     := [8, 22, 36, 50, 64]
 
 # TileMap source / atlas IDs — we'll paint programmatically using
