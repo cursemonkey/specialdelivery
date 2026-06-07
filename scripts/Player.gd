@@ -15,12 +15,27 @@ const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
 const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
 const TRAIL_STEP       := 12.0            # px between recorded trail positions
 
+# 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
+# (index = int(fposmod(deg + 22.5, 360) / 45))
+const BIKE_TEXTURES : Array = [
+	preload("res://assets/Hero/Hero_Bike_E.png"),
+	preload("res://assets/Hero/Hero_bike_SE.png"),
+	preload("res://assets/Hero/Hero_Bike_S.png"),
+	preload("res://assets/Hero/Hero_Bike_SW.png"),
+	preload("res://assets/Hero/Hero_Bike_W.png"),
+	preload("res://assets/Hero/hero_bike_NW.png"),
+	preload("res://assets/Hero/Hero_Bike_N.png"),
+	preload("res://assets/Hero/Hero_Bike_NE.png"),
+]
+
 # ── State ──────────────────────────────────────────────────
 var on_bike       := false
 var bike_speed    := 0.0
 var bike_angle    := -PI / 2.0   # facing up
 var bike_frame    := 0
 var bike_timer    := 0.0
+var _bike_dir_index    := -1
+var _visual_bike_angle := -PI / 2.0   # for sprite selection only, turns at full speed
 
 
 var boost_timer   := 0.0
@@ -99,6 +114,7 @@ func _try_mount() -> void:
 	on_bike = true
 	bike_speed = 0.0
 	bike_angle = velocity.angle() if velocity.length() > 10 else -PI / 2.0
+	_visual_bike_angle = bike_angle
 	world_bike.visible = false
 	_set_mode(true)
 	mounted_bike.emit()
@@ -171,30 +187,30 @@ func _process_bike(delta: float) -> void:
 		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * sign(bike_speed) * delta
 
 	velocity = Vector2(cos(bike_angle), sin(bike_angle)) * bike_speed
-	bike_sprite.rotation = bike_angle + PI / 2.0
 
-# Begin animation - bike animation
+	# Visual angle turns at full BIKE_TURN_SPEED on input so the sprite reacts immediately,
+	# independent of the physics turn_factor. Snaps back to bike_angle when not turning.
+	if turn_input != 0.0:
+		_visual_bike_angle += turn_input * BIKE_TURN_SPEED * delta
+	else:
+		_visual_bike_angle = bike_angle
+
+	# Direction: 8-way lookup. Angle 0=East, clockwise. Offset +22.5 centres each 45° sector.
+	var dir_index := int(fposmod(rad_to_deg(_visual_bike_angle) + 22.5, 360.0) / 45.0)
+	if dir_index != _bike_dir_index:
+		_bike_dir_index = dir_index
+		bike_sprite.texture = BIKE_TEXTURES[dir_index]
+
+	# Frame animation
 	if bike_speed != 0.0:
-		#TBD, determine direction from angle
-		#facing = bike_angle.;
 		bike_timer += delta
 		if bike_timer >= 0.15:
 			bike_timer = 0.0
-		
-			var current_anim := 0		
-			current_anim = 1 if fmod(bike_angle, 7.0) > 0.5 else 2
-			#We're not quite there, the 
-			
-			bike_frame = (bike_frame + 1) % 5 *current_anim 
-	#	bike_frame = (bike_frame + 1) % 5
-		
-			
+			bike_frame = (bike_frame + 1) % 5
 	else:
 		bike_timer = 0.0
 		bike_frame = 0
-		
-	bike_sprite.region_rect = Rect2(bike_frame * 68, 0, 68, 75) 
-# end Animation
+	bike_sprite.frame = bike_frame
 
 
 
