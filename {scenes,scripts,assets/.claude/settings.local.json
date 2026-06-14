@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"d:/David/SpecialDelivery/godot_claude_v0.0.2/cozy_delivery/assets/Backgrounds/CityMap.png\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))"
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"d:/David/SpecialDelivery/godot_claude_v0.0.2/cozy_delivery/assets/Backgrounds/CityMap.png\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "Bash(git -C \"d:\\\\David\\\\SpecialDelivery\\\\godot_claude_v0.0.2\\\\cozy_delivery\" status)"
     ]
   }
 }

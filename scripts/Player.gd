@@ -7,6 +7,9 @@ const BIKE_MAX_SPEED  := 148.0
 const BIKE_ACCEL      := 5.0
 const BIKE_FRICTION   := 0.90
 const BIKE_TURN_SPEED := 2.8   # radians/sec (speed-scaled)
+const STRAIGHTEN_TOLERANCE := PI / 12.0   # 10 degrees
+const STRAIGHTEN_DELAY     := 0.1         # seconds within tolerance before easing starts
+const STRAIGHTEN_SPEED     := 4.0         # lerp_angle weight/sec once easing starts
 const BOOST_MULT      := 1.8
 const SLOW_MULT       := 0.4
 const BOOST_DURATION  := 1.5
@@ -36,6 +39,7 @@ var bike_frame    := 0
 var bike_timer    := 0.0
 var _bike_dir_index    := -1
 var _visual_bike_angle := -PI / 2.0   # for sprite selection only, turns at full speed
+var _straighten_timer  := 0.0   # time spent near a cardinal heading without steering
 
 
 var boost_timer   := 0.0
@@ -115,6 +119,7 @@ func _try_mount() -> void:
 	bike_speed = 0.0
 	bike_angle = velocity.angle() if velocity.length() > 10 else -PI / 2.0
 	_visual_bike_angle = bike_angle
+	_straighten_timer = 0.0
 	world_bike.visible = false
 	_set_mode(true)
 	mounted_bike.emit()
@@ -185,6 +190,19 @@ func _process_bike(delta: float) -> void:
 	if abs(bike_speed) > 2.0:
 		var turn_factor: float = clamp(abs(bike_speed) / BIKE_MAX_SPEED, 0.3, 1.0)
 		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * sign(bike_speed) * delta
+
+	# Auto-straighten: if riding nearly N/E/S/W without steering input, hold
+	# that for a bit then ease the heading onto the exact cardinal direction.
+	if turn_input == 0.0 and abs(bike_speed) > 2.0:
+		var nearest_cardinal: float = round(bike_angle / (PI / 2.0)) * (PI / 2.0)
+		if abs(angle_difference(bike_angle, nearest_cardinal)) <= STRAIGHTEN_TOLERANCE:
+			_straighten_timer += delta
+			if _straighten_timer >= STRAIGHTEN_DELAY:
+				bike_angle = lerp_angle(bike_angle, nearest_cardinal, STRAIGHTEN_SPEED * delta)
+		else:
+			_straighten_timer = 0.0
+	else:
+		_straighten_timer = 0.0
 
 	velocity = Vector2(cos(bike_angle), sin(bike_angle)) * bike_speed
 
