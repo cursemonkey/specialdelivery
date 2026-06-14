@@ -16,8 +16,6 @@ const BIRD_COUNT := 6
 @onready var hud        : CanvasLayer     = $HUD
 @onready var title      : CanvasLayer     = $TitleScreen
 @onready var sky        : CanvasModulate  = $CanvasModulate
-#Pause Stuff TBD
-@onready var pause_menu : CanvasLayer     = get_node_or_null("PauseMenu")
 
 var _current_targets : Array = []
 var _day_timer       := 0.0
@@ -28,7 +26,6 @@ var _birds           : Array[Node] = []
 var _first_day       := true
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	var bg_size = $Background.texture.get_size() * $Background.scale
 	camera.limit_left   = 0
 	camera.limit_top    = 0
@@ -93,13 +90,8 @@ func _remove_buildings_under_art() -> void:
 		world.buildings.erase(bldg)
 		bldg.queue_free()
 
-#Pause TBD
-func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
-		get_tree().paused = not get_tree().paused
-
 func _process(delta: float) -> void:
-	if not _day_running or get_tree().paused:
+	if not _day_running:
 		return
 	_day_timer += delta
 	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)

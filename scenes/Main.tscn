@@ -22,19 +22,19 @@ centered = false
 editor_description = "Array of Building Shapes"
 
 [node name="House33" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=867943652]
-position = Vector2(-7345, 3233)
+position = Vector2(-7278, 3260)
 polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10320, -2948, 10405, -2830, 10415, -2611)
 
 [node name="House34" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=4059282]
-position = Vector2(-7543, 3233)
+position = Vector2(-7458, 3237)
 polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10320, -2948, 10405, -2830, 10415, -2611)
 
 [node name="House35" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=260723860]
-position = Vector2(-7724, 3236)
+position = Vector2(-7657, 3236)
 polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10320, -2948, 10405, -2830, 10415, -2611)
 
 [node name="House36" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=87557973]
-position = Vector2(-7905, 3231)
+position = Vector2(-7838, 3222)
 polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10320, -2948, 10405, -2830, 10415, -2611)
 
 [node name="Farm" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=892441404]
