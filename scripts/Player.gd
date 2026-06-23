@@ -42,6 +42,8 @@ var _visual_bike_angle := -PI / 2.0   # for sprite selection only, turns at full
 var _straighten_timer  := 0.0   # time spent near a cardinal heading without steering
 
 
+var _hopping      := false
+
 var boost_timer   := 0.0
 var slow_timer    := 0.0
 
@@ -62,6 +64,7 @@ var walk_timer    := 0.0
 # References set from Main
 var delivery_targets : Array = []
 var world_bike       : Node2D = null
+var pause_menu       : Node   = null
 
 # Path trail for bird following
 var path_trail       : Array[Vector2] = []
@@ -73,11 +76,14 @@ signal dismounted_bike()
 
 # ───────────────────────────────────────────────────────────
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_set_mode(false)
 	boost_aura.visible = false
 	slow_aura.visible  = false
 
 func _physics_process(delta: float) -> void:
+	if get_tree().paused:
+		return
 	_tick_effects(delta)
 	if on_bike:
 		_process_bike(delta)
@@ -96,10 +102,34 @@ func reset_trail() -> void:
 	_last_trail_pos = global_position
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
+		_toggle_pause()
+		return
+	if get_tree().paused:
+		return
 	if event.is_action_pressed("mount_bike"):
 		_toggle_bike()
 	if event.is_action_pressed("throw_package"):
 		_try_throw()
+	if event is InputEventKey and event.pressed and event.keycode == KEY_M:
+		_hop()
+
+func _toggle_pause() -> void:
+	if pause_menu == null:
+		return
+	if get_tree().paused:
+		pause_menu._on_close_button_pressed()
+	else:
+		pause_menu._on_pause_button_pressed()
+
+func _hop() -> void:
+	if on_bike or _hopping:
+		return
+	_hopping = true
+	var tween := create_tween()
+	tween.tween_property(foot_sprite, "position:y", -18.0, 0.18).set_ease(Tween.EASE_OUT)
+	tween.tween_property(foot_sprite, "position:y",   0.0, 0.20).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func(): _hopping = false)
 
 # ── Mode switching ─────────────────────────────────────────
 func _toggle_bike() -> void:
