@@ -33,7 +33,7 @@ func _ready() -> void:
 	camera.limit_bottom = int(bg_size.y)
 
 	player.global_position = _safe_spawn_near(PLAYER_START)
-	player.pause_menu = get_node_or_null("PauseMenu")
+	player.pause_menu = get_node_or_null("PauseMenuLayer/PauseMenuScreen")
 
 	hud.set_player(player)
 	hud.skip_day_pressed.connect(_on_skip_day)

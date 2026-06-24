@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://titlescreen" path="res://scenes/TitleScreen.tscn" id="5"]
 [ext_resource type="Script" uid="uid://cawj4uxomwgya" path="res://scripts/ArtBuilding.gd" id="6"]
 [ext_resource type="Script" uid="uid://ccyt8kaoywpgw" path="res://scenes/pause_menu.gd" id="8_jlsqs"]
+[ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -23,10 +24,6 @@ corner_radius_bottom_left = 4
 
 [node name="Main" type="Node2D" unique_id=5593507 groups=["main"]]
 script = ExtResource("1")
-
-[node name="Pause" type="MenuButton" parent="." unique_id=561818892]
-offset_right = 8.0
-offset_bottom = 8.0
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=-447676240]
 
@@ -478,14 +475,18 @@ position = Vector2(576, 448)
 
 [node name="PauseMenu" type="PopupMenu" parent="." unique_id=1811302183]
 process_mode = 2
-script = ExtResource("8_jlsqs")
 theme_override_styles/panel = SubResource("StyleBoxFlat_pause")
+script = ExtResource("8_jlsqs")
 
 [node name="Closebutton" type="MenuButton" parent="PauseMenu" unique_id=899833756]
+modulate = Color(1, 0, 0, 1)
 offset_right = 8.0
 offset_bottom = 8.0
 text = "DEPAUSE"
-modulate = Color(1, 0, 0, 1)
 
 [connection signal="pressed" from="PauseMenu/Closebutton" to="PauseMenu" method="_on_closebutton_pressed"]
 
+[node name="PauseMenuLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="PauseMenuScreen" parent="PauseMenuLayer" instance=ExtResource("9_pmscn")]
