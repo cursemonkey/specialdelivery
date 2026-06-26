@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://cawj4uxomwgya" path="res://scripts/ArtBuilding.gd" id="6"]
 [ext_resource type="Script" uid="uid://ccyt8kaoywpgw" path="res://scenes/pause_menu.gd" id="8_jlsqs"]
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
+[ext_resource type="PackedScene" uid="uid://dialoguebox1scn" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -490,3 +491,5 @@ text = "DEPAUSE"
 layer = 10
 
 [node name="PauseMenuScreen" parent="PauseMenuLayer" instance=ExtResource("9_pmscn")]
+
+[node name="DialogueBox" parent="." instance=ExtResource("10_dlgbx")]

@@ -34,6 +34,8 @@ func _ready() -> void:
 
 	player.global_position = _safe_spawn_near(PLAYER_START)
 	player.pause_menu = get_node_or_null("PauseMenuLayer/PauseMenuScreen")
+	player.dialogue_box = get_node_or_null("DialogueBox")
+	player.doors = get_tree().get_nodes_in_group("art_building")
 
 	hud.set_player(player)
 	hud.skip_day_pressed.connect(_on_skip_day)

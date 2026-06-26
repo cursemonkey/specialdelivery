@@ -16,6 +16,7 @@ const BOOST_DURATION  := 1.5
 const SLOW_DURATION   := 1.0
 const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
 const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
+const DOOR_INTERACT_RANGE := 3 * TILE_SIZE   # how close player must be to talk at a door
 const TRAIL_STEP       := 12.0            # px between recorded trail positions
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
@@ -65,6 +66,8 @@ var walk_timer    := 0.0
 var delivery_targets : Array = []
 var world_bike       : Node2D = null
 var pause_menu       : Node   = null
+var dialogue_box     : Node   = null
+var doors            : Array  = []
 
 # Path trail for bird following
 var path_trail       : Array[Vector2] = []
@@ -105,6 +108,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
 		_toggle_pause()
 		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
+		_try_dialogue()
+		return
 	if get_tree().paused:
 		return
 	if event.is_action_pressed("mount_bike"):
@@ -121,6 +127,19 @@ func _toggle_pause() -> void:
 		pause_menu._on_close_button_pressed()
 	else:
 		pause_menu._on_pause_button_pressed()
+
+func _try_dialogue() -> void:
+	if dialogue_box == null:
+		return
+	if dialogue_box.visible:
+		dialogue_box.close()
+		return
+	if get_tree().paused:
+		return
+	for door in doors:
+		if is_instance_valid(door) and global_position.distance_to(door.global_position) <= DOOR_INTERACT_RANGE:
+			dialogue_box.open("Hello!")
+			return
 
 func _hop() -> void:
 	if on_bike or _hopping:
