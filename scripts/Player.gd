@@ -16,7 +16,7 @@ const BOOST_DURATION  := 1.5
 const SLOW_DURATION   := 1.0
 const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
 const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
-const DOOR_INTERACT_RANGE := 3 * TILE_SIZE   # how close player must be to talk at a door
+const DOOR_INTERACT_RANGE := 4 * TILE_SIZE   # how close player must be to talk at a door
 const TRAIL_STEP       := 12.0            # px between recorded trail positions
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
@@ -110,6 +110,10 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
 		_try_dialogue()
+		return
+	if dialogue_box != null and dialogue_box.visible:
+		if event.is_action_pressed("mount_bike") or event.is_action_pressed("throw_package"):
+			dialogue_box.close()
 		return
 	if get_tree().paused:
 		return

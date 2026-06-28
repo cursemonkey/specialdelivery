@@ -37,6 +37,11 @@ func _ready() -> void:
 	player.dialogue_box = get_node_or_null("DialogueBox")
 	player.doors = get_tree().get_nodes_in_group("art_building")
 
+	var pause_screen := get_node_or_null("PauseMenuLayer/PauseMenuScreen")
+	if pause_screen != null:
+		pause_screen.player_ref = player
+		pause_screen.background_ref = $Background
+
 	hud.set_player(player)
 	hud.skip_day_pressed.connect(_on_skip_day)
 	hud.continue_playing_pressed.connect(_on_continue_playing)

@@ -5,11 +5,13 @@
 [ext_resource type="Texture2D" uid="uid://dxljmknnyrt6g" path="res://assets/Backgrounds/CityMap1.1.png" id="2_nxtc6"]
 [ext_resource type="PackedScene" uid="uid://player" path="res://scenes/Player.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://hud" path="res://scenes/HUD.tscn" id="4"]
+[ext_resource type="Texture2D" uid="uid://kcqviynp85l4" path="res://assets/Backgrounds/Building_Rooftop_House.png" id="4_bjd11"]
+[ext_resource type="Texture2D" uid="uid://rh80l63nuiwh" path="res://assets/Backgrounds/Rooftop_Building_Mechanic.png" id="4_wp0k4"]
 [ext_resource type="PackedScene" uid="uid://titlescreen" path="res://scenes/TitleScreen.tscn" id="5"]
 [ext_resource type="Script" uid="uid://cawj4uxomwgya" path="res://scripts/ArtBuilding.gd" id="6"]
 [ext_resource type="Script" uid="uid://ccyt8kaoywpgw" path="res://scenes/pause_menu.gd" id="8_jlsqs"]
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
-[ext_resource type="PackedScene" uid="uid://dialoguebox1scn" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
+[ext_resource type="PackedScene" uid="uid://c66vfsg3tigj6" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -55,13 +57,29 @@ polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10320, -2948, 10405, -2
 [node name="Farm" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=892441404]
 polygon = PackedVector2Array(3614, 387, 3619, 78, 4071, 73, 4068, 384)
 
+[node name="MechanicRoof" type="Sprite2D" parent="Background/Buildings" unique_id=1669481343]
+z_index = 1
+position = Vector2(1343, 818)
+scale = Vector2(1.0316206, 1.2045451)
+texture = ExtResource("4_wp0k4")
+region_enabled = true
+region_rect = Rect2(0, 0, 253, 88.09999)
+
 [node name="Mechanic" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1122748757]
 position = Vector2(-3806, 1626)
-polygon = PackedVector2Array(5028, -610, 5113, -630, 5211, -612, 5211, -549, 5261, -552, 5264, -838, 5126, -848, 5030, -765)
+polygon = PackedVector2Array(5028, -610, 5113, -630, 5211, -612, 5211, -549, 5261, -552, 5265, -797, 5072, -804, 5035, -762)
+
+[node name="House1Roof" type="Sprite2D" parent="Background/Buildings" unique_id=1209709734]
+z_index = 1
+position = Vector2(1818.25, 816)
+scale = Vector2(1.1837946, 1.3863641)
+texture = ExtResource("4_bjd11")
+region_enabled = true
+region_rect = Rect2(0, 0, 253, 88.09999)
 
 [node name="House1" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1792907887]
 position = Vector2(-1903, 813)
-polygon = PackedVector2Array(3612, 287, 3619, 78, 3728, -48, 3818, 78, 3805, 287)
+polygon = PackedVector2Array(3612, 287, 3628, 70, 3730, 67, 3818, 70, 3805, 287)
 
 [node name="House2" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1903175858]
 position = Vector2(-3812, 1606)
@@ -485,11 +503,11 @@ offset_right = 8.0
 offset_bottom = 8.0
 text = "DEPAUSE"
 
-[connection signal="pressed" from="PauseMenu/Closebutton" to="PauseMenu" method="_on_closebutton_pressed"]
-
-[node name="PauseMenuLayer" type="CanvasLayer" parent="."]
+[node name="PauseMenuLayer" type="CanvasLayer" parent="." unique_id=1943990612]
 layer = 10
 
-[node name="PauseMenuScreen" parent="PauseMenuLayer" instance=ExtResource("9_pmscn")]
+[node name="PauseMenuScreen" parent="PauseMenuLayer" unique_id=2140681990 instance=ExtResource("9_pmscn")]
 
-[node name="DialogueBox" parent="." instance=ExtResource("10_dlgbx")]
+[node name="DialogueBox" parent="." unique_id=2003931360 instance=ExtResource("10_dlgbx")]
+
+[connection signal="pressed" from="PauseMenu/Closebutton" to="PauseMenu" method="_on_closebutton_pressed"]
