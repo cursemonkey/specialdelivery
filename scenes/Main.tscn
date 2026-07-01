@@ -15,6 +15,11 @@
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
 
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_bjd11"]
+vertices = PackedVector2Array(960.97656, 1638, 2658.1875, 1638, 2300.7031, 1729, 1075.1797, 1739.0781, 959.02344, 2619.2578, 1069, 2086, 1072.9922, 2305.9531, 1066.2031, 2611.6719)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 0, 3, 5), PackedInt32Array(4, 5, 6, 7)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(2302, 1739, 1085, 1749, 1079, 2086, 1083, 2306, 1076, 2621, 949, 2630, 951, 1628, 2738, 1628)])
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
 border_width_left = 3
@@ -278,6 +283,13 @@ polygon = PackedVector2Array(10233, -2815, 10237, -2939, 10372, -2950, 10364, -2
 [node name="DropPad3" type="CollisionPolygon2D" parent="Background/DropPads" unique_id=1632872909]
 position = Vector2(-8919, 6188)
 polygon = PackedVector2Array(10233, -2815, 10237, -2939, 10372, -2950, 10364, -2823)
+
+[node name="Road" type="NavigationRegion2D" parent="Background" unique_id=2037994425]
+navigation_polygon = SubResource("NavigationPolygon_bjd11")
+
+[node name="DirtRoad" type="NavigationRegion2D" parent="Background" unique_id=1206092539]
+position = Vector2(13, -973)
+navigation_polygon = SubResource("NavigationPolygon_bjd11")
 
 [node name="Doors" type="Node" parent="." unique_id=871836246]
 

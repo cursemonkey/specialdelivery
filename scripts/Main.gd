@@ -36,6 +36,8 @@ func _ready() -> void:
 	player.pause_menu = get_node_or_null("PauseMenuLayer/PauseMenuScreen")
 	player.dialogue_box = get_node_or_null("DialogueBox")
 	player.doors = get_tree().get_nodes_in_group("art_building")
+	player.roads_region     = get_node_or_null("Background/Road")
+	player.dirt_road_region = get_node_or_null("Background/DirtRoad")
 
 	var pause_screen := get_node_or_null("PauseMenuLayer/PauseMenuScreen")
 	if pause_screen != null:

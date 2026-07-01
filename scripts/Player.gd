@@ -69,6 +69,8 @@ var world_bike       : Node2D = null
 var pause_menu       : Node   = null
 var dialogue_box     : Node   = null
 var doors            : Array  = []
+var roads_region     : NavigationRegion2D = null
+var dirt_road_region : NavigationRegion2D = null
 
 # Path trail for bird following
 var path_trail       : Array[Vector2] = []
@@ -331,9 +333,23 @@ func _tick_effects(delta: float) -> void:
 		if slow_timer <= 0.0:
 			slow_aura.visible = false
 
+func _is_in_region(region: NavigationRegion2D) -> bool:
+	if region == null:
+		return false
+	var nav_poly := region.navigation_polygon
+	if nav_poly == null:
+		return false
+	var local_pos := region.to_local(global_position)
+	for i in nav_poly.get_outline_count():
+		if Geometry2D.is_point_in_polygon(local_pos, nav_poly.get_outline(i)):
+			return true
+	return false
+
 func _speed_mult() -> float:
 	if boost_timer > 0.0: return BOOST_MULT
 	if slow_timer  > 0.0: return SLOW_MULT
+	if _is_in_region(roads_region):                 return 1.2
+	if _is_in_region(dirt_road_region):             return 0.75
 	return 1.0
 
 # ── Helpers ────────────────────────────────────────────────
