@@ -43,7 +43,7 @@ func on_delivery_complete(earned: int) -> void:
 	delivered_count += 1
 	add_cash(earned)
 	delivery_made.emit(earned)
-	if delivered_count >= total_targets:
+	if total_targets > 0 and delivered_count >= total_targets:
 		all_delivered.emit()
 
 func start_new_day(target_count: int) -> void:
@@ -53,6 +53,13 @@ func start_new_day(target_count: int) -> void:
 	total_targets = target_count
 	set_packages(target_count)
 	day_changed.emit(day)
+
+func add_packages(count: int) -> void:
+	packages += count
+	packages_changed.emit(packages)
+
+func add_targets(count: int) -> void:
+	total_targets += count
 
 func reset() -> void:
 	cash = 0

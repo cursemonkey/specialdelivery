@@ -71,6 +71,7 @@ var dialogue_box     : Node   = null
 var doors            : Array  = []
 var roads_region     : NavigationRegion2D = null
 var dirt_road_region : NavigationRegion2D = null
+var drop_pad_manager : Node               = null
 
 # Path trail for bird following
 var path_trail       : Array[Vector2] = []

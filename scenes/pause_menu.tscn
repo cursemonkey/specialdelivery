@@ -39,6 +39,10 @@ text = "Map"
 layout_mode = 2
 text = "Settings"
 
+[node name="NextDay" type="Button" parent="PanelContainer/HBoxContainer"]
+layout_mode = 2
+text = "Next Day"
+
 [node name="Quit" type="Button" parent="PanelContainer/HBoxContainer" unique_id=725038169]
 layout_mode = 2
 text = "Quit"
@@ -119,9 +123,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -200.0
-offset_top = -120.0
+offset_top = -180.0
 offset_right = 200.0
-offset_bottom = 120.0
+offset_bottom = 180.0
 
 [node name="VBox" type="VBoxContainer" parent="SettingsView/SettingsPanel"]
 layout_mode = 2
@@ -135,6 +139,36 @@ text = "Settings"
 layout_mode = 2
 button_pressed = true
 text = "Snap to Direction"
+
+[node name="DropsRow" type="HBoxContainer" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="DropsLabel" type="Label" parent="SettingsView/SettingsPanel/VBox/DropsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Max Drops/Day"
+
+[node name="DropsSpinBox" type="SpinBox" parent="SettingsView/SettingsPanel/VBox/DropsRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 8.0
+value = 4.0
+rounded = true
+
+[node name="PkgRow" type="HBoxContainer" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="PkgLabel" type="Label" parent="SettingsView/SettingsPanel/VBox/PkgRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Max Pkg/Drop"
+
+[node name="PkgSpinBox" type="SpinBox" parent="SettingsView/SettingsPanel/VBox/PkgRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 5.0
+value = 3.0
+rounded = true
 
 [node name="CloseSettings" type="Button" parent="SettingsView/SettingsPanel/VBox"]
 layout_mode = 2

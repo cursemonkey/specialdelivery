@@ -1,10 +1,11 @@
 extends Node2D
 ## Main — wires player, world, HUD, camera, and day cycle together.
 
-const TILE            := 16
-const PLAYER_START    := Vector2(1819, 1635)  # south of House5
-const TARGETS_PER_DAY := 12
-const DAY_DURATION    := 240.0   # 4 minutes in seconds
+const TILE             := 16
+const PLAYER_START     := Vector2(1819, 1635)  # south of House5
+const TARGETS_PER_DAY  := 12
+const DAY_DURATION     := 240.0   # 4 minutes in seconds
+const START_PACKAGES   := 0
 
 const BikeScene  := preload("res://scenes/Bike.tscn")
 const BirdScene  := preload("res://scenes/Bird.tscn")
@@ -16,6 +17,7 @@ const BIRD_COUNT := 6
 @onready var hud        : CanvasLayer     = $HUD
 @onready var title      : CanvasLayer     = $TitleScreen
 @onready var sky        : CanvasModulate  = $CanvasModulate
+@onready var drop_pads  : StaticBody2D    = $Background/DropPads
 
 var _current_targets : Array = []
 var _day_timer       := 0.0
@@ -38,11 +40,18 @@ func _ready() -> void:
 	player.doors = get_tree().get_nodes_in_group("art_building")
 	player.roads_region     = get_node_or_null("Background/Road")
 	player.dirt_road_region = get_node_or_null("Background/DirtRoad")
+	player.drop_pad_manager = drop_pads
+
+	drop_pads.player_ref = player
+	drop_pads.drop_arrived.connect(_on_drop_arrived)
+	drop_pads.pad_picked_up.connect(_on_pad_picked_up)
 
 	var pause_screen := get_node_or_null("PauseMenuLayer/PauseMenuScreen")
 	if pause_screen != null:
-		pause_screen.player_ref = player
-		pause_screen.background_ref = $Background
+		pause_screen.player_ref       = player
+		pause_screen.background_ref   = $Background
+		pause_screen.drop_pad_manager = drop_pads
+		pause_screen.next_day_requested.connect(_on_next_day)
 
 	hud.set_player(player)
 	hud.skip_day_pressed.connect(_on_skip_day)
@@ -107,8 +116,10 @@ func _process(delta: float) -> void:
 	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)
 	hud.update_timer(remaining)
 	_apply_sky_tint(_day_timer)
+	drop_pads.tick(delta)
 	if _day_timer >= DAY_DURATION:
 		_day_running = false
+		drop_pads.end_day()
 		_on_day_time_up()
 
 # ── Sky tint ───────────────────────────────────────────────
@@ -131,8 +142,9 @@ func start_game() -> void:
 	_begin_day()
 
 func _begin_day() -> void:
-	_current_targets = world.select_targets(TARGETS_PER_DAY)
-	player.delivery_targets = _current_targets
+	world.clear_targets()
+	_current_targets        = []
+	player.delivery_targets = []
 	_day_timer  = 0.0
 	_day_running = true
 	_bonus_paid  = false
@@ -142,15 +154,17 @@ func _begin_day() -> void:
 		_first_day = false
 		_first_day_setup()
 	else:
-		GameManager.start_new_day(_current_targets.size())
+		GameManager.start_new_day(0)
+
+	drop_pads.start_day(DAY_DURATION)
 
 	_spawn_bike()
 	player.reset_trail()
 	_spawn_birds()
 
 	GameManager.show_message(
-		"☀️ %s! Deliver %d packages. Press F for bicycle, SPACE to toss!"
-		% [GameManager.day_name(), _current_targets.size()]
+		"☀️ %s! Watch for supply drops — pick them up to get deliveries!" \
+		% GameManager.day_name()
 	)
 
 func _spawn_bike() -> void:
@@ -192,10 +206,10 @@ func _spawn_birds() -> void:
 		_birds.append(b)
 
 func _first_day_setup() -> void:
-	GameManager.total_targets   = _current_targets.size()
+	GameManager.total_targets   = 0
 	GameManager.delivered_count = 0
 	GameManager.day_cash        = 0
-	GameManager.set_packages(_current_targets.size())
+	GameManager.set_packages(0)
 
 # ── Delivery complete (early) ──────────────────────────────
 func _on_all_delivered() -> void:
@@ -204,9 +218,17 @@ func _on_all_delivered() -> void:
 	_bonus_paid = true
 	var bonus := int(GameManager.day_cash * 0.25)
 	GameManager.add_cash(bonus)
-	hud.show_day_complete_prompt(bonus)
+	GameManager.show_message("🎉 All delivered! +$%d bonus! Open menu for Next Day." % bonus, 5.0)
 
 # ── Prompt responses ───────────────────────────────────────
+func _on_next_day() -> void:
+	_day_running = false
+	drop_pads.end_day()
+	hud.update_timer(0.0)
+	await get_tree().create_timer(0.3).timeout
+	world._scatter_pickups()
+	_begin_day()
+
 func _on_skip_day() -> void:
 	_day_running = false
 	hud.hide_day_complete_prompt()
@@ -218,6 +240,25 @@ func _on_skip_day() -> void:
 func _on_continue_playing() -> void:
 	hud.hide_day_complete_prompt()
 	GameManager.show_message("🌇 Keep exploring! Next day starts when time runs out.")
+
+# ── Drop pad events ───────────────────────────────────────
+func _on_drop_arrived(pad_idx: int, count: int) -> void:
+	GameManager.show_message(
+		"📦 Supply drop at Pad %d! %d package%s waiting — go pick it up!" \
+		% [pad_idx + 1, count, "s" if count > 1 else ""],
+		5.0
+	)
+
+func _on_pad_picked_up(_pad_idx: int, count: int) -> void:
+	var new_targets : Array = world.select_extra_targets(count)
+	for t in new_targets:
+		player.delivery_targets.append(t)
+	GameManager.add_packages(new_targets.size())
+	GameManager.add_targets(new_targets.size())
+	GameManager.show_message(
+		"📬 Picked up %d package%s! New deliveries added." \
+		% [new_targets.size(), "s" if new_targets.size() > 1 else ""]
+	)
 
 # ── Timer expired ──────────────────────────────────────────
 func _on_day_time_up() -> void:

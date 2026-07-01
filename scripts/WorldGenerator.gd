@@ -158,6 +158,22 @@ func select_targets(count: int = 5) -> Array:
 		b.mark_as_target()
 	return chosen
 
+func select_extra_targets(count: int) -> Array:
+	var candidates : Array = buildings.filter(
+		func(b): return (b.building_type == Building.BuildingType.HOUSE \
+					 or b.building_type == Building.BuildingType.MANSION) \
+					 and not b.is_target and not b.is_delivered
+	)
+	var art : Array = get_tree().get_nodes_in_group("art_building").filter(
+		func(ab): return not ab.is_target and not ab.is_delivered
+	)
+	candidates.append_array(art)
+	candidates.shuffle()
+	var chosen : Array = candidates.slice(0, min(count, candidates.size()))
+	for b in chosen:
+		b.mark_as_target()
+	return chosen
+
 func clear_targets() -> void:
 	for b in buildings:
 		b.clear_target()

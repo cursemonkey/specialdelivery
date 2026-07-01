@@ -8,6 +8,11 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var player = get_parent()
+
+	if GameManager.packages <= 0:
+		visible = false
+		return
+
 	var targets : Array = player.delivery_targets
 
 	var nearest        = null

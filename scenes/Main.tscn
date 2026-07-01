@@ -9,11 +9,17 @@
 [ext_resource type="Texture2D" uid="uid://rh80l63nuiwh" path="res://assets/Backgrounds/Rooftop_Building_Mechanic.png" id="4_wp0k4"]
 [ext_resource type="PackedScene" uid="uid://titlescreen" path="res://scenes/TitleScreen.tscn" id="5"]
 [ext_resource type="Script" uid="uid://cawj4uxomwgya" path="res://scripts/ArtBuilding.gd" id="6"]
+[ext_resource type="Script" uid="uid://ccb8767c7ac20" path="res://scripts/DropPadManager.gd" id="6_droppad"]
 [ext_resource type="Script" uid="uid://ccyt8kaoywpgw" path="res://scenes/pause_menu.gd" id="8_jlsqs"]
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
 [ext_resource type="PackedScene" uid="uid://c66vfsg3tigj6" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_qmy6f"]
+vertices = PackedVector2Array(128.07031, 20.867188, 128.92188, 136.25, -8.0703125, 139.74219, -8.921875, 19.117188)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-19, 9, 138, 11, 139, 146, -18, 150)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_bjd11"]
 vertices = PackedVector2Array(960.97656, 1638, 2658.1875, 1638, 2300.7031, 1729, 1075.1797, 1739.0781, 959.02344, 2619.2578, 1069, 2086, 1072.9922, 2305.9531, 1066.2031, 2611.6719)
@@ -227,7 +233,7 @@ polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1284, 292
 
 [node name="House25" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=420101536]
 position = Vector2(-1859, 1458)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1284, 2927, 1407)
+polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1386, 2927, 1407)
 
 [node name="House26" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1833561829]
 position = Vector2(-1601, 1458)
@@ -251,7 +257,7 @@ polygon = PackedVector2Array(1047, 2076, 1442, 2067, 1454, 1824, 1027, 1814)
 
 [node name="Apartments" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=58801602]
 position = Vector2(2567, 1064)
-polygon = PackedVector2Array(1040, 2241, 1450, 2246, 1454, 1824, 1383, 1726, 1151, 1703, 1027, 1814)
+polygon = PackedVector2Array(1040, 2241, 1450, 2246, 1454, 1897, 1369, 1897, 1134, 1890, 1034, 1906)
 
 [node name="House29" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1571027830]
 position = Vector2(-3718, 2916)
@@ -259,7 +265,7 @@ polygon = PackedVector2Array(7923, 197, 8270, 206, 8259, -33, 8072, -184, 7877, 
 
 [node name="House30" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=503795352]
 position = Vector2(-1867, 1796)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1284, 2927, 1407)
+polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3048, 1393, 2927, 1407)
 
 [node name="House31" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1209346275]
 position = Vector2(-1275, 1800)
@@ -271,18 +277,19 @@ polygon = PackedVector2Array(2911, 1578, 3146, 1585, 3158, 1386, 3101, 1328, 293
 
 [node name="DropPads" type="StaticBody2D" parent="Background" unique_id=642770669]
 editor_description = "Array of Building Shapes"
+script = ExtResource("6_droppad")
 
-[node name="DropPad1" type="CollisionPolygon2D" parent="Background/DropPads" unique_id=743955414]
-position = Vector2(-7286, 4178)
-polygon = PackedVector2Array(10233, -2815, 10237, -2939, 10372, -2950, 10364, -2823)
+[node name="DropPad1" type="NavigationRegion2D" parent="Background/DropPads" unique_id=906075150]
+position = Vector2(2977, 1223)
+navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 
-[node name="DropPad2" type="CollisionPolygon2D" parent="Background/DropPads" unique_id=452092259]
-position = Vector2(-8385, 4946)
-polygon = PackedVector2Array(10233, -2815, 10237, -2939, 10372, -2950, 10364, -2823)
+[node name="DropPad2" type="NavigationRegion2D" parent="Background/DropPads" unique_id=434442302]
+position = Vector2(1844, 2004)
+navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 
-[node name="DropPad3" type="CollisionPolygon2D" parent="Background/DropPads" unique_id=1632872909]
-position = Vector2(-8919, 6188)
-polygon = PackedVector2Array(10233, -2815, 10237, -2939, 10372, -2950, 10364, -2823)
+[node name="DropPad3" type="NavigationRegion2D" parent="Background/DropPads" unique_id=1346600367]
+position = Vector2(1380, 3224)
+navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 
 [node name="Road" type="NavigationRegion2D" parent="Background" unique_id=2037994425]
 navigation_polygon = SubResource("NavigationPolygon_bjd11")

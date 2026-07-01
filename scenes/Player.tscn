@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://dokyyujq7ypuv" path="res://scripts/BikeSprite.gd" id="3"]
 [ext_resource type="Texture2D" uid="uid://b2veu37hod6r" path="res://assets/Hero/Hero_Bike_N.png" id="3_qu4a1"]
 [ext_resource type="Script" uid="uid://vql6a3yxxpgh" path="res://scripts/DeliveryArrow.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/DropPadArrow.gd" id="5_dpa"]
 
 [sub_resource type="CircleShape2D" id="1"]
 radius = 12.0415945
@@ -38,6 +39,10 @@ script = ExtResource("3")
 [node name="DeliveryArrow" type="Node2D" parent="." unique_id=394827165]
 visible = false
 script = ExtResource("4")
+
+[node name="DropPadArrow" type="Node2D" parent="." unique_id=987654321]
+visible = false
+script = ExtResource("5_dpa")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1037166321]
 position = Vector2(0, 1)
