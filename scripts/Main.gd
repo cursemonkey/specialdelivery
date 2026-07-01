@@ -141,6 +141,11 @@ func start_game() -> void:
 	title.hide_title()
 	_begin_day()
 
+func continue_game() -> void:
+	title.hide_title()
+	GameManager.load_game()
+	_begin_day()
+
 func _begin_day() -> void:
 	world.clear_targets()
 	_current_targets        = []
@@ -155,6 +160,7 @@ func _begin_day() -> void:
 		_first_day_setup()
 	else:
 		GameManager.start_new_day(0)
+		GameManager.save_game()
 
 	drop_pads.start_day(DAY_DURATION)
 

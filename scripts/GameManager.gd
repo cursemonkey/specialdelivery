@@ -61,6 +61,31 @@ func add_packages(count: int) -> void:
 func add_targets(count: int) -> void:
 	total_targets += count
 
+func save_game() -> void:
+	var data : Dictionary = { "cash": cash, "day": day }
+	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify(data))
+	file.close()
+
+func load_game() -> bool:
+	if not FileAccess.file_exists("user://save.json"):
+		return false
+	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.READ)
+	if file == null:
+		return false
+	var text    : String = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(text)
+	if parsed == null or not parsed is Dictionary:
+		return false
+	cash = int(parsed.get("cash", 0))
+	day  = int(parsed.get("day",  1))
+	cash_changed.emit(cash)
+	day_changed.emit(day)
+	return true
+
 func reset() -> void:
 	cash = 0
 	packages = 0
