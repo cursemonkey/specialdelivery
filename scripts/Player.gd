@@ -41,6 +41,7 @@ var bike_timer    := 0.0
 var _bike_dir_index    := -1
 var _visual_bike_angle := -PI / 2.0   # for sprite selection only, turns at full speed
 var _straighten_timer  := 0.0   # time spent near a cardinal heading without steering
+var snap_to_direction  := true
 
 
 var _hopping      := false
@@ -244,14 +245,14 @@ func _process_bike(delta: float) -> void:
 		var turn_factor: float = clamp(abs(bike_speed) / BIKE_MAX_SPEED, 0.3, 1.0)
 		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * sign(bike_speed) * delta
 
-	# Auto-straighten: if riding nearly N/E/S/W without steering input, hold
-	# that for a bit then ease the heading onto the exact cardinal direction.
-	if turn_input == 0.0 and abs(bike_speed) > 2.0:
-		var nearest_cardinal: float = round(bike_angle / (PI / 2.0)) * (PI / 2.0)
-		if abs(angle_difference(bike_angle, nearest_cardinal)) <= STRAIGHTEN_TOLERANCE:
+	# Auto-straighten: if riding nearly N/NE/E/SE/S/SW/W/NW without steering
+	# input, hold that for a bit then ease the heading onto the exact direction.
+	if snap_to_direction and turn_input == 0.0 and abs(bike_speed) > 2.0:
+		var nearest_octant: float = round(bike_angle / (PI / 4.0)) * (PI / 4.0)
+		if abs(angle_difference(bike_angle, nearest_octant)) <= STRAIGHTEN_TOLERANCE:
 			_straighten_timer += delta
 			if _straighten_timer >= STRAIGHTEN_DELAY:
-				bike_angle = lerp_angle(bike_angle, nearest_cardinal, STRAIGHTEN_SPEED * delta)
+				bike_angle = lerp_angle(bike_angle, nearest_octant, STRAIGHTEN_SPEED * delta)
 		else:
 			_straighten_timer = 0.0
 	else:

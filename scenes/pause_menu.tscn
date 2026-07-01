@@ -35,6 +35,10 @@ text = "Resume"
 layout_mode = 2
 text = "Map"
 
+[node name="Settings" type="Button" parent="PanelContainer/HBoxContainer"]
+layout_mode = 2
+text = "Settings"
+
 [node name="Quit" type="Button" parent="PanelContainer/HBoxContainer" unique_id=725038169]
 layout_mode = 2
 text = "Quit"
@@ -86,5 +90,52 @@ theme_override_font_sizes/font_size = 18
 text = "★"
 
 [node name="CloseMap" type="Button" parent="MapView/MapPanel/VBox"]
+layout_mode = 2
+text = "Close"
+
+[node name="SettingsView" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="SettingsView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+mouse_filter = 2
+
+[node name="SettingsPanel" type="PanelContainer" parent="SettingsView"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -120.0
+offset_right = 200.0
+offset_bottom = 120.0
+
+[node name="VBox" type="VBoxContainer" parent="SettingsView/SettingsPanel"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Settings"
+
+[node name="SnapToggle" type="CheckButton" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+button_pressed = true
+text = "Snap to Direction"
+
+[node name="CloseSettings" type="Button" parent="SettingsView/SettingsPanel/VBox"]
 layout_mode = 2
 text = "Close"
