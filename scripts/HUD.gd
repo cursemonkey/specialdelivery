@@ -2,6 +2,7 @@ extends CanvasLayer
 ## HUD — listens to GameManager signals and updates labels/panels.
 
 @onready var cash_label         : Label          = $Panel/VBox/CashLabel
+@onready var mortgage_label     : Label          = $Panel/VBox/MortgageLabel
 @onready var pkg_label          : Label          = $Panel/VBox/PackageLabel
 @onready var day_label          : Label          = $Panel/VBox/DayLabel
 @onready var time_label         : Label          = $Panel/VBox/TimeLabel
@@ -60,6 +61,13 @@ func show_day_complete_prompt(bonus: int) -> void:
 
 func hide_day_complete_prompt() -> void:
 	day_complete_panel.visible = false
+
+func update_mortgage(amount: int) -> void:
+	if amount <= 0:
+		mortgage_label.visible = false
+		return
+	mortgage_label.text    = "🏠 Mortgage: -$%d" % amount
+	mortgage_label.visible = true
 
 func _on_cash_changed(v: int)     -> void: cash_label.text = "💰 Cash: $%d" % v
 func _on_packages_changed(v: int) -> void: pkg_label.text  = "📫 Packages: %d" % v

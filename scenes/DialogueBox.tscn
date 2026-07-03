@@ -34,10 +34,10 @@ size_flags_horizontal = 3
 
 [node name="TextMargin" type="MarginContainer" parent="Panel/Margin/HBox/TextPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="DialogueLabel" type="Label" parent="Panel/Margin/HBox/TextPanel/TextMargin"]
 layout_mode = 2

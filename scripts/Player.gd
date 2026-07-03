@@ -72,6 +72,8 @@ var doors            : Array  = []
 var roads_region     : NavigationRegion2D = null
 var dirt_road_region : NavigationRegion2D = null
 var drop_pad_manager : Node               = null
+var home_door_node   : Node2D             = null
+var input_locked     : bool               = false
 
 # Path trail for bird following
 var path_trail       : Array[Vector2] = []
@@ -80,6 +82,7 @@ var _last_trail_pos  : Vector2 = Vector2.ZERO
 # ── Signals ────────────────────────────────────────────────
 signal mounted_bike()
 signal dismounted_bike()
+signal home_door_activated()
 
 # ───────────────────────────────────────────────────────────
 func _ready() -> void:
@@ -109,6 +112,8 @@ func reset_trail() -> void:
 	_last_trail_pos = global_position
 
 func _input(event: InputEvent) -> void:
+	if input_locked:
+		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
 		_toggle_pause()
 		return
@@ -143,6 +148,9 @@ func _try_dialogue() -> void:
 		dialogue_box.close()
 		return
 	if get_tree().paused:
+		return
+	if home_door_node != null and global_position.distance_to(home_door_node.global_position) <= DOOR_INTERACT_RANGE:
+		home_door_activated.emit()
 		return
 	for door in doors:
 		if is_instance_valid(door) and global_position.distance_to(door.global_position) <= DOOR_INTERACT_RANGE:

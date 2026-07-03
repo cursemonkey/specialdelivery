@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://beu71wmx4dsfc"]
+
+[ext_resource type="Script" path="res://scripts/HomeSelection.gd" id="1"]
+
+[node name="HomeSelection" type="CanvasLayer"]
+layer = 12
+script = ExtResource("1")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.75)
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -240.0
+offset_right = 300.0
+offset_bottom = 240.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MayorLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+text = "Mayor Henderson:  \"Welcome to Cozy Town, new resident! The city is offering you one of four available homes as part of our new resident program. Choose wisely — this will be your home base and daily spawn point!\""
+
+[node name="Separator" type="HSeparator" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="ChoiceLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+text = "Select your new home:"
+
+[node name="Townhouse3Btn" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Townhouse 3  —  $100,000"
+
+[node name="ApartmentsBtn" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Apartments  —  $150,000"
+
+[node name="House28Btn" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "House 28  —  $300,000"
+
+[node name="House10Btn" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "House 10  —  $500,000"

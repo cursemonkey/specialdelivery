@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://ccyt8kaoywpgw" path="res://scenes/pause_menu.gd" id="8_jlsqs"]
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
 [ext_resource type="PackedScene" uid="uid://c66vfsg3tigj6" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
+[ext_resource type="PackedScene" path="res://scenes/HomeSelection.tscn" id="11_homesel"]
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
 
@@ -56,19 +57,19 @@ editor_description = "Array of Building Shapes"
 
 [node name="House33" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=867943652]
 position = Vector2(-7278, 3260)
-polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10322, -2880, 10405, -2830, 10415, -2611)
+polygon = PackedVector2Array(10254, -2675, 10237, -2809, 10322, -2880, 10405, -2830, 10395, -2595)
 
 [node name="House34" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=4059282]
 position = Vector2(-7458, 3237)
-polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10341, -2857, 10405, -2830, 10415, -2611)
+polygon = PackedVector2Array(10251, -2652, 10237, -2809, 10341, -2857, 10422, -2844, 10404, -2572)
 
 [node name="House35" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=260723860]
 position = Vector2(-7657, 3236)
-polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10325, -2852, 10405, -2830, 10415, -2611)
+polygon = PackedVector2Array(10255, -2672, 10237, -2809, 10325, -2852, 10405, -2830, 10403, -2596)
 
 [node name="House36" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=87557973]
 position = Vector2(-7838, 3222)
-polygon = PackedVector2Array(10245, -2619, 10237, -2809, 10324, -2862, 10405, -2830, 10415, -2611)
+polygon = PackedVector2Array(10368, -2603, 10216, -2685, 10324, -2862, 10423, -2833, 10423, -2635)
 
 [node name="Farm" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=892441404]
 polygon = PackedVector2Array(3614, 387, 3619, 78, 4071, 73, 4068, 384)
@@ -146,26 +147,26 @@ polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1059, 1349, 938,
 
 [node name="House8" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1619668181]
 position = Vector2(-552, 502)
-polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1081, 1271, 938, 1394)
+polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1062, 1386, 938, 1394)
 
 [node name="House9" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1273933114]
 position = Vector2(-281, 506)
-polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1081, 1271, 938, 1394)
+polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 938, 1394)
 
 [node name="House10" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1236145223]
 position = Vector2(155, 515)
-polygon = PackedVector2Array(946, 1555, 1160, 1543, 1172, 1382, 1081, 1271, 951, 1385)
+polygon = PackedVector2Array(946, 1555, 1160, 1543, 1172, 1382, 951, 1385)
 
 [node name="House11" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=94728437]
 position = Vector2(404, 506)
-polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1081, 1271, 938, 1394)
+polygon = PackedVector2Array(946, 1555, 1157, 1553, 1168, 1389, 1026, 1343, 938, 1394)
 
 [node name="CollisionPolygon2D_Building_TownHall" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=838524041]
 polygon = PackedVector2Array(2593, 1884, 2766, 1879, 2874, 1723, 3020, 1736, 3025, 1854, 3243, 1856, 3193, 2115, 2588, 2087)
 
 [node name="House12" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1668242803]
 position = Vector2(2588, 537)
-polygon = PackedVector2Array(976, 1549, 1157, 1553, 1172, 1382, 1081, 1271, 961, 1378)
+polygon = PackedVector2Array(976, 1549, 1157, 1553, 1172, 1382, 961, 1378)
 
 [node name="House13" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1084458579]
 position = Vector2(2846, 546)
@@ -576,5 +577,7 @@ layer = 10
 [node name="PauseMenuScreen" parent="PauseMenuLayer" unique_id=2140681990 instance=ExtResource("9_pmscn")]
 
 [node name="DialogueBox" parent="." unique_id=2003931360 instance=ExtResource("10_dlgbx")]
+
+[node name="HomeSelectionLayer" parent="." unique_id=1283301731 instance=ExtResource("11_homesel")]
 
 [connection signal="pressed" from="PauseMenu/Closebutton" to="PauseMenu" method="_on_closebutton_pressed"]

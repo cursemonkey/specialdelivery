@@ -11,21 +11,23 @@ const BikeScene  := preload("res://scenes/Bike.tscn")
 const BirdScene  := preload("res://scenes/Bird.tscn")
 const BIRD_COUNT := 6
 
-@onready var world      : Node2D          = $WorldGenerator
-@onready var player     : CharacterBody2D = $Player
-@onready var camera     : Camera2D        = $Player/Camera2D
-@onready var hud        : CanvasLayer     = $HUD
-@onready var title      : CanvasLayer     = $TitleScreen
-@onready var sky        : CanvasModulate  = $CanvasModulate
-@onready var drop_pads  : StaticBody2D    = $Background/DropPads
+@onready var world          : Node2D          = $WorldGenerator
+@onready var player         : CharacterBody2D = $Player
+@onready var camera         : Camera2D        = $Player/Camera2D
+@onready var hud            : CanvasLayer     = $HUD
+@onready var title          : CanvasLayer     = $TitleScreen
+@onready var sky            : CanvasModulate  = $CanvasModulate
+@onready var drop_pads      : StaticBody2D    = $Background/DropPads
+@onready var home_selection : CanvasLayer     = $HomeSelectionLayer
 
-var _current_targets : Array = []
-var _day_timer       := 0.0
-var _day_running     := false
-var _bonus_paid      := false   # prevent double bonus if signal fires twice
-var _world_bike      : Node2D = null
-var _birds           : Array[Node] = []
-var _first_day       := true
+var _current_targets  : Array  = []
+var _day_timer        : float  = 0.0
+var _day_running      : bool   = false
+var _bonus_paid       : bool   = false
+var _world_bike       : Node2D = null
+var _birds            : Array[Node] = []
+var _first_day        : bool   = true
+var _home_door_node   : Node2D = null
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -45,6 +47,9 @@ func _ready() -> void:
 	drop_pads.player_ref = player
 	drop_pads.drop_arrived.connect(_on_drop_arrived)
 	drop_pads.pad_picked_up.connect(_on_pad_picked_up)
+
+	home_selection.home_selected.connect(_on_home_selected)
+	player.home_door_activated.connect(_on_home_door_activated)
 
 	var pause_screen := get_node_or_null("PauseMenuLayer/PauseMenuScreen")
 	if pause_screen != null:
@@ -140,29 +145,45 @@ func _apply_sky_tint(elapsed: float) -> void:
 func start_game() -> void:
 	title.hide_title()
 	_begin_day()
+	player.input_locked = true
+	home_selection.show_selection()
 
 func continue_game() -> void:
 	title.hide_title()
 	GameManager.load_game()
+	_resolve_home_door()
+	hud.update_mortgage(GameManager.mortgage)
 	_begin_day()
+
+func _resolve_home_door() -> void:
+	if GameManager.home_id.is_empty():
+		return
+	_home_door_node = get_node_or_null("Doors/" + GameManager.home_id)
+	if _home_door_node != null:
+		player.home_door_node = _home_door_node
 
 func _begin_day() -> void:
 	world.clear_targets()
 	_current_targets        = []
 	player.delivery_targets = []
-	_day_timer  = 0.0
+	_day_timer   = 0.0
 	_day_running = true
 	_bonus_paid  = false
 	sky.color    = Color(1.0, 1.0, 1.0)
 
+	if _home_door_node != null:
+		player.global_position = _home_door_node.global_position + Vector2(0, 10)
+	else:
+		player.global_position = _safe_spawn_near(PLAYER_START)
+
 	if _first_day:
 		_first_day = false
 		_first_day_setup()
+		# drop_pads.start_day() is called by _on_home_selected after selection
 	else:
 		GameManager.start_new_day(0)
 		GameManager.save_game()
-
-	drop_pads.start_day(DAY_DURATION)
+		drop_pads.start_day(DAY_DURATION)
 
 	_spawn_bike()
 	player.reset_trail()
@@ -227,6 +248,25 @@ func _on_all_delivered() -> void:
 	GameManager.show_message("🎉 All delivered! +$%d bonus! Open menu for Next Day." % bonus, 5.0)
 
 # ── Prompt responses ───────────────────────────────────────
+func _on_home_selected(home_id: String, price: int) -> void:
+	player.input_locked     = false
+	GameManager.home_id     = home_id
+	GameManager.mortgage    = price
+	_resolve_home_door()
+	hud.update_mortgage(price)
+	drop_pads.start_day(DAY_DURATION)
+	GameManager.show_message("🏠 Welcome home! Your mortgage: -$%d" % price)
+
+func _on_home_door_activated() -> void:
+	if not _day_running:
+		return
+	_day_running = false
+	drop_pads.end_day()
+	GameManager.show_message("🏠 Heading home for the night...")
+	await get_tree().create_timer(1.5).timeout
+	world._scatter_pickups()
+	_begin_day()
+
 func _on_next_day() -> void:
 	_day_running = false
 	drop_pads.end_day()

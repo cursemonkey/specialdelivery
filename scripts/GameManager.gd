@@ -12,6 +12,8 @@ var day: int = 1
 var day_cash: int = 0   # earnings this day only (used for end-of-day bonus)
 var total_targets: int = 0
 var delivered_count: int = 0
+var home_id: String = ""
+var mortgage: int = 0
 
 signal cash_changed(new_cash: int)
 signal packages_changed(new_packages: int)
@@ -62,7 +64,12 @@ func add_targets(count: int) -> void:
 	total_targets += count
 
 func save_game() -> void:
-	var data : Dictionary = { "cash": cash, "day": day }
+	var data : Dictionary = {
+		"cash":     cash,
+		"day":      day,
+		"home_id":  home_id,
+		"mortgage": mortgage,
+	}
 	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.WRITE)
 	if file == null:
 		return
@@ -75,13 +82,15 @@ func load_game() -> bool:
 	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.READ)
 	if file == null:
 		return false
-	var text    : String = file.get_as_text()
+	var text : String = file.get_as_text()
 	file.close()
 	var parsed = JSON.parse_string(text)
 	if parsed == null or not parsed is Dictionary:
 		return false
-	cash = int(parsed.get("cash", 0))
-	day  = int(parsed.get("day",  1))
+	cash     = int(parsed.get("cash",     0))
+	day      = int(parsed.get("day",      1))
+	home_id  = str(parsed.get("home_id",  ""))
+	mortgage = int(parsed.get("mortgage", 0))
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	return true
@@ -93,3 +102,5 @@ func reset() -> void:
 	day_cash = 0
 	total_targets = 0
 	delivered_count = 0
+	home_id  = ""
+	mortgage = 0

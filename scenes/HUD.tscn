@@ -23,6 +23,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "💰 Cash: $0"
 
+[node name="MortgageLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 12
+visible = false
+text = "🏠 Mortgage: -$0"
+
 [node name="PackageLabel" type="Label" parent="Panel/VBox" unique_id=857906849]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
