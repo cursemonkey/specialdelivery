@@ -79,6 +79,21 @@ func _safe_spawn_near(target: Vector2) -> Vector2:
 				return candidate
 	return target
 
+func _find_safe_position(target: Vector2) -> Vector2:
+	var space_state : PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	var query := PhysicsPointQueryParameters2D.new()
+	query.collision_mask = 1
+	query.position = target
+	if space_state.intersect_point(query).is_empty():
+		return target
+	for radius in range(TILE, 300, TILE):
+		for deg in range(0, 360, 30):
+			var candidate : Vector2 = target + Vector2(radius, 0).rotated(deg_to_rad(float(deg)))
+			query.position = candidate
+			if space_state.intersect_point(query).is_empty():
+				return candidate
+	return target
+
 func _in_building(pos: Vector2) -> bool:
 	for bldg in world.buildings:
 		var r := Rect2(bldg.global_position,
@@ -200,7 +215,7 @@ func _spawn_bike() -> void:
 	player.force_dismount()
 	_world_bike = BikeScene.instantiate()
 	add_child(_world_bike)
-	_world_bike.global_position = player.global_position + Vector2(3 * TILE, 0)
+	_world_bike.global_position = _find_safe_position(player.global_position + Vector2(0, 20))
 	player.world_bike = _world_bike
 
 func _spawn_birds() -> void:

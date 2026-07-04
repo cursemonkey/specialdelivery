@@ -252,9 +252,9 @@ func _process_bike(delta: float) -> void:
 		if abs(bike_speed) < 0.5:
 			bike_speed = 0.0
 			
-	if abs(bike_speed) > 2.0:
-		var turn_factor: float = clamp(abs(bike_speed) / BIKE_MAX_SPEED, 0.3, 1.0)
-		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * sign(bike_speed) * delta
+	if bike_speed > 2.0:
+		var turn_factor: float = clamp(bike_speed / BIKE_MAX_SPEED, 0.3, 1.0)
+		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * delta
 
 	# Auto-straighten: if riding nearly N/NE/E/SE/S/SW/W/NW without steering
 	# input, hold that for a bit then ease the heading onto the exact direction.
@@ -273,7 +273,7 @@ func _process_bike(delta: float) -> void:
 
 	# Visual angle turns at full BIKE_TURN_SPEED on input so the sprite reacts immediately,
 	# independent of the physics turn_factor. Snaps back to bike_angle when not turning.
-	if turn_input != 0.0:
+	if turn_input != 0.0 and bike_speed > 0.0:
 		_visual_bike_angle += turn_input * BIKE_TURN_SPEED * delta
 	else:
 		_visual_bike_angle = bike_angle
