@@ -120,6 +120,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
 		_try_dialogue()
 		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+		if dialogue_box != null and dialogue_box.visible:
+			dialogue_box.advance()
+			return
 	if dialogue_box != null and dialogue_box.visible:
 		if event.is_action_pressed("mount_bike") or event.is_action_pressed("throw_package"):
 			dialogue_box.close()
@@ -145,7 +149,7 @@ func _try_dialogue() -> void:
 	if dialogue_box == null:
 		return
 	if dialogue_box.visible:
-		dialogue_box.close()
+		dialogue_box.advance()
 		return
 	if get_tree().paused:
 		return

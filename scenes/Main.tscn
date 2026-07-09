@@ -13,7 +13,7 @@
 [ext_resource type="Script" uid="uid://ccyt8kaoywpgw" path="res://scenes/pause_menu.gd" id="8_jlsqs"]
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
 [ext_resource type="PackedScene" uid="uid://c66vfsg3tigj6" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
-[ext_resource type="PackedScene" path="res://scenes/HomeSelection.tscn" id="11_homesel"]
+[ext_resource type="PackedScene" uid="uid://beu71wmx4dsfc" path="res://scenes/HomeSelection.tscn" id="11_homesel"]
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
 
@@ -238,23 +238,23 @@ polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1386, 292
 
 [node name="House26" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1833561829]
 position = Vector2(-1601, 1458)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1284, 2927, 1407)
+polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3056, 1391, 2927, 1407)
 
 [node name="House27" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1486101084]
 position = Vector2(-1285, 1480)
-polygon = PackedVector2Array(2984, 1532, 3155, 1522, 3161, 1395, 3070, 1284, 2961, 1397)
+polygon = PackedVector2Array(2984, 1532, 3155, 1522, 3161, 1395, 3080, 1378, 2961, 1397)
 
 [node name="House28" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1449228809]
 position = Vector2(-991, 1467)
-polygon = PackedVector2Array(2938, 1535, 3149, 1540, 3152, 1400, 3056, 1317, 2927, 1407)
+polygon = PackedVector2Array(2938, 1535, 3149, 1540, 3152, 1400, 3056, 1403, 2927, 1407)
 
 [node name="Library" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=416324004]
 position = Vector2(1317, 1015)
-polygon = PackedVector2Array(1068, 2086, 1379, 2090, 1392, 1823, 1094, 1814)
+polygon = PackedVector2Array(1068, 2086, 1379, 2090, 1403, 1859, 1083, 1857)
 
 [node name="School" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1984680678]
-position = Vector2(1926, 1015)
-polygon = PackedVector2Array(1047, 2076, 1442, 2067, 1454, 1824, 1027, 1814)
+position = Vector2(1931, 1038)
+polygon = PackedVector2Array(1047, 2076, 1471, 2067, 1474, 1866, 1045, 1868)
 
 [node name="Apartments" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=58801602]
 position = Vector2(2567, 1064)
@@ -262,7 +262,7 @@ polygon = PackedVector2Array(1040, 2241, 1450, 2246, 1454, 1897, 1369, 1897, 113
 
 [node name="House29" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1571027830]
 position = Vector2(-3718, 2916)
-polygon = PackedVector2Array(7923, 197, 8270, 206, 8259, -33, 8072, -184, 7877, 11)
+polygon = PackedVector2Array(7923, 197, 8270, 206, 8278, -5, 8095, -16, 7877, 11)
 
 [node name="House30" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=503795352]
 position = Vector2(-1867, 1796)
@@ -270,11 +270,11 @@ polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3048, 1393, 292
 
 [node name="House31" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1209346275]
 position = Vector2(-1275, 1800)
-polygon = PackedVector2Array(2954, 1568, 3146, 1566, 3161, 1395, 3058, 1335, 2951, 1407)
+polygon = PackedVector2Array(2954, 1568, 3146, 1566, 3161, 1395, 3064, 1396, 2951, 1407)
 
 [node name="House32" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=396982203]
 position = Vector2(-995, 1800)
-polygon = PackedVector2Array(2911, 1578, 3146, 1585, 3158, 1386, 3101, 1328, 2930, 1335, 2897, 1396)
+polygon = PackedVector2Array(2911, 1578, 3146, 1585, 3158, 1386, 3099, 1362, 2959, 1367, 2897, 1396)
 
 [node name="DropPads" type="StaticBody2D" parent="Background" unique_id=642770669]
 editor_description = "Array of Building Shapes"

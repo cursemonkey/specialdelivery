@@ -49,6 +49,14 @@ func _ready() -> void:
 	drop_pads.pad_picked_up.connect(_on_pad_picked_up)
 
 	home_selection.home_selected.connect(_on_home_selected)
+	home_selection.dialogue_box_ref = get_node_or_null("DialogueBox")
+	home_selection.background_ref   = $Background
+	var _door_positions : Dictionary = {}
+	for _id in ["Townhouse3", "Apartments", "House28", "House10"]:
+		var _door : Node2D = get_node_or_null("Doors/" + _id)
+		if _door != null:
+			_door_positions[_id] = _door.global_position
+	home_selection.home_doors = _door_positions
 	player.home_door_activated.connect(_on_home_door_activated)
 
 	var pause_screen := get_node_or_null("PauseMenuLayer/PauseMenuScreen")
@@ -160,7 +168,6 @@ func _apply_sky_tint(elapsed: float) -> void:
 func start_game() -> void:
 	title.hide_title()
 	_begin_day()
-	player.input_locked = true
 	home_selection.show_selection()
 
 func continue_game() -> void:
@@ -264,7 +271,6 @@ func _on_all_delivered() -> void:
 
 # ── Prompt responses ───────────────────────────────────────
 func _on_home_selected(home_id: String, price: int) -> void:
-	player.input_locked     = false
 	GameManager.home_id     = home_id
 	GameManager.mortgage    = price
 	_resolve_home_door()
