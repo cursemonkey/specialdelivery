@@ -104,6 +104,8 @@ func _follow(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if _state == State.FOLLOWING:
 		return
+	if body is NPCBase:
+		return
 	if body is CharacterBody2D:
 		_state        = State.FOLLOWING
 		_player       = body

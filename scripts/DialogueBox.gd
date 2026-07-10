@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-const CHARS_PER_SEC   : float = 9.0
+const CHARS_PER_SEC   : float = 14.4
 const FAST_MULTIPLIER : float = 3.0
 
 @onready var label : Label = $Panel/Margin/HBox/TextPanel/TextMargin/DialogueLabel

@@ -17,7 +17,11 @@ const SLOW_DURATION   := 1.0
 const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
 const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
 const DOOR_INTERACT_RANGE := 4 * TILE_SIZE   # how close player must be to talk at a door
+const NPC_INTERACT_RANGE  := 2.5 * TILE_SIZE # how close player must be to talk to an NPC
 const TRAIL_STEP       := 12.0            # px between recorded trail positions
+const NPC_RUNOVER_SPEED := 40.0           # min bike speed for a spin-out crash
+const SPIN_DURATION     := 0.8            # seconds of lost control after hitting an NPC
+const SPIN_VISUAL_SPEED := 2.0 * TAU / 0.8   # two full sprite rotations per spin-out
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -48,6 +52,7 @@ var _hopping      := false
 
 var boost_timer   := 0.0
 var slow_timer    := 0.0
+var _spin_timer   := 0.0   # > 0 while spun out after running into an NPC
 
 var facing        := Vector2.DOWN
 var walk_frame    := 0
@@ -100,6 +105,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		_process_foot(delta)
 	move_and_slide()
+	_handle_npc_collisions()
 	_record_trail()
 
 func _record_trail() -> void:
@@ -155,6 +161,18 @@ func _try_dialogue() -> void:
 		return
 	if home_door_node != null and global_position.distance_to(home_door_node.global_position) <= DOOR_INTERACT_RANGE:
 		home_door_activated.emit()
+		return
+	var nearest_npc : RegularNPC = null
+	var nearest_d   : float      = NPC_INTERACT_RANGE
+	var npcs        : Array      = get_tree().get_nodes_in_group("interactable_npc")
+	for npc in npcs:
+		var d : float = global_position.distance_to(npc.global_position)
+		if d <= nearest_d:
+			nearest_d   = d
+			nearest_npc = npc
+	if nearest_npc != null:
+		nearest_npc.begin_interaction(self)
+		dialogue_box.open(nearest_npc.get_dialogue())
 		return
 	for door in doors:
 		if is_instance_valid(door) and global_position.distance_to(door.global_position) <= DOOR_INTERACT_RANGE:
@@ -236,12 +254,19 @@ func _process_foot(delta: float) -> void:
 
 # ── Bike movement ──────────────────────────────────────────
 func _process_bike(delta: float) -> void:
-	var turn_input := 0.0
-	if Input.is_action_pressed("move_left"):  turn_input = -1.0
-	if Input.is_action_pressed("move_right"): turn_input =  1.0
+	# Spin-out: controls dead, speed bleeds off fast, sprite whirls.
+	var spinning := _spin_timer > 0.0
+	if spinning:
+		_spin_timer -= delta
+		bike_speed *= 0.92
 
-	var accel  := Input.is_action_pressed("move_up")
-	var braking := Input.is_action_pressed("move_down")
+	var turn_input := 0.0
+	if not spinning:
+		if Input.is_action_pressed("move_left"):  turn_input = -1.0
+		if Input.is_action_pressed("move_right"): turn_input =  1.0
+
+	var accel   := not spinning and Input.is_action_pressed("move_up")
+	var braking := not spinning and Input.is_action_pressed("move_down")
 	var mult   := _speed_mult()
 
 	if accel:
@@ -277,7 +302,9 @@ func _process_bike(delta: float) -> void:
 
 	# Visual angle turns at full BIKE_TURN_SPEED on input so the sprite reacts immediately,
 	# independent of the physics turn_factor. Snaps back to bike_angle when not turning.
-	if turn_input != 0.0 and bike_speed > 0.0:
+	if spinning:
+		_visual_bike_angle += SPIN_VISUAL_SPEED * delta
+	elif turn_input != 0.0 and bike_speed > 0.0:
 		_visual_bike_angle += turn_input * BIKE_TURN_SPEED * delta
 	else:
 		_visual_bike_angle = bike_angle
@@ -300,6 +327,31 @@ func _process_bike(delta: float) -> void:
 	bike_sprite.frame = bike_frame
 
 
+
+# ── NPC collisions ─────────────────────────────────────────
+## After move_and_slide(): on foot a bumped NPC halts in place; on the bike
+## at speed the NPC is knocked toward whichever side of the bike it's on
+## and the player spins out.
+func _handle_npc_collisions() -> void:
+	for i in get_slide_collision_count():
+		var collider : Object = get_slide_collision(i).get_collider()
+		if collider is NPCBase:
+			var npc : NPCBase = collider
+			if on_bike and absf(bike_speed) > NPC_RUNOVER_SPEED:
+				var travel : Vector2 = Vector2(cos(bike_angle), sin(bike_angle)) * signf(bike_speed)
+				var side   : float   = signf(travel.cross(npc.global_position - global_position))
+				if side == 0.0:
+					side = 1.0
+				npc.knock_back((travel.orthogonal() * side + travel * 0.3).normalized())
+				_spin_out()
+			else:
+				npc.bump_halt()
+
+func _spin_out() -> void:
+	if _spin_timer > 0.0:
+		return
+	_spin_timer = SPIN_DURATION
+	GameManager.show_message("💫 Crash! You spun out!")
 
 # ── Throwing ───────────────────────────────────────────────
 func _try_throw() -> void:

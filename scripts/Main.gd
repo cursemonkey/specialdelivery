@@ -7,9 +7,10 @@ const TARGETS_PER_DAY  := 12
 const DAY_DURATION     := 240.0   # 4 minutes in seconds
 const START_PACKAGES   := 0
 
-const BikeScene  := preload("res://scenes/Bike.tscn")
-const BirdScene  := preload("res://scenes/Bird.tscn")
-const BIRD_COUNT := 6
+const BikeScene        := preload("res://scenes/Bike.tscn")
+const BirdScene        := preload("res://scenes/Bird.tscn")
+const NPCManagerScript := preload("res://scripts/NPCManager.gd")
+const BIRD_COUNT       := 6
 
 @onready var world          : Node2D          = $WorldGenerator
 @onready var player         : CharacterBody2D = $Player
@@ -28,6 +29,7 @@ var _world_bike       : Node2D = null
 var _birds            : Array[Node] = []
 var _first_day        : bool   = true
 var _home_door_node   : Node2D = null
+var _npc_manager      : Node2D = null
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -74,6 +76,12 @@ func _ready() -> void:
 	GameManager.reset()
 
 	_remove_buildings_under_art()
+
+	_npc_manager = NPCManagerScript.new()
+	_npc_manager.name = "NPCManager"
+	add_child(_npc_manager)
+	_npc_manager.setup(player, get_node_or_null("Doors"))
+	_npc_manager.spawn_all()
 
 	title.show_title()
 
@@ -144,6 +152,7 @@ func _process(delta: float) -> void:
 	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)
 	hud.update_timer(remaining)
 	_apply_sky_tint(_day_timer)
+	TimeManager.set_day_progress(_day_timer / DAY_DURATION)
 	drop_pads.tick(delta)
 	if _day_timer >= DAY_DURATION:
 		_day_running = false
@@ -207,6 +216,7 @@ func _begin_day() -> void:
 		GameManager.save_game()
 		drop_pads.start_day(DAY_DURATION)
 
+	TimeManager.start_day(GameManager.day)
 	_spawn_bike()
 	player.reset_trail()
 	_spawn_birds()
