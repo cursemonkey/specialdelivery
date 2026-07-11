@@ -1,11 +1,28 @@
 extends Node2D
 ## NPCManager — spawns and configures all villagers. Created from Main._ready().
-## Schedule locations are anchored to the named doors under Main's "Doors"
-## node so they stay correct if the map shifts; tweak the offsets/casts below
-## to add or move villagers.
+##
+## Regular (named, interactable) NPCs are data-driven: their definitions live in
+## NPCRegistry keyed by id, and this manager just resolves each definition's
+## door anchors into world positions and instances a RegularNPC. To add or edit
+## a regular villager, edit NPCRegistry — not this file.
+##
+## Background (ambient, non-interactable) NPCs are configured inline below since
+## they're simple phase-only wanderers; they wear greys and blank "NPC-meme"
+## faces to read as background at a glance.
 
 const BackgroundNPCScene := preload("res://scenes/BackgroundNPC.tscn")
 const RegularNPCScene    := preload("res://scenes/RegularNPC.tscn")
+
+# Fallback door positions, used only if the named door node can't be found.
+const ANCHOR_FALLBACKS := {
+	"Pub":              Vector2(2000, 1500),
+	"Apartments":       Vector2(1600, 1800),
+	"Building1":        Vector2(2200, 1700),
+	"House28":          Vector2(2069, 2997),
+	"House10":          Vector2(1207, 2026),
+	"House19":          Vector2(3019, 2573),
+	"Building_TownHall": Vector2(2898, 2070),
+}
 
 var _player : CharacterBody2D = null
 var _doors  : Node            = null
@@ -18,11 +35,45 @@ func spawn_all() -> void:
 	_spawn_background_npcs()
 	_spawn_regular_npcs()
 
-# ── Background cast (ambient, non-interactable) ────────────
+# ── Regular cast (from NPCRegistry) ────────────────────────
+func _spawn_regular_npcs() -> void:
+	for def in NPCRegistry.all_definitions():
+		_spawn_from_definition(def)
+
+func _spawn_from_definition(def: NPCDefinition) -> void:
+	var npc : RegularNPC = RegularNPCScene.instantiate()
+	add_child(npc)
+	npc.id               = def.id
+	npc.npc_name         = def.display_name
+	npc.schedule         = def.schedule
+	npc.dialogue_lines   = def.dialogue_lines
+	npc.conversation     = def.conversation
+	npc.anchor_positions = _resolve_anchors(def)
+	npc.home_position    = npc.anchor_positions.get(def.home_anchor, Vector2.ZERO) + def.home_offset
+	npc.global_position  = npc.home_position
+
+	var sprite : NPCSprite = npc.get_node("NPCSprite")
+	sprite.shirt_color = def.shirt_color
+	sprite.pants_color = def.pants_color
+	sprite.hair_color  = def.hair_color
+	npc._retarget()
+
+## Resolve every door anchor a definition references into world positions.
+func _resolve_anchors(def: NPCDefinition) -> Dictionary:
+	var names : Array = [def.home_anchor]
+	for entry in def.schedule:
+		if not names.has(entry.anchor):
+			names.append(entry.anchor)
+	var result : Dictionary = {}
+	for anchor_name in names:
+		result[anchor_name] = _door_pos(anchor_name)
+	return result
+
+# ── Background cast (ambient, greyed-out "NPC-meme" villagers) ──
 func _spawn_background_npcs() -> void:
-	var pub  : Vector2 = _door_pos("Pub",        Vector2(2000, 1500))
-	var apts : Vector2 = _door_pos("Apartments", Vector2(1600, 1800))
-	var b1   : Vector2 = _door_pos("Building1",  Vector2(2200, 1700))
+	var pub  : Vector2 = _door_pos("Pub")
+	var apts : Vector2 = _door_pos("Apartments")
+	var b1   : Vector2 = _door_pos("Building1")
 
 	# Each route: [day, sunset, night] wander-to spots.
 	var routes : Array = [
@@ -30,11 +81,13 @@ func _spawn_background_npcs() -> void:
 		[b1   + Vector2(20, 40),  b1  + Vector2(-90, 60), pub  + Vector2(-30, 30)],
 		[pub  + Vector2(70, 30),  apts + Vector2(50, 60), b1   + Vector2(0, 40)],
 	]
-	var shirts : Array = [Color("#7aa05a"), Color("#a06a9a"), Color("#c4a04a")]
+	# Muted greys so the background cast reads as scenery, not characters.
+	var shirts : Array = [Color("#8f8f8f"), Color("#6f6f74"), Color("#a2a2a2")]
 
 	for i in routes.size():
 		var npc : BackgroundNPC = BackgroundNPCScene.instantiate()
 		add_child(npc)
+		npc.id = "bg_%d" % i
 		var route : Array = routes[i]
 		npc.global_position = route[0]
 		var typed_route : Array[Vector2] = []
@@ -42,93 +95,17 @@ func _spawn_background_npcs() -> void:
 			typed_route.append(p)
 		npc.route_points = typed_route
 		var sprite : NPCSprite = npc.get_node("NPCSprite")
+		sprite.meme_style  = true
 		sprite.shirt_color = shirts[i]
+		sprite.pants_color = Color("#565659")
+		sprite.hair_color  = Color("#777777")
+		sprite.skin_color  = Color("#a8a8a8")   # classic grey NPC-meme skin
 		npc._retarget()
 
-# ── Regular cast (schedules + dialogue) ────────────────────
-func _spawn_regular_npcs() -> void:
-	var pub     : Vector2 = _door_pos("Pub",        Vector2(2000, 1500))
-	var apts    : Vector2 = _door_pos("Apartments", Vector2(1600, 1800))
-	var b1      : Vector2 = _door_pos("Building1",  Vector2(2200, 1700))
-	var house28 : Vector2 = _door_pos("House28",    Vector2(2400, 2000))
-	var house10 : Vector2 = _door_pos("House10",    Vector2(1400, 2100))
-
-	# Mabel — works at Building1 early in the week, market runs late-week,
-	# pub on sunset mid-week, always home at night.
-	_spawn_regular(
-		"Mabel", apts,
-		[
-			NPCScheduleEntry.make([1, 2, 3],       TimeManager.Phase.DAY,    b1 + Vector2(-30, 40)),
-			NPCScheduleEntry.make([4, 5],          TimeManager.Phase.DAY,    house28 + Vector2(30, 30)),
-			NPCScheduleEntry.make([2, 3],          TimeManager.Phase.SUNSET, pub + Vector2(20, 30)),
-			NPCScheduleEntry.make([],              TimeManager.Phase.NIGHT,  apts + Vector2(0, 20)),
-		],
-		[
-			"Oh, hello dear! Busy day of deliveries?",
-			"I'm off to the pub later — Wednesdays are trivia night!",
-		],
-		Color("#d46a6a"), Color("#e0d8c8")
-	)
-
-	# Gus — pub regular. Tends Building1 on weekends (Sun), naps at home
-	# on sunset, at the pub every night.
-	_spawn_regular(
-		"Gus", house28,
-		[
-			NPCScheduleEntry.make([0],             TimeManager.Phase.DAY,    b1 + Vector2(30, 40)),
-			NPCScheduleEntry.make([1, 2, 3, 4, 5], TimeManager.Phase.DAY,    pub + Vector2(-40, 40)),
-			NPCScheduleEntry.make([],              TimeManager.Phase.NIGHT,  pub + Vector2(0, 30)),
-		],
-		[
-			"Watch where you're pedaling, kid!",
-			"...Ah, I'm only teasing. Fine weather for it.",
-		],
-		Color("#5a7aa0"), Color("#7a6a4a")
-	)
-
-	# Poppy — school-age: out by House10 on weekdays, roams near the
-	# apartments Sunday, home at sunset and night.
-	_spawn_regular(
-		"Poppy", house10,
-		[
-			NPCScheduleEntry.make([1, 2, 3, 4, 5], TimeManager.Phase.DAY,    house10 + Vector2(50, 40)),
-			NPCScheduleEntry.make([0],             TimeManager.Phase.DAY,    apts + Vector2(-60, 50)),
-			NPCScheduleEntry.make([],              TimeManager.Phase.SUNSET, house10 + Vector2(0, 25)),
-		],
-		[
-			"Wow, you deliver packages?! That's so cool!",
-			"When I grow up I want a bike just like yours.",
-		],
-		Color("#e0a040"), Color("#4a3020")
-	)
-
-func _spawn_regular(
-	npc_name: String,
-	home: Vector2,
-	entries: Array,
-	lines: Array,
-	shirt: Color,
-	hair: Color
-) -> void:
-	var npc : RegularNPC = RegularNPCScene.instantiate()
-	add_child(npc)
-	npc.npc_name        = npc_name
-	npc.home_position   = home + Vector2(0, 20)
-	npc.global_position = npc.home_position
-	var typed_entries : Array[NPCScheduleEntry] = []
-	for e in entries:
-		typed_entries.append(e)
-	npc.schedule       = typed_entries
-	npc.dialogue_lines = lines
-	var sprite : NPCSprite = npc.get_node("NPCSprite")
-	sprite.shirt_color = shirt
-	sprite.hair_color  = hair
-	npc._retarget()
-
 # ── Helpers ────────────────────────────────────────────────
-func _door_pos(door_name: String, fallback: Vector2) -> Vector2:
+func _door_pos(door_name: String) -> Vector2:
 	if _doors != null:
 		var door : Node2D = _doors.get_node_or_null(door_name)
 		if door != null:
 			return door.global_position
-	return fallback
+	return ANCHOR_FALLBACKS.get(door_name, Vector2.ZERO)

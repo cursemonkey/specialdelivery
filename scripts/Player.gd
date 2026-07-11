@@ -329,9 +329,9 @@ func _process_bike(delta: float) -> void:
 
 
 # ── NPC collisions ─────────────────────────────────────────
-## After move_and_slide(): on foot a bumped NPC halts in place; on the bike
-## at speed the NPC is knocked toward whichever side of the bike it's on
-## and the player spins out.
+## After move_and_slide(): on foot we gently shove the NPC along in our
+## direction of travel (herding); on the bike at speed the NPC is knocked
+## toward whichever side of the bike it's on and the player spins out.
 func _handle_npc_collisions() -> void:
 	for i in get_slide_collision_count():
 		var collider : Object = get_slide_collision(i).get_collider()
@@ -344,8 +344,8 @@ func _handle_npc_collisions() -> void:
 					side = 1.0
 				npc.knock_back((travel.orthogonal() * side + travel * 0.3).normalized())
 				_spin_out()
-			else:
-				npc.bump_halt()
+			elif not on_bike:
+				npc.push(velocity)
 
 func _spin_out() -> void:
 	if _spin_timer > 0.0:

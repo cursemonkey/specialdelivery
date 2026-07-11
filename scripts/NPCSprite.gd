@@ -8,6 +8,9 @@ extends Node2D
 @export var pants_color : Color = Color("#4a4a5e")
 @export var hair_color  : Color = Color("#3a2a1a")
 @export var skin_color  : Color = Color("#e8c8a0")
+# Background villagers set this: a blank, expressionless "NPC-meme" face
+# (dead dot eyes + a flat straight mouth) instead of the direction-aware eyes.
+@export var meme_style  : bool  = false
 
 var _facing     : Vector2 = Vector2.DOWN
 var _walk_frame : int     = 0
@@ -40,14 +43,24 @@ func _draw() -> void:
 	# Hair
 	draw_rect(Rect2(-5, -16, 10, 4), hair_color)
 
-	# Eyes (direction-aware; hidden when facing away)
-	if _facing != Vector2.UP:
+	if meme_style:
+		_draw_meme_face()
+	elif _facing != Vector2.UP:
+		# Direction-aware eyes (hidden when facing away).
 		var eye_offset : Vector2 = Vector2.ZERO
 		if   _facing == Vector2.DOWN: eye_offset = Vector2(0, 1)
 		elif _facing.x > 0:           eye_offset = Vector2(1, 0)
 		elif _facing.x < 0:           eye_offset = Vector2(-1, 0)
 		draw_rect(Rect2(-3 + eye_offset.x, -9 + eye_offset.y, 2, 2), Color("#2c1a0e"))
 		draw_rect(Rect2( 1 + eye_offset.x, -9 + eye_offset.y, 2, 2), Color("#2c1a0e"))
+
+# Blank, staring "NPC meme" face — always front-facing regardless of heading:
+# two small dead eyes and a flat, straight mouth.
+func _draw_meme_face() -> void:
+	var feature : Color = Color("#3a3a3a")
+	draw_rect(Rect2(-3, -9, 2, 2), feature)   # left eye
+	draw_rect(Rect2( 1, -9, 2, 2), feature)   # right eye
+	draw_rect(Rect2(-2, -5, 4, 1), feature)   # flat straight mouth
 
 func _draw_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
 	var pts : PackedVector2Array = PackedVector2Array()

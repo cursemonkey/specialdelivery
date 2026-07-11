@@ -2,14 +2,15 @@ class_name NPCBase
 extends CharacterBody2D
 ## Base villager. Walks in a straight line toward a schedule target (sliding
 ## around obstacles), idles on arrival, and reacts to the player:
-##  - bumped on foot  → comes to a complete halt for a moment (bump_halt)
-##  - hit by the bike → knocked aside, then dazed briefly (knock_back)
+##  - walked into on foot → gently shoved along, so the player can herd it (push)
+##  - hit by the bike     → knocked aside, then dazed briefly (knock_back)
 ## Subclasses override _retarget() to decide where to go; it is called on
 ## every phase change and at the start of each day via TimeManager signals.
 
 const WALK_SPEED          := 42.0
 const ARRIVE_THRESHOLD    := 10.0
-const BUMP_HALT_DURATION  := 2.0    # halt after a on-foot bump
+const PUSH_SPEED          := 34.0   # shove speed when the player walks into us (< WALK_SPEED)
+const PUSH_FRICTION       := 220.0  # px/sec² decay of the shove
 const KNOCK_HALT_DURATION := 2.5    # dazed time after a bike hit
 const KNOCKBACK_SPEED     := 240.0
 const KNOCKBACK_FRICTION  := 480.0  # px/sec² decay of knockback velocity
@@ -17,12 +18,14 @@ const WALK_FRAME_TIME     := 0.18
 const STUCK_TIME          := 1.2    # secs of no progress before detouring
 const DETOUR_TIME         := 0.7
 
+var id            : String  = ""   # stable identifier; see NPCRegistry
 var facing        : Vector2 = Vector2.DOWN
 
 var _move_target  : Vector2 = Vector2.ZERO
 var _has_target   : bool    = false
 var _halt_timer   : float   = 0.0
 var _knock_vel    : Vector2 = Vector2.ZERO
+var _push_vel     : Vector2 = Vector2.ZERO
 var _walk_frame   : int     = 0
 var _walk_timer   : float   = 0.0
 var _stuck_timer  : float   = 0.0
@@ -49,15 +52,24 @@ func _physics_process(delta: float) -> void:
 		_last_pos = global_position
 		return
 
+	# A gentle shove from the player on foot; decays over a fraction of a second.
+	_push_vel = _push_vel.move_toward(Vector2.ZERO, PUSH_FRICTION * delta)
+	var pushed : bool = _push_vel.length_squared() > 1.0
+
 	if _halt_timer > 0.0:
 		_halt_timer -= delta
-		velocity = Vector2.ZERO
+		velocity = _push_vel
+		if pushed:
+			move_and_slide()
 		_animate(false, delta)
 		return
 
 	var to_target : Vector2 = _move_target - global_position
 	if not _has_target or to_target.length() <= ARRIVE_THRESHOLD:
-		velocity = Vector2.ZERO
+		# Idle, but still shovable so the player can nudge a stopped NPC.
+		velocity = _push_vel
+		if pushed:
+			move_and_slide()
 		_animate(false, delta)
 		return
 
@@ -65,7 +77,7 @@ func _physics_process(delta: float) -> void:
 	if _detour_timer > 0.0:
 		_detour_timer -= delta
 		dir = _detour_dir
-	velocity = dir * WALK_SPEED
+	velocity = dir * WALK_SPEED + _push_vel
 	move_and_slide()
 	_update_stuck(delta)
 	_animate(true, delta)
@@ -75,9 +87,13 @@ func set_move_target(pos: Vector2) -> void:
 	_move_target = pos
 	_has_target  = true
 
-## Player walked into us: freeze in place for a moment.
-func bump_halt() -> void:
-	_halt_timer = maxf(_halt_timer, BUMP_HALT_DURATION)
+## Player walked into us on foot: a gentle shove in `dir` (slower than walking
+## pace) so they can slowly herd the NPC forward. Re-applied each frame of
+## contact, so continuous walking = continuous pushing.
+func push(dir: Vector2) -> void:
+	if dir == Vector2.ZERO:
+		return
+	_push_vel = dir.normalized() * PUSH_SPEED
 
 ## Player rode into us: get shoved in `dir`, then stand dazed.
 func knock_back(dir: Vector2) -> void:

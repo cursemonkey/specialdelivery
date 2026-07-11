@@ -1,14 +1,18 @@
 class_name RegularNPC
 extends NPCBase
-## Named villager with a weekly schedule (weekday + day phase → location)
-## and dialogue. The player interacts with E when close; the NPC stops,
-## turns to face the player, and the dialogue box opens (Player.gd drives
-## this via the "interactable_npc" group).
+## Named villager with a weekly schedule (weekday + day phase → location) and
+## dialogue. Its data comes from an NPCDefinition in NPCRegistry (configured by
+## NPCManager at spawn). The player interacts with E when close; the NPC stops,
+## turns to face the player, and the dialogue box opens.
 
-var npc_name       : String                  = "Villager"
-var home_position  : Vector2                 = Vector2.ZERO
-var schedule       : Array[NPCScheduleEntry] = []
-var dialogue_lines : Array                   = []   # Array of Strings
+var npc_name        : String                  = "Villager"
+var home_position   : Vector2                 = Vector2.ZERO
+var schedule        : Array[NPCScheduleEntry] = []
+var dialogue_lines  : Array                   = []   # Array of Strings
+var conversation    : Resource                = null # future branching tree
+# Door node name -> resolved world position, filled in by NPCManager so the
+# NPC can turn its schedule anchors into positions at retarget time.
+var anchor_positions : Dictionary             = {}
 
 func _ready() -> void:
 	super._ready()
@@ -19,9 +23,13 @@ func _ready() -> void:
 func _retarget() -> void:
 	for entry in schedule:
 		if entry.matches(TimeManager.weekday, TimeManager.phase):
-			set_move_target(entry.target)
+			set_move_target(_resolve(entry.anchor, entry.offset))
 			return
 	set_move_target(home_position)
+
+func _resolve(anchor: String, offset: Vector2) -> Vector2:
+	var base : Vector2 = anchor_positions.get(anchor, home_position)
+	return base + offset
 
 ## Called by Player just before opening the dialogue box. The tree pauses
 ## while dialogue is open; the short halt keeps the NPC standing politely
