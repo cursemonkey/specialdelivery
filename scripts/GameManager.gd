@@ -14,6 +14,7 @@ var total_targets: int = 0
 var delivered_count: int = 0
 var home_id: String = ""
 var mortgage: int = 0
+var easy_bike: bool = false
 
 signal cash_changed(new_cash: int)
 signal packages_changed(new_packages: int)

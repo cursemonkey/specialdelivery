@@ -4,7 +4,8 @@ extends Control
 @onready var map_texture   : TextureRect = $MapView/MapPanel/VBox/MapTexture
 @onready var player_marker : Label       = $MapView/MapPanel/VBox/MapTexture/PlayerMarker
 @onready var settings_view : Control     = $SettingsView
-@onready var snap_toggle   : CheckButton = $SettingsView/SettingsPanel/VBox/SnapToggle
+@onready var snap_toggle      : CheckButton = $SettingsView/SettingsPanel/VBox/SnapToggle
+@onready var easy_bike_toggle : CheckButton = $SettingsView/SettingsPanel/VBox/EasyBikeToggle
 @onready var drops_spin    : SpinBox     = $SettingsView/SettingsPanel/VBox/DropsRow/DropsSpinBox
 @onready var pkg_spin      : SpinBox     = $SettingsView/SettingsPanel/VBox/PkgRow/PkgSpinBox
 
@@ -27,6 +28,7 @@ func _ready() -> void:
 	$MapView/MapPanel/VBox/CloseMap.pressed.connect(_on_close_map_pressed)
 	$SettingsView/SettingsPanel/VBox/CloseSettings.pressed.connect(_on_close_settings_pressed)
 	snap_toggle.toggled.connect(_on_snap_toggled)
+	easy_bike_toggle.toggled.connect(_on_easy_bike_toggled)
 	drops_spin.value_changed.connect(_on_drops_changed)
 	pkg_spin.value_changed.connect(_on_pkg_changed)
 
@@ -54,6 +56,7 @@ func _on_close_map_pressed() -> void:
 func _on_settings_button_pressed() -> void:
 	if player_ref != null:
 		snap_toggle.set_pressed_no_signal(player_ref.snap_to_direction)
+	easy_bike_toggle.set_pressed_no_signal(GameManager.easy_bike)
 	if drop_pad_manager != null:
 		drops_spin.value = drop_pad_manager.max_drops_per_day
 		pkg_spin.value   = drop_pad_manager.max_packages_per_drop
@@ -65,6 +68,9 @@ func _on_close_settings_pressed() -> void:
 func _on_snap_toggled(pressed: bool) -> void:
 	if player_ref != null:
 		player_ref.snap_to_direction = pressed
+
+func _on_easy_bike_toggled(pressed: bool) -> void:
+	GameManager.easy_bike = pressed
 
 func _on_drops_changed(value: float) -> void:
 	if drop_pad_manager != null:

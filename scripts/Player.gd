@@ -254,6 +254,9 @@ func _process_foot(delta: float) -> void:
 
 # ── Bike movement ──────────────────────────────────────────
 func _process_bike(delta: float) -> void:
+	if GameManager.easy_bike:
+		_process_bike_easy(delta)
+		return
 	# Spin-out: controls dead, speed bleeds off fast, sprite whirls.
 	var spinning := _spin_timer > 0.0
 	if spinning:
@@ -336,10 +339,11 @@ func _handle_npc_collisions() -> void:
 	for i in get_slide_collision_count():
 		var collider : Object = get_slide_collision(i).get_collider()
 		if collider is NPCBase:
-			var npc : NPCBase = collider
-			if on_bike and absf(bike_speed) > NPC_RUNOVER_SPEED:
-				var travel : Vector2 = Vector2(cos(bike_angle), sin(bike_angle)) * signf(bike_speed)
-				var side   : float   = signf(travel.cross(npc.global_position - global_position))
+			var npc        : NPCBase = collider
+			var cur_speed  : float   = velocity.length() if GameManager.easy_bike else absf(bike_speed)
+			var travel     : Vector2 = velocity.normalized() if GameManager.easy_bike else Vector2(cos(bike_angle), sin(bike_angle)) * signf(bike_speed)
+			if on_bike and cur_speed > NPC_RUNOVER_SPEED:
+				var side : float = signf(travel.cross(npc.global_position - global_position))
 				if side == 0.0:
 					side = 1.0
 				npc.knock_back((travel.orthogonal() * side + travel * 0.3).normalized())
@@ -352,6 +356,41 @@ func _spin_out() -> void:
 		return
 	_spin_timer = SPIN_DURATION
 	GameManager.show_message("💫 Crash! You spun out!")
+
+func _process_bike_easy(delta: float) -> void:
+	var spinning := _spin_timer > 0.0
+	if spinning:
+		_spin_timer -= delta
+		velocity   *= 0.85
+		_visual_bike_angle += SPIN_VISUAL_SPEED * delta
+		var dir_index := int(fposmod(rad_to_deg(_visual_bike_angle) + 22.5, 360.0) / 45.0)
+		if dir_index != _bike_dir_index:
+			_bike_dir_index = dir_index
+			bike_sprite.texture = BIKE_TEXTURES[dir_index]
+		bike_timer += delta
+		if bike_timer >= 0.15:
+			bike_timer = 0.0
+			bike_frame = (bike_frame + 1) % 5
+		bike_sprite.frame = bike_frame
+		return
+
+	var dir  := _get_dir()
+	var mult := _speed_mult()
+	velocity = dir * BIKE_MAX_SPEED * mult
+
+	if dir != Vector2.ZERO:
+		var dir_index := int(fposmod(rad_to_deg(dir.angle()) + 22.5, 360.0) / 45.0)
+		if dir_index != _bike_dir_index:
+			_bike_dir_index = dir_index
+			bike_sprite.texture = BIKE_TEXTURES[dir_index]
+		bike_timer += delta
+		if bike_timer >= 0.15:
+			bike_timer = 0.0
+			bike_frame = (bike_frame + 1) % 5
+	else:
+		bike_timer = 0.0
+		bike_frame = 0
+	bike_sprite.frame = bike_frame
 
 # ── Throwing ───────────────────────────────────────────────
 func _try_throw() -> void:

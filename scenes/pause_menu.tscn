@@ -123,9 +123,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -200.0
-offset_top = -180.0
+offset_top = -210.0
 offset_right = 200.0
-offset_bottom = 180.0
+offset_bottom = 210.0
 
 [node name="VBox" type="VBoxContainer" parent="SettingsView/SettingsPanel"]
 layout_mode = 2
@@ -139,6 +139,11 @@ text = "Settings"
 layout_mode = 2
 button_pressed = true
 text = "Snap to Direction"
+
+[node name="EasyBikeToggle" type="CheckButton" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+button_pressed = false
+text = "Easy Bicycle Controls"
 
 [node name="DropsRow" type="HBoxContainer" parent="SettingsView/SettingsPanel/VBox"]
 layout_mode = 2
