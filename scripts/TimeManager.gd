@@ -1,7 +1,8 @@
 extends Node
-## TimeManager (autoload) — single source of truth for the day phase and
-## day of the week. Main drives it (start_day / set_day_progress); NPCs and
-## anything else that cares about time listens to its signals.
+## TimeManager (autoload) — single source of truth for the day phase, the day
+## of the week, and the calendar date (year/season). Main drives it (start_day /
+## set_day_progress); NPCs and anything else that cares about time listens to
+## its signals or reads its fields.
 
 enum Phase { DAY, SUNSET, NIGHT }
 
@@ -12,13 +13,20 @@ const NIGHT_START  : float = 0.75
 signal phase_changed(new_phase: int)
 signal day_started(weekday: int)
 
-var phase        : int   = Phase.DAY
-var weekday      : int   = 0     # 0 = Sunday … 5 = Friday (mirrors GameManager.DAY_NAMES)
-var day_progress : float = 0.0   # 0.0 → 1.0 across the day
+var phase         : int   = Phase.DAY
+var weekday       : int   = 0     # 0 = Sunday … 5 = Friday (mirrors GameManager.DAY_NAMES)
+var day_progress  : float = 0.0   # 0.0 → 1.0 across the day
+var year          : int   = 1
+var season        : int   = Calendar.Season.FALL
+var day_of_season : int   = 1     # 1-based day within the current season
 
 func start_day(day_number: int) -> void:
 	weekday      = (day_number - 1) % GameManager.DAY_NAMES.size()
 	day_progress = 0.0
+	var date : Dictionary = Calendar.date_for_day(day_number)
+	year          = date.year
+	season        = date.season
+	day_of_season = date.day
 	if phase != Phase.DAY:
 		phase = Phase.DAY
 		phase_changed.emit(phase)
@@ -37,3 +45,6 @@ func set_day_progress(progress: float) -> void:
 
 func weekday_name() -> String:
 	return GameManager.DAY_NAMES[weekday]
+
+func season_name() -> String:
+	return Calendar.season_name(season)

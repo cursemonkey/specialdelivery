@@ -8,6 +8,10 @@ extends Control
 @onready var easy_bike_toggle : CheckButton = $SettingsView/SettingsPanel/VBox/EasyBikeToggle
 @onready var drops_spin    : SpinBox     = $SettingsView/SettingsPanel/VBox/DropsRow/DropsSpinBox
 @onready var pkg_spin      : SpinBox     = $SettingsView/SettingsPanel/VBox/PkgRow/PkgSpinBox
+@onready var calendar_button : Button        = $PanelContainer/HBoxContainer/Calendar
+@onready var calendar_view   : Control       = $CalendarView
+@onready var calendar_month  : Label         = $CalendarView/CalendarPanel/VBox/MonthLabel
+@onready var calendar_grid   : GridContainer = $CalendarView/CalendarPanel/VBox/Grid
 
 signal next_day_requested
 
@@ -31,6 +35,8 @@ func _ready() -> void:
 	easy_bike_toggle.toggled.connect(_on_easy_bike_toggled)
 	drops_spin.value_changed.connect(_on_drops_changed)
 	pkg_spin.value_changed.connect(_on_pkg_changed)
+	calendar_button.pressed.connect(_on_calendar_button_pressed)
+	$CalendarView/CalendarPanel/VBox/CloseCalendar.pressed.connect(_on_close_calendar_pressed)
 
 func _on_pause_button_pressed() -> void:
 	visible = true
@@ -62,6 +68,72 @@ func _on_settings_button_pressed() -> void:
 
 func _on_close_settings_pressed() -> void:
 	settings_view.visible = false
+
+# ── Calendar ───────────────────────────────────────────────
+func _on_calendar_button_pressed() -> void:
+	_populate_calendar()
+	calendar_view.visible = true
+
+func _on_close_calendar_pressed() -> void:
+	calendar_view.visible = false
+
+## Draws the current season as a monthly grid (6-day week), with day-1 aligned
+## under its weekday column and today highlighted.
+func _populate_calendar() -> void:
+	for child in calendar_grid.get_children():
+		child.queue_free()
+
+	var date       : Dictionary = GameManager.calendar_date()
+	var season     : int        = date.season
+	var today      : int        = date.day
+	var season_len : int        = Calendar.SEASON_LENGTHS[season]
+	var week_size  : int        = GameManager.DAY_NAMES.size()
+
+	calendar_month.text  = "%s — Year %d" % [Calendar.SEASON_NAMES[season], date.year]
+	calendar_grid.columns = week_size
+
+	# Weekday header row.
+	for i in week_size:
+		var head : Label = Label.new()
+		head.text = GameManager.DAY_NAMES[i].substr(0, 3)
+		head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		head.custom_minimum_size = Vector2(46, 24)
+		head.add_theme_color_override("font_color", Color(0.7, 0.7, 0.8))
+		calendar_grid.add_child(head)
+
+	# Blank cells so day 1 sits under the correct weekday.
+	var first_abs_day : int = GameManager.day - (today - 1)
+	var offset        : int = (first_abs_day - 1) % week_size
+	for _i in offset:
+		calendar_grid.add_child(_make_blank_cell())
+
+	# One cell per day of the season.
+	for d in range(1, season_len + 1):
+		calendar_grid.add_child(_make_day_cell(d, d == today))
+
+func _make_blank_cell() -> Control:
+	var cell : Control = Control.new()
+	cell.custom_minimum_size = Vector2(46, 34)
+	return cell
+
+func _make_day_cell(day_num: int, is_today: bool) -> Control:
+	var cell : PanelContainer = PanelContainer.new()
+	cell.custom_minimum_size = Vector2(46, 34)
+
+	var lbl : Label = Label.new()
+	lbl.text = str(day_num)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+
+	if is_today:
+		var sb : StyleBoxFlat = StyleBoxFlat.new()
+		sb.bg_color = Color(1.0, 0.75, 0.2)
+		sb.set_corner_radius_all(6)
+		cell.add_theme_stylebox_override("panel", sb)
+		lbl.add_theme_color_override("font_color", Color(0.12, 0.1, 0.05))
+
+	cell.add_child(lbl)
+	return cell
 
 func _on_snap_toggled(pressed: bool) -> void:
 	if player_ref != null:

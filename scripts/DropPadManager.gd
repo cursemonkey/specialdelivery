@@ -1,7 +1,7 @@
 extends StaticBody2D
 
 signal drop_arrived(pad_idx: int, count: int)
-signal pad_picked_up(pad_idx: int, count: int)
+signal pad_picked_up(pad_idx: int, count: int, landing_times: Array)
 
 @export var max_drops_per_day    : int   = 4
 @export var max_packages_per_drop: int   = 3
@@ -15,6 +15,7 @@ var player_ref : CharacterBody2D = null
 var _pads      : Array = []
 var _centroids : Array[Vector2] = []
 var _packages  : Array[int]     = []
+var _landing   : Array          = []   # per pad: Array[float] of play_clock landing times
 
 var _day_duration : float        = 0.0
 var _day_elapsed  : float        = 0.0
@@ -27,6 +28,7 @@ func _ready() -> void:
 		if child is NavigationRegion2D:
 			_pads.append(child)
 			_packages.append(0)
+			_landing.append([])
 	_compute_centroids()
 
 func _compute_centroids() -> void:
@@ -53,6 +55,7 @@ func start_day(duration: float) -> void:
 	_compute_centroids()
 	for i in _packages.size():
 		_packages[i] = 0
+		_landing[i]  = []
 	_schedule_drops()
 
 func end_day() -> void:
@@ -98,6 +101,8 @@ func _fire_drop() -> void:
 	var idx   := randi() % _pads.size()
 	var count := 1 + randi() % max_packages_per_drop
 	_packages[idx] += count
+	for _p in count:
+		_landing[idx].append(GameManager.play_clock)
 	drop_arrived.emit(idx, count)
 
 func _check_pickup() -> void:
@@ -106,9 +111,11 @@ func _check_pickup() -> void:
 	for i in _pads.size():
 		if _packages[i] > 0:
 			if player_ref.global_position.distance_to(_centroids[i]) <= pickup_range:
-				var count     := _packages[i]
+				var count         := _packages[i]
+				var landing_times : Array = _landing[i]
 				_packages[i]  = 0
-				pad_picked_up.emit(i, count)
+				_landing[i]   = []
+				pad_picked_up.emit(i, count, landing_times)
 
 func get_packages() -> Array[int]:
 	return _packages

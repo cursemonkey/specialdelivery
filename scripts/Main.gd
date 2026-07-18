@@ -151,6 +151,7 @@ func _remove_buildings_under_art() -> void:
 func _process(delta: float) -> void:
 	if not _day_running:
 		return
+	GameManager.play_clock += delta
 	_day_timer += delta
 	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)
 	hud.update_timer(remaining)
@@ -240,7 +241,7 @@ func _begin_day() -> void:
 
 	GameManager.show_message(
 		"☀️ %s! Watch for supply drops — pick them up to get deliveries!" \
-		% GameManager.day_name()
+		% GameManager.date_label()
 	)
 
 func _spawn_bike() -> void:
@@ -343,9 +344,13 @@ func _on_drop_arrived(pad_idx: int, count: int) -> void:
 		5.0
 	)
 
-func _on_pad_picked_up(_pad_idx: int, count: int) -> void:
+func _on_pad_picked_up(_pad_idx: int, count: int, landing_times: Array) -> void:
 	var new_targets : Array = world.select_extra_targets(count)
-	for t in new_targets:
+	for i in new_targets.size():
+		var t : Object = new_targets[i]
+		# Start each package's delivery clock at the time its drop landed.
+		t.package_landing_time = landing_times[i] if i < landing_times.size() \
+				else GameManager.play_clock
 		player.delivery_targets.append(t)
 	GameManager.add_packages(new_targets.size())
 	GameManager.add_targets(new_targets.size())
@@ -358,7 +363,7 @@ func _on_pad_picked_up(_pad_idx: int, count: int) -> void:
 func _on_day_time_up() -> void:
 	hud.hide_day_complete_prompt()
 	hud.update_timer(0.0)
-	GameManager.show_message("⏰ %s is over! Starting next day…" % GameManager.day_name())
+	GameManager.show_message("⏰ %s is over! Starting next day…" % GameManager.date_label())
 	await get_tree().create_timer(2.5).timeout
 	world._scatter_pickups()
 	_begin_day()

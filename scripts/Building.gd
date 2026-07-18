@@ -23,6 +23,7 @@ var building_id    : int = 0
 var is_target      := false
 var is_delivered   := false
 var door_position  : Vector2   # world pixels, set after placement
+var package_landing_time : float = 0.0   # GameManager.play_clock when this drop landed
 
 # Thrown-package landing effect
 var _flash_timer   := 0.0
@@ -67,9 +68,11 @@ func receive_package(from_pos: Vector2) -> void:
 	is_delivered = true
 	is_target    = false
 	_flash_timer = 0.6
-	var earned   := EARN_MIN + randi() % (EARN_MAX - EARN_MIN + 1)
+	var base     := EARN_MIN + randi() % (EARN_MAX - EARN_MIN + 1)
+	var earned   := GameManager.delivery_payout(base, package_landing_time)
 	GameManager.on_delivery_complete(earned)
-	GameManager.show_message("📦 Delivered! +$%d" % earned)
+	GameManager.show_message("📦 Delivered! +$%d%s" \
+			% [earned, GameManager.delivery_speed_tag(package_landing_time)])
 	_spawn_stars()
 	queue_redraw()
 

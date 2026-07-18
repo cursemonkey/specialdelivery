@@ -9,6 +9,7 @@ const EARN_MAX := 25
 var is_target     := false
 var is_delivered  := false
 var door_position : Vector2
+var package_landing_time : float = 0.0   # GameManager.play_clock when this drop landed
 
 signal delivered(building: Node2D, cash_earned: int)
 
@@ -52,9 +53,11 @@ func receive_package(_from_pos: Vector2) -> void:
 	is_delivered = true
 	is_target    = false
 	queue_redraw()
-	var earned   := EARN_MIN + randi() % (EARN_MAX - EARN_MIN + 1)
+	var base     := EARN_MIN + randi() % (EARN_MAX - EARN_MIN + 1)
+	var earned   := GameManager.delivery_payout(base, package_landing_time)
 	GameManager.on_delivery_complete(earned)
-	GameManager.show_message("📦 Delivered! +$%d" % earned)
+	GameManager.show_message("📦 Delivered! +$%d%s" \
+			% [earned, GameManager.delivery_speed_tag(package_landing_time)])
 	_spawn_stars()
 
 func _spawn_stars() -> void:

@@ -5,6 +5,26 @@ const DAY_NAMES := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Fri
 func day_name() -> String:
 	return DAY_NAMES[(day - 1) % DAY_NAMES.size()]
 
+func weekday_abbrev() -> String:    # "Mon"
+	return DAY_NAMES[(day - 1) % DAY_NAMES.size()].substr(0, 3)
+
+# ── Calendar (derived from the absolute `day` counter) ─────
+func calendar_date() -> Dictionary:
+	return Calendar.date_for_day(day)
+
+func season() -> int:
+	return Calendar.date_for_day(day).season
+
+func date_label() -> String:        # "Year 1, Fall 9"
+	return Calendar.format_long(day)
+
+func date_label_short() -> String:  # "Fall 9 · Yr 1"
+	return Calendar.format_short(day)
+
+func date_label_hud() -> String:    # "Mon, Winter 12"
+	var d : Dictionary = Calendar.date_for_day(day)
+	return "%s, %s %d" % [weekday_abbrev(), Calendar.SEASON_NAMES[d.season], d.day]
+
 # Global game state
 var cash: int = 0
 var packages: int = 0
@@ -18,6 +38,37 @@ var easy_bike             : bool = false
 var snap_to_direction     : bool = true
 var max_drops_per_day     : int  = 4
 var max_packages_per_drop : int  = 3
+
+# Monotonic in-game seconds, advanced by Main only during active play (frozen
+# while paused). Used to time deliveries from pad-landing to drop-off.
+var play_clock : float = 0.0
+
+# Delivery speed bonus: a package delivered within FAST seconds of landing pays
+# the full MAX multiplier; by SLOW seconds it decays to MIN (never below base).
+const DELIVERY_FAST_TIME : float = 25.0
+const DELIVERY_SLOW_TIME : float = 120.0
+const DELIVERY_MAX_MULT  : float = 2.0
+const DELIVERY_MIN_MULT  : float = 1.0
+
+## Scale a base payout by how fast the package got delivered after landing.
+func delivery_payout(base_earned: int, landing_time: float) -> int:
+	return int(round(base_earned * _delivery_mult(landing_time)))
+
+## Short flavour tag for the delivery message, based on speed.
+func delivery_speed_tag(landing_time: float) -> String:
+	var mult : float = _delivery_mult(landing_time)
+	if mult >= DELIVERY_MAX_MULT - 0.01:
+		return " ⚡ Speedy bonus!"
+	if mult > DELIVERY_MIN_MULT + 0.01:
+		return " ⏱ Quick!"
+	return ""
+
+func _delivery_mult(landing_time: float) -> float:
+	var elapsed : float = maxf(play_clock - landing_time, 0.0)
+	var t       : float = clampf(
+		(elapsed - DELIVERY_FAST_TIME) / (DELIVERY_SLOW_TIME - DELIVERY_FAST_TIME),
+		0.0, 1.0)
+	return lerpf(DELIVERY_MAX_MULT, DELIVERY_MIN_MULT, t)
 
 signal cash_changed(new_cash: int)
 signal packages_changed(new_packages: int)
