@@ -54,12 +54,10 @@ func _on_close_map_pressed() -> void:
 	map_view.visible = false
 
 func _on_settings_button_pressed() -> void:
-	if player_ref != null:
-		snap_toggle.set_pressed_no_signal(player_ref.snap_to_direction)
+	snap_toggle.set_pressed_no_signal(GameManager.snap_to_direction)
 	easy_bike_toggle.set_pressed_no_signal(GameManager.easy_bike)
-	if drop_pad_manager != null:
-		drops_spin.value = drop_pad_manager.max_drops_per_day
-		pkg_spin.value   = drop_pad_manager.max_packages_per_drop
+	drops_spin.value = GameManager.max_drops_per_day
+	pkg_spin.value   = GameManager.max_packages_per_drop
 	settings_view.visible = true
 
 func _on_close_settings_pressed() -> void:
@@ -68,17 +66,24 @@ func _on_close_settings_pressed() -> void:
 func _on_snap_toggled(pressed: bool) -> void:
 	if player_ref != null:
 		player_ref.snap_to_direction = pressed
+	GameManager.snap_to_direction = pressed
+	GameManager.save_game()
 
 func _on_easy_bike_toggled(pressed: bool) -> void:
 	GameManager.easy_bike = pressed
+	GameManager.save_game()
 
 func _on_drops_changed(value: float) -> void:
 	if drop_pad_manager != null:
 		drop_pad_manager.max_drops_per_day = int(value)
+	GameManager.max_drops_per_day = int(value)
+	GameManager.save_game()
 
 func _on_pkg_changed(value: float) -> void:
 	if drop_pad_manager != null:
 		drop_pad_manager.max_packages_per_drop = int(value)
+	GameManager.max_packages_per_drop = int(value)
+	GameManager.save_game()
 
 func _process(_delta: float) -> void:
 	if map_view.visible:

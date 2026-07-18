@@ -7,8 +7,7 @@ const BIKE_MAX_SPEED  := 148.0
 const BIKE_ACCEL      := 5.0
 const BIKE_FRICTION   := 0.90
 const BIKE_TURN_SPEED := 2.8   # radians/sec (speed-scaled)
-const STRAIGHTEN_TOLERANCE := PI / 12.0   # 10 degrees
-const STRAIGHTEN_DELAY     := 0.1         # seconds within tolerance before easing starts
+const STRAIGHTEN_DELAY     := 0.1         # seconds without steering before easing starts
 const STRAIGHTEN_SPEED     := 4.0         # lerp_angle weight/sec once easing starts
 const BOOST_MULT      := 1.8
 const SLOW_MULT       := 0.4
@@ -288,16 +287,14 @@ func _process_bike(delta: float) -> void:
 		var turn_factor: float = clamp(bike_speed / BIKE_MAX_SPEED, 0.3, 1.0)
 		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * delta
 
-	# Auto-straighten: if riding nearly N/NE/E/SE/S/SW/W/NW without steering
-	# input, hold that for a bit then ease the heading onto the exact direction.
+	# Auto-straighten: when riding without steering input, hold briefly then
+	# ease the heading onto the nearest of the 8 directions. No tolerance gate:
+	# the nearest octant is at most 22.5° away, so snapping always engages.
 	if snap_to_direction and turn_input == 0.0 and abs(bike_speed) > 2.0:
-		var nearest_octant: float = round(bike_angle / (PI / 4.0)) * (PI / 4.0)
-		if abs(angle_difference(bike_angle, nearest_octant)) <= STRAIGHTEN_TOLERANCE:
-			_straighten_timer += delta
-			if _straighten_timer >= STRAIGHTEN_DELAY:
-				bike_angle = lerp_angle(bike_angle, nearest_octant, STRAIGHTEN_SPEED * delta)
-		else:
-			_straighten_timer = 0.0
+		_straighten_timer += delta
+		if _straighten_timer >= STRAIGHTEN_DELAY:
+			var nearest_octant: float = round(bike_angle / (PI / 4.0)) * (PI / 4.0)
+			bike_angle = lerp_angle(bike_angle, nearest_octant, STRAIGHTEN_SPEED * delta)
 	else:
 		_straighten_timer = 0.0
 

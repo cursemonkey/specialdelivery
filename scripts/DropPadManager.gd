@@ -7,6 +7,9 @@ signal pad_picked_up(pad_idx: int, count: int)
 @export var max_packages_per_drop: int   = 3
 @export var pickup_range         : float = 64.0
 
+const MIN_DROPS_PER_DAY   : int   = 2     # always at least this many drops
+const FIRST_DROP_MAX_TIME : float = 30.0  # first drop must land within this many seconds
+
 var player_ref : CharacterBody2D = null
 
 var _pads      : Array = []
@@ -56,9 +59,15 @@ func end_day() -> void:
 	_day_active = false
 
 func _schedule_drops() -> void:
-	var window : float = _day_duration * (2.0 / 3.0)
-	_drop_times.append(randf_range(3.0, 10.0))
-	for _i in max_drops_per_day - 1:
+	_drop_times.clear()
+	var drop_count : int = maxi(max_drops_per_day, MIN_DROPS_PER_DAY)
+
+	# First drop always lands within the first 30 s so deliveries start promptly.
+	_drop_times.append(randf_range(3.0, minf(12.0, FIRST_DROP_MAX_TIME)))
+
+	# Spread the remaining drops across roughly the first two-thirds of the day.
+	var window : float = maxf(_day_duration * (2.0 / 3.0), FIRST_DROP_MAX_TIME)
+	for _i in drop_count - 1:
 		_drop_times.append(randf_range(15.0, window))
 	_drop_times.sort()
 

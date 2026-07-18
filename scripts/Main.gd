@@ -28,6 +28,7 @@ var _bonus_paid       : bool   = false
 var _world_bike       : Node2D = null
 var _birds            : Array[Node] = []
 var _first_day        : bool   = true
+var _continue_flow    : bool   = false   # loading a save: start drops now, don't advance the day
 var _home_door_node   : Node2D = null
 var _npc_manager      : Node2D = null
 
@@ -74,6 +75,8 @@ func _ready() -> void:
 
 	GameManager.all_delivered.connect(_on_all_delivered)
 	GameManager.reset()
+	GameManager.load_settings()
+	_apply_settings()
 
 	_remove_buildings_under_art()
 
@@ -182,9 +185,20 @@ func start_game() -> void:
 func continue_game() -> void:
 	title.hide_title()
 	GameManager.load_game()
+	_apply_settings()
 	_resolve_home_door()
 	hud.update_mortgage(GameManager.mortgage)
+	# A loaded game already has a home, so the new-game home-selection flow
+	# (which normally kicks off drops) never runs — flag this so _begin_day
+	# schedules drops for the resumed day without advancing to a new one.
+	_first_day     = false
+	_continue_flow = true
 	_begin_day()
+
+func _apply_settings() -> void:
+	player.snap_to_direction        = GameManager.snap_to_direction
+	drop_pads.max_drops_per_day     = GameManager.max_drops_per_day
+	drop_pads.max_packages_per_drop = GameManager.max_packages_per_drop
 
 func _resolve_home_door() -> void:
 	if GameManager.home_id.is_empty():
@@ -211,6 +225,9 @@ func _begin_day() -> void:
 		_first_day = false
 		_first_day_setup()
 		# drop_pads.start_day() is called by _on_home_selected after selection
+	elif _continue_flow:
+		_continue_flow = false
+		drop_pads.start_day(DAY_DURATION)   # resume the loaded day; don't advance
 	else:
 		GameManager.start_new_day(0)
 		GameManager.save_game()

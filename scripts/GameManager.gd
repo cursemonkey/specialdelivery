@@ -14,7 +14,10 @@ var total_targets: int = 0
 var delivered_count: int = 0
 var home_id: String = ""
 var mortgage: int = 0
-var easy_bike: bool = false
+var easy_bike             : bool = false
+var snap_to_direction     : bool = true
+var max_drops_per_day     : int  = 4
+var max_packages_per_drop : int  = 3
 
 signal cash_changed(new_cash: int)
 signal packages_changed(new_packages: int)
@@ -66,10 +69,14 @@ func add_targets(count: int) -> void:
 
 func save_game() -> void:
 	var data : Dictionary = {
-		"cash":     cash,
-		"day":      day,
-		"home_id":  home_id,
-		"mortgage": mortgage,
+		"cash":                  cash,
+		"day":                   day,
+		"home_id":               home_id,
+		"mortgage":              mortgage,
+		"easy_bike":             easy_bike,
+		"snap_to_direction":     snap_to_direction,
+		"max_drops_per_day":     max_drops_per_day,
+		"max_packages_per_drop": max_packages_per_drop,
 	}
 	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.WRITE)
 	if file == null:
@@ -88,13 +95,32 @@ func load_game() -> bool:
 	var parsed = JSON.parse_string(text)
 	if parsed == null or not parsed is Dictionary:
 		return false
-	cash     = int(parsed.get("cash",     0))
-	day      = int(parsed.get("day",      1))
-	home_id  = str(parsed.get("home_id",  ""))
-	mortgage = int(parsed.get("mortgage", 0))
+	cash                  = int(parsed.get("cash",                 0))
+	day                   = int(parsed.get("day",                  1))
+	home_id               = str(parsed.get("home_id",              ""))
+	mortgage              = int(parsed.get("mortgage",             0))
+	easy_bike             = bool(parsed.get("easy_bike",            false))
+	snap_to_direction     = bool(parsed.get("snap_to_direction",    true))
+	max_drops_per_day     = int(parsed.get("max_drops_per_day",     4))
+	max_packages_per_drop = int(parsed.get("max_packages_per_drop", 3))
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	return true
+
+func load_settings() -> void:
+	if not FileAccess.file_exists("user://save.json"):
+		return
+	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.READ)
+	if file == null:
+		return
+	var parsed : Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not parsed is Dictionary:
+		return
+	easy_bike             = bool(parsed.get("easy_bike",            false))
+	snap_to_direction     = bool(parsed.get("snap_to_direction",    true))
+	max_drops_per_day     = int(parsed.get("max_drops_per_day",     4))
+	max_packages_per_drop = int(parsed.get("max_packages_per_drop", 3))
 
 func reset() -> void:
 	cash = 0
