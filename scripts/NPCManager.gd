@@ -43,6 +43,7 @@ func _spawn_regular_npcs() -> void:
 func _spawn_from_definition(def: NPCDefinition) -> void:
 	var npc : RegularNPC = RegularNPCScene.instantiate()
 	add_child(npc)
+	npc.definition       = def
 	npc.id               = def.id
 	npc.npc_name         = def.display_name
 	npc.schedule         = def.schedule

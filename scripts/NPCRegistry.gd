@@ -52,7 +52,7 @@ func _register_mayor_henderson() -> void:
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
-		"Hi, how's the delivery business?",
+		DialogueLine.make("Hi, how's the delivery business?", DialogueLine.SURPRISED),
 	]
 	_add(def)
 
@@ -71,8 +71,8 @@ func _register_mabel() -> void:
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
-		"Oh, hello dear! Busy day of deliveries?",
-		"I'm off to the pub later — Wednesdays are trivia night!",
+		DialogueLine.make("Oh, hello dear! Busy day of deliveries?", DialogueLine.HAPPY),
+		DialogueLine.make("I'm off to the pub later — Wednesdays are trivia night!", DialogueLine.HAPPY),
 	]
 	_add(def)
 
@@ -90,8 +90,8 @@ func _register_gus() -> void:
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
-		"Watch where you're pedaling, kid!",
-		"...Ah, I'm only teasing. Fine weather for it.",
+		DialogueLine.make("Watch where you're pedaling, kid!", DialogueLine.MAD),
+		DialogueLine.make("...Ah, I'm only teasing. Fine weather for it.", DialogueLine.CALM),
 	]
 	_add(def)
 
@@ -109,7 +109,7 @@ func _register_poppy() -> void:
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
-		"Wow, you deliver packages?! That's so cool!",
-		"When I grow up I want a bike just like yours.",
+		DialogueLine.make("Wow, you deliver packages?! That's so cool!", DialogueLine.SURPRISED),
+		DialogueLine.make("When I grow up I want a bike just like yours.", DialogueLine.HAPPY),
 	]
 	_add(def)

@@ -8,9 +8,10 @@ extends NPCBase
 var npc_name        : String                  = "Villager"
 var home_position   : Vector2                 = Vector2.ZERO
 var schedule        : Array[NPCScheduleEntry] = []
-var dialogue_lines  : Array                   = []   # Array of Strings
+var dialogue_lines  : Array                   = []   # Array of DialogueLine
 var conversation    : Resource                = null # future branching tree
-var portrait        : Texture2D               = null # shown in the dialogue box
+var portrait        : Texture2D               = null # neutral portrait (fallback)
+var definition      : NPCDefinition           = null # source data; resolves mood portraits
 # Door node name -> resolved world position, filled in by NPCManager so the
 # NPC can turn its schedule anchors into positions at retarget time.
 var anchor_positions : Dictionary             = {}
@@ -42,8 +43,26 @@ func begin_interaction(player: Node2D) -> void:
 
 func get_dialogue() -> Array:
 	if dialogue_lines.is_empty():
-		return ["%s waves hello!" % npc_name]
+		return [DialogueLine.make("%s waves hello!" % npc_name)]
 	return dialogue_lines
 
 func get_portrait() -> Texture2D:
 	return portrait
+
+## Portrait for a mood (see DialogueLine mood constants), with fallback baked
+## into NPCDefinition.portrait_texture().
+func portrait_for_mood(mood: String) -> Texture2D:
+	if definition != null:
+		return definition.portrait_texture(mood)
+	return portrait
+
+## Build ready-to-display dialogue blocks: each line's text paired with the
+## portrait for that line's emotion. Tolerates plain Strings as neutral lines.
+func get_dialogue_blocks() -> Array:
+	var blocks : Array = []
+	for line in get_dialogue():
+		if line is DialogueLine:
+			blocks.append({"text": line.text, "portrait": portrait_for_mood(line.mood)})
+		else:
+			blocks.append({"text": str(line), "portrait": portrait_for_mood("")})
+	return blocks

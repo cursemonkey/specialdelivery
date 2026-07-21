@@ -15,7 +15,13 @@
       "Bash(taskkill //F //IM Godot_v4.6.1-stable_win64_console.exe)",
       "Bash(taskkill //F //IM Godot_v4.6.1-stable_win64.exe)",
       "Bash(rm -f \"/d/David/SpecialDelivery/godot_claude_v0.0.2/cozy_delivery/_dlgtest.gd\")",
-      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 200)"
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 200)",
+      "Bash(cd \"/d/David/SpecialDelivery/godot_claude_v0.0.2/cozy_delivery\" && ls -la assets/Portraits/)",
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 120)",
+      "Bash(timeout 45 \"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless -s _postest.gd)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(rm -f _postest.gd)",
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 150)"
     ]
   }
 }

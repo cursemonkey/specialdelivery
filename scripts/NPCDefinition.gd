@@ -25,18 +25,28 @@ extends Resource
 @export var dialogue_lines : Array    = []
 var conversation           : Resource = null
 
+const PORTRAIT_DIR : String = "res://assets/Portraits/"
+
 # Dialogue portrait. Leave empty to use the id-based convention
-# res://assets/Portraits/<id>.png; set explicitly to override.
+# res://assets/Portraits/<id>.jpg; set explicitly to override the neutral base.
 @export var portrait_path  : String   = ""
 
-## The portrait texture for this NPC, or null if the art file doesn't exist yet
-## (so NPCs without portraits simply show no portrait slot).
-func portrait_texture() -> Texture2D:
-	var path : String = portrait_path
-	if path.is_empty():
-		if id.is_empty():
-			return null
-		path = "res://assets/Portraits/%s.jpg	" % id
+## The portrait texture for this NPC in the given mood (see DialogueLine mood
+## constants). Falls back to the neutral base portrait when the mood-specific
+## art is missing, and to null when there's no art at all — so NPCs without
+## portraits simply show no portrait slot.
+func portrait_texture(mood: String = "") -> Texture2D:
+	if not mood.is_empty() and not id.is_empty():
+		var moody : Texture2D = _load_portrait(PORTRAIT_DIR + "%s_%s.jpg" % [id, mood])
+		if moody != null:
+			return moody
+	if not portrait_path.is_empty():
+		return _load_portrait(portrait_path)
+	if id.is_empty():
+		return null
+	return _load_portrait(PORTRAIT_DIR + "%s.jpg" % id)
+
+func _load_portrait(path: String) -> Texture2D:
 	if ResourceLoader.exists(path):
 		return load(path)
 	return null

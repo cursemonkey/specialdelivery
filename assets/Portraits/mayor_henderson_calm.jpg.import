@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://s62t68vosgf5"
-path="res://.godot/imported/mayor_henderson_angry.JPG-92f43d0ff3d00dea24422b448bdb4700.ctex"
+uid="uid://dsetk470eaib8"
+path="res://.godot/imported/mayor_henderson_calm.jpg-2364b8af473eab6cdb6fe0797301cce8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Portraits/mayor_henderson_angry.JPG"
-dest_files=["res://.godot/imported/mayor_henderson_angry.JPG-92f43d0ff3d00dea24422b448bdb4700.ctex"]
+source_file="res://assets/Portraits/mayor_henderson_calm.jpg"
+dest_files=["res://.godot/imported/mayor_henderson_calm.jpg-2364b8af473eab6cdb6fe0797301cce8.ctex"]
 
 [params]
 

@@ -171,7 +171,7 @@ func _try_dialogue() -> void:
 			nearest_npc = npc
 	if nearest_npc != null:
 		nearest_npc.begin_interaction(self)
-		dialogue_box.open(nearest_npc.get_dialogue(), Callable(), nearest_npc.get_portrait())
+		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks())
 		return
 	for door in doors:
 		if is_instance_valid(door) and global_position.distance_to(door.global_position) <= DOOR_INTERACT_RANGE:

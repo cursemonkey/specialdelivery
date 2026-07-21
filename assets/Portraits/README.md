@@ -31,10 +31,25 @@ and centered (aspect preserved), so any size works — match the ~2:3 slot ratio
 to avoid empty padding. There's no background panel, so the whole image is
 visible; JPGs are opaque rectangles (no transparency).
 
-## Future: expressions / moods
+## Expressions / moods
 
-When we add per-line moods, the convention will extend to
-`assets/Portraits/<npc_id>_<mood>.png` (e.g. `mayor_henderson_happy.png`), with
-`<npc_id>.png` as the neutral default. So it's safe to author a few Mayor
-Henderson pieces now (neutral, happy, stern) — keep the neutral one named
-exactly `mayor_henderson.png` and it will be used today.
+Each line of dialogue carries an emotion, and the portrait swaps to match. The
+four moods are **happy**, **mad**, **surprised**, and **calm** (see the
+constants in `scripts/DialogueLine.gd`). Provide a file per mood:
+
+```
+assets/Portraits/<npc_id>_<mood>.jpg
+```
+
+e.g. for Mayor Henderson:
+
+```
+assets/Portraits/mayor_henderson_happy.jpg
+assets/Portraits/mayor_henderson_mad.jpg
+assets/Portraits/mayor_henderson_surprised.jpg
+assets/Portraits/mayor_henderson_calm.jpg
+```
+
+Any mood without its own file falls back to the neutral base
+`mayor_henderson.jpg`, so you can add expressions gradually. Moods are optional
+per NPC — an NPC with only the base file just shows that for every line.

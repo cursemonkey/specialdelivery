@@ -7,7 +7,7 @@ const FAST_MULTIPLIER : float = 3.0
 @onready var portrait_frame : Control     = $PortraitFrame
 @onready var portrait_rect  : TextureRect = $PortraitFrame/PortraitTexture
 
-var _blocks        : Array    = []
+var _blocks        : Array    = []   # each: {text: String, portrait: Texture2D}
 var _block_index   : int      = 0
 var _char_progress : float    = 0.0
 var _on_finish     : Callable = Callable()
@@ -28,16 +28,28 @@ func _process(delta: float) -> void:
 
 func _current_text() -> String:
 	if _block_index < _blocks.size():
-		return _blocks[_block_index]
+		return _blocks[_block_index].get("text", "")
 	return ""
 
-# Accepts a String or Array of Strings. Optional callback fires when all blocks
-# are done. `portrait` shows the speaker's art on the right; null hides the slot.
+func _current_portrait() -> Texture2D:
+	if _block_index < _blocks.size():
+		return _blocks[_block_index].get("portrait", null)
+	return null
+
+# Simple form: a String or Array of Strings, one portrait for every block.
 func open(texts: Variant, on_finish: Callable = Callable(), portrait: Texture2D = null) -> void:
+	var arr : Array = [texts] if texts is String else texts
+	var blocks : Array = []
+	for t in arr:
+		blocks.append({"text": str(t), "portrait": portrait})
+	open_blocks(blocks, on_finish)
+
+# Rich form: each block is {text: String, portrait: Texture2D}, so the portrait
+# can change per line (emotion-driven dialogue).
+func open_blocks(blocks: Array, on_finish: Callable = Callable()) -> void:
 	_on_finish   = on_finish
-	_blocks      = [texts] if texts is String else texts
+	_blocks      = blocks
 	_block_index = 0
-	set_portrait(portrait)
 	_start_block()
 	visible = true
 	get_tree().paused = true
@@ -51,6 +63,7 @@ func _start_block() -> void:
 	typing                   = true
 	label.text               = _current_text()
 	label.visible_characters = 0
+	set_portrait(_current_portrait())
 
 # E or Space: skip typing → reveal block, advance to next block, or close.
 func advance() -> void:
