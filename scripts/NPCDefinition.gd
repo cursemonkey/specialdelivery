@@ -24,3 +24,19 @@ extends Resource
 # real tree exists; assign `conversation` later and have it take precedence.
 @export var dialogue_lines : Array    = []
 var conversation           : Resource = null
+
+# Dialogue portrait. Leave empty to use the id-based convention
+# res://assets/Portraits/<id>.png; set explicitly to override.
+@export var portrait_path  : String   = ""
+
+## The portrait texture for this NPC, or null if the art file doesn't exist yet
+## (so NPCs without portraits simply show no portrait slot).
+func portrait_texture() -> Texture2D:
+	var path : String = portrait_path
+	if path.is_empty():
+		if id.is_empty():
+			return null
+		path = "res://assets/Portraits/%s.jpg	" % id
+	if ResourceLoader.exists(path):
+		return load(path)
+	return null

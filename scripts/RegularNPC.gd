@@ -10,6 +10,7 @@ var home_position   : Vector2                 = Vector2.ZERO
 var schedule        : Array[NPCScheduleEntry] = []
 var dialogue_lines  : Array                   = []   # Array of Strings
 var conversation    : Resource                = null # future branching tree
+var portrait        : Texture2D               = null # shown in the dialogue box
 # Door node name -> resolved world position, filled in by NPCManager so the
 # NPC can turn its schedule anchors into positions at retarget time.
 var anchor_positions : Dictionary             = {}
@@ -43,3 +44,6 @@ func get_dialogue() -> Array:
 	if dialogue_lines.is_empty():
 		return ["%s waves hello!" % npc_name]
 	return dialogue_lines
+
+func get_portrait() -> Texture2D:
+	return portrait

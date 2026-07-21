@@ -3,7 +3,9 @@ extends CanvasLayer
 const CHARS_PER_SEC   : float = 14.4
 const FAST_MULTIPLIER : float = 3.0
 
-@onready var label : Label = $Panel/Margin/HBox/TextPanel/TextMargin/DialogueLabel
+@onready var label          : Label       = $Panel/Margin/DialogueLabel
+@onready var portrait_frame : Control     = $PortraitFrame
+@onready var portrait_rect  : TextureRect = $PortraitFrame/PortraitTexture
 
 var _blocks        : Array    = []
 var _block_index   : int      = 0
@@ -29,14 +31,20 @@ func _current_text() -> String:
 		return _blocks[_block_index]
 	return ""
 
-# Accepts a String or Array of Strings. Optional callback fires when all blocks are done.
-func open(texts: Variant, on_finish: Callable = Callable()) -> void:
+# Accepts a String or Array of Strings. Optional callback fires when all blocks
+# are done. `portrait` shows the speaker's art on the right; null hides the slot.
+func open(texts: Variant, on_finish: Callable = Callable(), portrait: Texture2D = null) -> void:
 	_on_finish   = on_finish
 	_blocks      = [texts] if texts is String else texts
 	_block_index = 0
+	set_portrait(portrait)
 	_start_block()
 	visible = true
 	get_tree().paused = true
+
+func set_portrait(portrait: Texture2D) -> void:
+	portrait_rect.texture = portrait
+	portrait_frame.visible = portrait != null
 
 func _start_block() -> void:
 	_char_progress           = 0.0
@@ -65,4 +73,5 @@ func close() -> void:
 	label.visible_characters = -1
 	typing                   = false
 	_on_finish               = Callable()
+	portrait_frame.visible   = false
 	get_tree().paused        = false

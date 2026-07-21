@@ -51,7 +51,9 @@ func show_selection() -> void:
 	map_popup.visible     = false
 	dim.visible           = false
 	if dialogue_box_ref != null:
-		dialogue_box_ref.open(MAYOR_TEXT, _show_choices)
+		var mayor : NPCDefinition = NPCRegistry.get_definition("mayor_henderson")
+		var portrait : Texture2D = mayor.portrait_texture() if mayor != null else null
+		dialogue_box_ref.open(MAYOR_TEXT, _show_choices, portrait)
 	else:
 		_show_choices()
 

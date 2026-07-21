@@ -11,7 +11,11 @@
       "Bash(awk 'NR>=302 && NR<=520' scenes/Main.tscn)",
       "Bash(awk '/node name=\"DropPads\"/,/node name=\"Road\"/' scenes/Main.tscn)",
       "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 300)",
-      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless -s _caltest.gd)"
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless -s _caltest.gd)",
+      "Bash(taskkill //F //IM Godot_v4.6.1-stable_win64_console.exe)",
+      "Bash(taskkill //F //IM Godot_v4.6.1-stable_win64.exe)",
+      "Bash(rm -f \"/d/David/SpecialDelivery/godot_claude_v0.0.2/cozy_delivery/_dlgtest.gd\")",
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 200)"
     ]
   }
 }
