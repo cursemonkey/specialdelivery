@@ -43,8 +43,18 @@ func _ready() -> void:
 	player.pause_menu = get_node_or_null("PauseMenuLayer/PauseMenuScreen")
 	player.dialogue_box = get_node_or_null("DialogueBox")
 	player.doors = get_tree().get_nodes_in_group("art_building")
-	player.roads_region     = get_node_or_null("Background/Road")
-	player.dirt_road_region = get_node_or_null("Background/DirtRoad")
+	var _road_nodes       : Array[NavigationRegion2D] = []
+	var _dirt_road_nodes  : Array[NavigationRegion2D] = []
+	var _grass_nodes      : Array[NavigationRegion2D] = []
+	for _n in get_tree().get_nodes_in_group("road_zone"):
+		_road_nodes.append(_n)
+	for _n in get_tree().get_nodes_in_group("dirt_road_zone"):
+		_dirt_road_nodes.append(_n)
+	for _n in get_tree().get_nodes_in_group("grass_zone"):
+		_grass_nodes.append(_n)
+	player.road_regions      = _road_nodes
+	player.dirt_road_regions = _dirt_road_nodes
+	player.grass_regions     = _grass_nodes
 	player.drop_pad_manager = drop_pads
 
 	drop_pads.player_ref = player

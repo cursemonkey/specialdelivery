@@ -21,6 +21,7 @@ const TRAIL_STEP       := 12.0            # px between recorded trail positions
 const NPC_RUNOVER_SPEED := 40.0           # min bike speed for a spin-out crash
 const SPIN_DURATION     := 0.8            # seconds of lost control after hitting an NPC
 const SPIN_VISUAL_SPEED := 2.0 * TAU / 0.8   # two full sprite rotations per spin-out
+const EASY_TURN_SPEED    := 6.0           # rad/sec the easy-mode bike can re-aim itself
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -45,6 +46,7 @@ var _bike_dir_index    := -1
 var _visual_bike_angle := -PI / 2.0   # for sprite selection only, turns at full speed
 var _straighten_timer  := 0.0   # time spent near a cardinal heading without steering
 var snap_to_direction  := true
+var _easy_bike_angle   := -PI / 2.0   # current facing used only by easy-mode bike movement
 
 
 var _hopping      := false
@@ -73,8 +75,9 @@ var world_bike       : Node2D = null
 var pause_menu       : Node   = null
 var dialogue_box     : Node   = null
 var doors            : Array  = []
-var roads_region     : NavigationRegion2D = null
-var dirt_road_region : NavigationRegion2D = null
+var road_regions      : Array[NavigationRegion2D] = []
+var dirt_road_regions : Array[NavigationRegion2D] = []
+var grass_regions     : Array[NavigationRegion2D] = []
 var drop_pad_manager : Node               = null
 var home_door_node   : Node2D             = null
 var input_locked     : bool               = false
@@ -205,6 +208,7 @@ func _try_mount() -> void:
 	bike_speed = 0.0
 	bike_angle = velocity.angle() if velocity.length() > 10 else -PI / 2.0
 	_visual_bike_angle = bike_angle
+	_easy_bike_angle   = bike_angle
 	_straighten_timer = 0.0
 	world_bike.visible = false
 	_set_mode(true)
@@ -234,7 +238,7 @@ func _set_mode(biking: bool) -> void:
 # ── Foot movement ──────────────────────────────────────────
 func _process_foot(delta: float) -> void:
 	var dir := _get_dir()
-	var spd := FOOT_SPEED * _speed_mult()
+	var spd := FOOT_SPEED * _speed_mult(false)
 	velocity = dir * spd
 
 	if dir != Vector2.ZERO:
@@ -373,10 +377,16 @@ func _process_bike_easy(delta: float) -> void:
 
 	var dir  := _get_dir()
 	var mult := _speed_mult()
-	velocity = dir * BIKE_MAX_SPEED * mult
 
 	if dir != Vector2.ZERO:
-		var dir_index := int(fposmod(rad_to_deg(dir.angle()) + 22.5, 360.0) / 45.0)
+		# Turn the bike's facing toward the pressed direction at a fixed rate
+		# instead of snapping instantly — a 180° reversal takes twice as long
+		# to come about as a 90° turn.
+		var target_angle : float = dir.angle()
+		_easy_bike_angle = rotate_toward(_easy_bike_angle, target_angle, EASY_TURN_SPEED * delta)
+		velocity = Vector2(cos(_easy_bike_angle), sin(_easy_bike_angle)) * BIKE_MAX_SPEED * mult
+
+		var dir_index := int(fposmod(rad_to_deg(_easy_bike_angle) + 22.5, 360.0) / 45.0)
 		if dir_index != _bike_dir_index:
 			_bike_dir_index = dir_index
 			bike_sprite.texture = BIKE_TEXTURES[dir_index]
@@ -385,6 +395,7 @@ func _process_bike_easy(delta: float) -> void:
 			bike_timer = 0.0
 			bike_frame = (bike_frame + 1) % 5
 	else:
+		velocity   = Vector2.ZERO
 		bike_timer = 0.0
 		bike_frame = 0
 	bike_sprite.frame = bike_frame
@@ -446,11 +457,22 @@ func _is_in_region(region: NavigationRegion2D) -> bool:
 			return true
 	return false
 
-func _speed_mult() -> float:
+func _is_in_any_region(regions: Array[NavigationRegion2D]) -> bool:
+	for region in regions:
+		if _is_in_region(region):
+			return true
+	return false
+
+## Surface zones can overlap on the map (e.g. a grass patch under a road).
+## Resolution is best-surface-wins, checked in this fixed priority order:
+## Road (fastest) > Dirt Road (neutral) > Grass (slowest).
+func _speed_mult(apply_surface: bool = true) -> float:
 	if boost_timer > 0.0: return BOOST_MULT
 	if slow_timer  > 0.0: return SLOW_MULT
-	if _is_in_region(roads_region):                 return 1.2
-	if _is_in_region(dirt_road_region):             return 0.75
+	if not apply_surface: return 1.0
+	if _is_in_any_region(road_regions):      return 1.2
+	if _is_in_any_region(dirt_road_regions): return 1.0
+	if _is_in_any_region(grass_regions):     return 0.8
 	return 1.0
 
 # ── Helpers ────────────────────────────────────────────────

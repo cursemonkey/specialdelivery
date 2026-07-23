@@ -23,15 +23,50 @@ vertices = PackedVector2Array(128.07031, 20.867188, 128.92188, 136.25, -8.070312
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-19, 9, 138, 11, 139, 146, -18, 150)])
 
-[sub_resource type="NavigationPolygon" id="NavigationPolygon_bjd11"]
-vertices = PackedVector2Array(922.21094, 1234, 1068.7891, 1234, 1026.0469, 1606.2891, 877.27344, 1459.6719, -79.11719, 1642.6719, -80.88281, 1498.5938)
-polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(3, 2, 4, 5)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(869, 1450, 914, 1224, 1080, 1224, 1035, 1616, -89, 1653, -91, 1489)])
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_1iba3"]
+vertices = PackedVector2Array(4891.992, 515.65625, 4844.8594, 609.9219, -71.203125, 552.09375, -93.25, 465.53906, 888.96875, 430)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(889, 420, 4908, 506, 4851, 620, -79, 562, -106, 456)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_yxlcp"]
+vertices = PackedVector2Array(4370.3438, -285.85156, 4658.742, -751.28125, 4753.6094, -756.1797, 4605.1875, -402.85938, 4419.867, -139.96875, 4232.0625, -195.04688, 4188.9063, -41.976563, -46.257813, -130.15625, -37.703125, -12.0625)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(5, 0, 4, 6), PackedInt32Array(7, 5, 6, 8)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4769, -767, 4614, -398, 4426.3867, -131.86725, 4191, -32, -47, -2, -57, -140, 4229, -205, 4363, -293, 4653, -761)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_1nqs0"]
+vertices = PackedVector2Array(204.02344, 79.046875, 277.67188, 608.1094, 57.34375, 630.96875, 20.8125, 33.023438)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(10, 20, 48, 642, 215, 612, 236, -5)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_bb450"]
+vertices = PackedVector2Array(-36, 795.4297, -145.10156, 789.5078, -153.88281, 28, -36, 28)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-26, 18, -26, 190.16504, -26, 806, -155, 799, -164, 18)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_ft6cd"]
+vertices = PackedVector2Array(343.5078, 621.1328, -131.10156, 627.85156, -137.89063, -11, 377.4375, -11)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(388, -21, 353, 631, -141, 638, -148, -21)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_cvmbd"]
+vertices = PackedVector2Array(557.1094, 631.3203, -67.71875, 896.2031, -102.49219, 204.77344, 564.8125, 190.21875)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(575, 180, 567, 638, -106, 911, -113, 195)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_3p2gp"]
 vertices = PackedVector2Array(951.6328, 1499, 931.40625, 2057.3125, 726.1172, 2024.0234, 626.47656, 1781.4609, -79.96875, 1499, -47, 1834.2578)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 0, 3, 5)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(962, 1489, 941, 2069, 719, 2033, 620, 1792, -56, 1845, -91, 1489)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_nfivy"]
+vertices = PackedVector2Array(411.46875, -16.671875, 376.4922, 623.52344, -112, 651.40625, -112, -51.3125)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(422, -26, 386, 633, -122, 662, -122, -62)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_bjd11"]
+vertices = PackedVector2Array(405.70313, 515.7422, -68.359375, 551.1719, -33.601563, -50.289063, 398.9922, 294.9297, 412.57813, -17.726563)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(2, 4, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(423, -27, 409, 295, 416, 525, -79, 562, -43, -61)])
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -45,13 +80,12 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="Main" type="Node2D" unique_id=5593507 groups=["main"]]
+[node name="DialogueBox" type="Node2D" unique_id=5593507 groups=["main"]]
 script = ExtResource("1")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=-447676240]
 
 [node name="Background" type="Sprite2D" parent="." unique_id=294716201]
-position = Vector2(0, 15)
 texture = ExtResource("2_nxtc6")
 centered = false
 
@@ -306,22 +340,57 @@ navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 position = Vector2(1380, 3224)
 navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 
-[node name="Road" type="NavigationRegion2D" parent="Background" unique_id=2037994425]
-navigation_polygon = SubResource("NavigationPolygon_bjd11")
+[node name="Roads" type="Node2D" parent="Background" unique_id=753903657]
+position = Vector2(180, -1696)
 
-[node name="DirtRoad" type="NavigationRegion2D" parent="Background" unique_id=1206092539]
+[node name="Road" type="NavigationRegion2D" parent="Background/Roads" unique_id=2037994425 groups=["road_zone"]]
+position = Vector2(-83, 1856)
+navigation_polygon = SubResource("NavigationPolygon_1iba3")
+
+[node name="Road3" type="NavigationRegion2D" parent="Background/Roads" unique_id=962296090 groups=["road_zone"]]
+position = Vector2(-145, 3881)
+navigation_polygon = SubResource("NavigationPolygon_yxlcp")
+
+[node name="Road2" type="NavigationRegion2D" parent="Background/Roads" unique_id=740245237 groups=["road_zone"]]
+position = Vector2(-69, 2388)
+navigation_polygon = SubResource("NavigationPolygon_yxlcp")
+
+[node name="Road4" type="NavigationRegion2D" parent="Background/Roads" unique_id=282358996 groups=["road_zone"]]
+position = Vector2(-125, 5221)
+navigation_polygon = SubResource("NavigationPolygon_yxlcp")
+
+[node name="DirtRoads" type="Node2D" parent="Background" unique_id=886499066]
 position = Vector2(90, -848)
-navigation_polygon = SubResource("NavigationPolygon_bjd11")
 
-[node name="Grass2" type="StaticBody2D" parent="Background" unique_id=693478667]
+[node name="Dirtroad3" type="NavigationRegion2D" parent="Background/DirtRoads" unique_id=820081059 groups=["dirt_road_zone"]]
+position = Vector2(825, 888)
+navigation_polygon = SubResource("NavigationPolygon_1nqs0")
+
+[node name="DirtRoad" type="NavigationRegion2D" parent="Background/DirtRoads" unique_id=1206092539 groups=["dirt_road_zone"]]
+position = Vector2(4169, 802)
+navigation_polygon = SubResource("NavigationPolygon_bb450")
+
+[node name="Grass2" type="Node2D" parent="Background" unique_id=913162803]
 position = Vector2(1209, -1169)
 
-[node name="Grass" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1752064760]
+[node name="Grass5" type="NavigationRegion2D" parent="Background/Grass2" unique_id=354549419 groups=["grass_zone"]]
+position = Vector2(2533, 1170)
+navigation_polygon = SubResource("NavigationPolygon_ft6cd")
+
+[node name="Grass6" type="NavigationRegion2D" parent="Background/Grass2" unique_id=403542013 groups=["grass_zone"]]
+position = Vector2(3142, 940)
+navigation_polygon = SubResource("NavigationPolygon_cvmbd")
+
+[node name="Grass" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1752064760 groups=["grass_zone"]]
 position = Vector2(1266, -316)
 navigation_polygon = SubResource("NavigationPolygon_3p2gp")
 
-[node name="Grass3" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1557030316]
-position = Vector2(2813, -338)
+[node name="Grass3" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1557030316 groups=["grass_zone"]]
+position = Vector2(35, 1160)
+navigation_polygon = SubResource("NavigationPolygon_nfivy")
+
+[node name="Grass4" type="NavigationRegion2D" parent="Background/Grass2" unique_id=892123954 groups=["grass_zone"]]
+position = Vector2(608, 1217)
 navigation_polygon = SubResource("NavigationPolygon_bjd11")
 
 [node name="Doors" type="Node" parent="." unique_id=871836246]
@@ -600,6 +669,10 @@ text = "DEPAUSE"
 layer = 10
 
 [node name="PauseMenuScreen" parent="PauseMenuLayer" unique_id=2140681990 instance=ExtResource("9_pmscn")]
+offset_left = 20.999998
+offset_top = 185.99998
+offset_right = 21.0
+offset_bottom = 186.0
 
 [node name="DialogueBox" parent="." unique_id=2003931360 instance=ExtResource("10_dlgbx")]
 
