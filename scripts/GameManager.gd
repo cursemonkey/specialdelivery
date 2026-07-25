@@ -39,6 +39,9 @@ var snap_to_direction     : bool = true
 var max_drops_per_day     : int  = 4
 var max_packages_per_drop : int  = 3
 
+const SAVE_SLOT_COUNT : int = 5
+var current_slot      : int = -1   # which slot autosaves write to; -1 = none chosen yet
+
 # Monotonic in-game seconds, advanced by Main only during active play (frozen
 # while paused). Used to time deliveries from pad-landing to drop-off.
 var play_clock : float = 0.0
@@ -118,50 +121,94 @@ func add_packages(count: int) -> void:
 func add_targets(count: int) -> void:
 	total_targets += count
 
-func save_game() -> void:
-	var data : Dictionary = {
-		"cash":                  cash,
-		"day":                   day,
-		"home_id":               home_id,
-		"mortgage":              mortgage,
-		"easy_bike":             easy_bike,
-		"snap_to_direction":     snap_to_direction,
-		"max_drops_per_day":     max_drops_per_day,
-		"max_packages_per_drop": max_packages_per_drop,
+func _slot_path(slot: int) -> String:
+	return "user://save_slot_%d.json" % slot
+
+## Reads a slot without loading it into live game state — used by the save
+## slot picker UI to show "Slot N — Day X · $Y · <timestamp>" or "Empty".
+func get_slot_info(slot: int) -> Dictionary:
+	var path : String = _slot_path(slot)
+	if not FileAccess.file_exists(path):
+		return {"exists": false}
+	var file : FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {"exists": false}
+	var parsed : Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not parsed is Dictionary:
+		return {"exists": false}
+	return {
+		"exists":    true,
+		"slot_name": str(parsed.get("slot_name", "Slot %d" % slot)),
+		"day":       int(parsed.get("day",       1)),
+		"cash":      int(parsed.get("cash",      0)),
+		"timestamp": int(parsed.get("timestamp", 0)),
 	}
-	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.WRITE)
+
+## Writes to `slot` (or current_slot if omitted) and remembers it so later
+## autosaves (e.g. day rollover) keep landing in the same slot.
+func save_game(slot: int = -1) -> void:
+	if slot == -1:
+		slot = current_slot
+	if slot == -1:
+		return
+	current_slot = slot
+	var existing   : Dictionary = get_slot_info(slot)
+	var slot_name  : String     = str(existing.get("slot_name", "Slot %d" % slot)) \
+			if existing.get("exists", false) else "Slot %d" % slot
+	var data : Dictionary = {
+		"slot_name": slot_name,
+		"timestamp": Time.get_unix_time_from_system(),
+		"cash":      cash,
+		"day":       day,
+		"home_id":   home_id,
+		"mortgage":  mortgage,
+	}
+	var file : FileAccess = FileAccess.open(_slot_path(slot), FileAccess.WRITE)
 	if file == null:
 		return
 	file.store_string(JSON.stringify(data))
 	file.close()
 
-func load_game() -> bool:
-	if not FileAccess.file_exists("user://save.json"):
+func load_game(slot: int) -> bool:
+	var path : String = _slot_path(slot)
+	if not FileAccess.file_exists(path):
 		return false
-	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.READ)
+	var file : FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		return false
-	var text : String = file.get_as_text()
+	var parsed : Variant = JSON.parse_string(file.get_as_text())
 	file.close()
-	var parsed = JSON.parse_string(text)
-	if parsed == null or not parsed is Dictionary:
+	if not parsed is Dictionary:
 		return false
-	cash                  = int(parsed.get("cash",                 0))
-	day                   = int(parsed.get("day",                  1))
-	home_id               = str(parsed.get("home_id",              ""))
-	mortgage              = int(parsed.get("mortgage",             0))
-	easy_bike             = bool(parsed.get("easy_bike",            false))
-	snap_to_direction     = bool(parsed.get("snap_to_direction",    true))
-	max_drops_per_day     = int(parsed.get("max_drops_per_day",     4))
-	max_packages_per_drop = int(parsed.get("max_packages_per_drop", 3))
+	current_slot = slot
+	cash     = int(parsed.get("cash",     0))
+	day      = int(parsed.get("day",      1))
+	home_id  = str(parsed.get("home_id",  ""))
+	mortgage = int(parsed.get("mortgage", 0))
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	return true
 
-func load_settings() -> void:
-	if not FileAccess.file_exists("user://save.json"):
+## Settings (control scheme, drop tuning) are global user prefs, independent
+## of any save slot, so they live in their own file.
+func save_settings() -> void:
+	var data : Dictionary = {
+		"easy_bike":             easy_bike,
+		"snap_to_direction":     snap_to_direction,
+		"max_drops_per_day":     max_drops_per_day,
+		"max_packages_per_drop": max_packages_per_drop,
+	}
+	var file : FileAccess = FileAccess.open("user://settings.json", FileAccess.WRITE)
+	if file == null:
 		return
-	var file : FileAccess = FileAccess.open("user://save.json", FileAccess.READ)
+	file.store_string(JSON.stringify(data))
+	file.close()
+
+func load_settings() -> void:
+	if not FileAccess.file_exists("user://settings.json"):
+		return
+	var file : FileAccess = FileAccess.open("user://settings.json", FileAccess.READ)
 	if file == null:
 		return
 	var parsed : Variant = JSON.parse_string(file.get_as_text())
@@ -182,3 +229,4 @@ func reset() -> void:
 	delivered_count = 0
 	home_id  = ""
 	mortgage = 0
+	current_slot = -1

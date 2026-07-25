@@ -52,10 +52,10 @@ horizontal_alignment = 1
 [node name="StartButton" type="Button" parent="Panel" unique_id=726550702]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Start Delivering! 📦"
+text = "New Game 📦"
 
 [node name="LoadButton" type="Button" parent="Panel" unique_id=112233445]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 visible = false
-text = "Load Game 💾"
+text = "Continue 💾"

@@ -20,6 +20,7 @@ const BIRD_COUNT       := 6
 @onready var sky            : CanvasModulate  = $CanvasModulate
 @onready var drop_pads      : StaticBody2D    = $Background/DropPads
 @onready var home_selection : CanvasLayer     = $HomeSelectionLayer
+@onready var save_slot_panel : CanvasLayer    = $SaveSlotPanel
 
 var _current_targets  : Array  = []
 var _day_timer        : float  = 0.0
@@ -77,7 +78,10 @@ func _ready() -> void:
 		pause_screen.player_ref       = player
 		pause_screen.background_ref   = $Background
 		pause_screen.drop_pad_manager = drop_pads
+		pause_screen.save_slot_panel  = save_slot_panel
 		pause_screen.next_day_requested.connect(_on_next_day)
+
+	title.save_slot_panel = save_slot_panel
 
 	hud.set_player(player)
 	hud.skip_day_pressed.connect(_on_skip_day)
@@ -188,14 +192,16 @@ func _apply_sky_tint(elapsed: float) -> void:
 		sky.color = Color(1.0, 1.0, 1.0)
 
 # ── Game flow ──────────────────────────────────────────────
-func start_game() -> void:
+func start_game(slot: int) -> void:
 	title.hide_title()
+	GameManager.reset()
+	GameManager.current_slot = slot
 	_begin_day()
 	home_selection.show_selection()
 
-func continue_game() -> void:
+func continue_game(slot: int) -> void:
 	title.hide_title()
-	GameManager.load_game()
+	GameManager.load_game(slot)
 	_apply_settings()
 	_resolve_home_door()
 	hud.update_mortgage(GameManager.mortgage)

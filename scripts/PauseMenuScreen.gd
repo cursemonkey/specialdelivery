@@ -18,6 +18,7 @@ signal next_day_requested
 var player_ref       : Node2D = null
 var background_ref   : Node2D = null
 var drop_pad_manager : Node   = null
+var save_slot_panel  : Node   = null
 
 var _pad_markers : Array[Label] = []
 
@@ -29,6 +30,7 @@ func _ready() -> void:
 	$PanelContainer/HBoxContainer/Map.pressed.connect(_on_map_button_pressed)
 	$PanelContainer/HBoxContainer/Settings.pressed.connect(_on_settings_button_pressed)
 	$PanelContainer/HBoxContainer/NextDay.pressed.connect(_on_next_day_pressed)
+	$PanelContainer/HBoxContainer/Save.pressed.connect(_on_save_pressed)
 	$MapView/MapPanel/VBox/CloseMap.pressed.connect(_on_close_map_pressed)
 	$SettingsView/SettingsPanel/VBox/CloseSettings.pressed.connect(_on_close_settings_pressed)
 	snap_toggle.toggled.connect(_on_snap_toggled)
@@ -50,6 +52,15 @@ func _on_next_day_pressed() -> void:
 	visible = false
 	get_tree().paused = false
 	next_day_requested.emit()
+
+func _on_save_pressed() -> void:
+	if save_slot_panel == null:
+		return
+	save_slot_panel.open_panel(save_slot_panel.Mode.SAVE, _on_save_slot_chosen)
+
+func _on_save_slot_chosen(slot: int) -> void:
+	GameManager.save_game(slot)
+	GameManager.show_message("💾 Saved to Slot %d!" % slot)
 
 func _on_map_button_pressed() -> void:
 	_ensure_pad_markers()
@@ -139,23 +150,23 @@ func _on_snap_toggled(pressed: bool) -> void:
 	if player_ref != null:
 		player_ref.snap_to_direction = pressed
 	GameManager.snap_to_direction = pressed
-	GameManager.save_game()
+	GameManager.save_settings()
 
 func _on_easy_bike_toggled(pressed: bool) -> void:
 	GameManager.easy_bike = pressed
-	GameManager.save_game()
+	GameManager.save_settings()
 
 func _on_drops_changed(value: float) -> void:
 	if drop_pad_manager != null:
 		drop_pad_manager.max_drops_per_day = int(value)
 	GameManager.max_drops_per_day = int(value)
-	GameManager.save_game()
+	GameManager.save_settings()
 
 func _on_pkg_changed(value: float) -> void:
 	if drop_pad_manager != null:
 		drop_pad_manager.max_packages_per_drop = int(value)
 	GameManager.max_packages_per_drop = int(value)
-	GameManager.save_game()
+	GameManager.save_settings()
 
 func _process(_delta: float) -> void:
 	if map_view.visible:

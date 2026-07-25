@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
 [ext_resource type="PackedScene" uid="uid://c66vfsg3tigj6" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
 [ext_resource type="PackedScene" uid="uid://beu71wmx4dsfc" path="res://scenes/HomeSelection.tscn" id="11_homesel"]
+[ext_resource type="PackedScene" path="res://scenes/SaveSlotPanel.tscn" id="12_saveslot"]
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
 
@@ -29,9 +30,9 @@ polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(889, 420, 4908, 506, 4851, 620, -79, 562, -106, 456)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_yxlcp"]
-vertices = PackedVector2Array(4370.3438, -285.85156, 4658.742, -751.28125, 4753.6094, -756.1797, 4605.1875, -402.85938, 4419.867, -139.96875, 4232.0625, -195.04688, 4188.9063, -41.976563, -46.257813, -130.15625, -37.703125, -12.0625)
-polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(5, 0, 4, 6), PackedInt32Array(7, 5, 6, 8)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(4769, -767, 4614, -398, 4426.3867, -131.86725, 4191, -32, -47, -2, -57, -140, 4229, -205, 4363, -293, 4653, -761)])
+vertices = PackedVector2Array(4487.172, -417.0078, 4659.25, -751.2969, 4753.6094, -756.1797, 4605.1875, -402.85938, 4419.867, -139.96875, 4266.5234, -198.39844, 4188.9063, -41.976563, 3940.539, -166, -37.703125, -12.0625, -46.257813, -130.09375)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(5, 0, 4, 6), PackedInt32Array(7, 5, 6), PackedInt32Array(7, 6, 8, 9)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4769, -767, 4614, -398, 4426.3867, -131.86725, 4191, -32, -47, -2, -57, -140, 3940, -176, 4262, -208, 4479, -423, 4653, -761)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_1nqs0"]
 vertices = PackedVector2Array(204.02344, 79.046875, 277.67188, 608.1094, 57.34375, 630.96875, 20.8125, 33.023438)
@@ -59,9 +60,9 @@ polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Arr
 outlines = Array[PackedVector2Array]([PackedVector2Array(962, 1489, 941, 2069, 719, 2033, 620, 1792, -56, 1845, -91, 1489)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_nfivy"]
-vertices = PackedVector2Array(411.46875, -16.671875, 376.4922, 623.52344, -112, 651.40625, -112, -51.3125)
+vertices = PackedVector2Array(372.1797, 19.84375, 323.71875, 630.4297, -111.77344, 651.4922, -98.21094, 13.140625)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(422, -26, 386, 633, -122, 662, -122, -62)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(383, 10, 333, 640, -122, 662, -108, 3)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_bjd11"]
 vertices = PackedVector2Array(405.70313, 515.7422, -68.359375, 551.1719, -33.601563, -50.289063, 398.9922, 294.9297, 412.57813, -17.726563)
@@ -669,13 +670,14 @@ text = "DEPAUSE"
 layer = 10
 
 [node name="PauseMenuScreen" parent="PauseMenuLayer" unique_id=2140681990 instance=ExtResource("9_pmscn")]
-offset_left = 20.999998
-offset_top = 185.99998
-offset_right = 21.0
-offset_bottom = 186.0
+offset_top = 3.0000153
+offset_bottom = 3.0
+rotation = -0.020142948
 
 [node name="DialogueBox" parent="." unique_id=2003931360 instance=ExtResource("10_dlgbx")]
 
 [node name="HomeSelectionLayer" parent="." unique_id=1283301731 instance=ExtResource("11_homesel")]
+
+[node name="SaveSlotPanel" parent="." unique_id=934833406 instance=ExtResource("12_saveslot")]
 
 [connection signal="pressed" from="PauseMenu/Closebutton" to="PauseMenu" method="_on_closebutton_pressed"]
