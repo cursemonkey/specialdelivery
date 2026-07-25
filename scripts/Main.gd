@@ -11,6 +11,7 @@ const BikeScene             := preload("res://scenes/Bike.tscn")
 const BirdScene             := preload("res://scenes/Bird.tscn")
 const NPCManagerScript      := preload("res://scripts/NPCManager.gd")
 const InteriorManagerScript := preload("res://scripts/InteriorManager.gd")
+const DayTransitionScene    := preload("res://scenes/DayTransition.tscn")
 const BIRD_COUNT            := 6
 
 @onready var world          : Node2D          = $WorldGenerator
@@ -34,6 +35,7 @@ var _continue_flow    : bool   = false   # loading a save: start drops now, don'
 var _home_door_node   : Node2D = null
 var _npc_manager      : Node2D = null
 var _interior_manager : Node2D = null
+var _day_transition   : CanvasLayer = null
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -110,6 +112,10 @@ func _ready() -> void:
 	_interior_manager.setup(player, camera, door_markers)
 	_interior_manager.sleep_requested.connect(_on_home_door_activated)
 	player.interior_manager = _interior_manager
+
+	_day_transition = DayTransitionScene.instantiate()
+	add_child(_day_transition)
+	_day_transition.continue_requested.connect(_on_sleep_continue)
 
 	title.show_title()
 
@@ -344,10 +350,14 @@ func _on_home_door_activated() -> void:
 		return
 	_day_running = false
 	drop_pads.end_day()
-	GameManager.show_message("🏠 Heading home for the night...")
-	await get_tree().create_timer(1.5).timeout
+	player.input_locked = true
+	_day_transition.begin()   # fade to black + "Continue" prompt
+
+func _on_sleep_continue() -> void:
 	world._scatter_pickups()
 	_begin_day()
+	_day_transition.reveal()
+	player.input_locked = false
 
 func _on_next_day() -> void:
 	_day_running = false

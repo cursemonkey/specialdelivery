@@ -78,6 +78,24 @@ func enter(building_id: String) -> void:
 	else:
 		GameManager.show_message("🚪 Inside. Walk out the south doorway to leave.", 4.0)
 
+	_try_auto_deliver(building_id)
+
+## If the building we entered is a live delivery target and the player has a
+## package, drop it off automatically (the door markers are ArtBuildings, so the
+## entered building is itself the delivery target).
+func _try_auto_deliver(building_id: String) -> void:
+	var node : Node2D = null
+	for m in _markers:
+		if m is Node2D and String(m.name) == building_id:
+			node = m
+			break
+	if node == null:
+		return
+	if node.get("is_target") != true or node.get("is_delivered") == true:
+		return
+	if GameManager.use_package():
+		node.receive_package(node.global_position)
+
 func exit() -> void:
 	if not is_inside():
 		return
