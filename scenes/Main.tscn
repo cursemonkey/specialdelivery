@@ -15,7 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://2j80gc0jjn4r" path="res://scenes/pause_menu.tscn" id="9_pmscn"]
 [ext_resource type="PackedScene" uid="uid://c66vfsg3tigj6" path="res://scenes/DialogueBox.tscn" id="10_dlgbx"]
 [ext_resource type="PackedScene" uid="uid://beu71wmx4dsfc" path="res://scenes/HomeSelection.tscn" id="11_homesel"]
-[ext_resource type="PackedScene" path="res://scenes/SaveSlotPanel.tscn" id="12_saveslot"]
+[ext_resource type="PackedScene" uid="uid://b7xberlv1o3u7" path="res://scenes/SaveSlotPanel.tscn" id="12_saveslot"]
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
 

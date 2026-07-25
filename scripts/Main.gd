@@ -283,6 +283,11 @@ func _begin_day() -> void:
 		% GameManager.date_label()
 	)
 
+	# Each day starts inside the player's home; they walk out to begin. (The
+	# bike was just parked at the home door above, so it's waiting outside.)
+	if _interior_manager != null and not GameManager.home_id.is_empty() and _home_door_node != null:
+		_interior_manager.enter(GameManager.home_id)
+
 func _spawn_bike() -> void:
 	if _world_bike != null:
 		_world_bike.queue_free()

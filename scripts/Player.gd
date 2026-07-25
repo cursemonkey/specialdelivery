@@ -180,9 +180,15 @@ func _try_dialogue() -> void:
 		nearest_npc.begin_interaction(self)
 		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks())
 		return
-	# Otherwise, enter the building whose door we're standing at.
-	if interior_manager != null and interior_manager.try_enter_nearest(global_position):
-		return
+	# Otherwise, enter the building whose door we're standing at — but only on
+	# foot. On the bike, prompt the player to dismount first.
+	if interior_manager != null:
+		if on_bike:
+			if interior_manager.has_door_near(global_position):
+				GameManager.show_message("🚲 Hop off your bike to go inside!")
+				return
+		elif interior_manager.try_enter_nearest(global_position):
+			return
 
 func _hop() -> void:
 	if on_bike or _hopping:

@@ -31,6 +31,17 @@ func is_inside() -> bool:
 func try_enter_nearest(from_pos: Vector2) -> bool:
 	if is_inside():
 		return false
+	var best : Node2D = _nearest_door(from_pos)
+	if best == null:
+		return false
+	enter(String(best.name))
+	return true
+
+## True if there's an enterable door within range (without entering it).
+func has_door_near(from_pos: Vector2) -> bool:
+	return _nearest_door(from_pos) != null
+
+func _nearest_door(from_pos: Vector2) -> Node2D:
 	var best   : Node2D = null
 	var best_d : float  = ENTER_RANGE
 	for m in _markers:
@@ -39,10 +50,7 @@ func try_enter_nearest(from_pos: Vector2) -> bool:
 			if d <= best_d:
 				best_d = d
 				best   = m
-	if best == null:
-		return false
-	enter(best.name)
-	return true
+	return best
 
 func enter(building_id: String) -> void:
 	if is_inside():
