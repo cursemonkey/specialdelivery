@@ -81,6 +81,8 @@ var grass_regions     : Array[NavigationRegion2D] = []
 var drop_pad_manager : Node               = null
 var home_door_node   : Node2D             = null
 var input_locked     : bool               = false
+var interior_manager : Node               = null
+var in_interior      : bool               = false
 
 # Path trail for bird following
 var path_trail       : Array[Vector2] = []
@@ -125,6 +127,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
 		_toggle_pause()
 		return
+	# Inside a building: movement still polls in _physics_process, but bike /
+	# throw / door interactions are suppressed. The Interior handles E (sleep).
+	if in_interior:
+		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
 		_try_dialogue()
 		return
@@ -161,9 +167,7 @@ func _try_dialogue() -> void:
 		return
 	if get_tree().paused:
 		return
-	if home_door_node != null and global_position.distance_to(home_door_node.global_position) <= DOOR_INTERACT_RANGE:
-		home_door_activated.emit()
-		return
+	# Talking to a nearby villager takes priority over entering a building.
 	var nearest_npc : RegularNPC = null
 	var nearest_d   : float      = NPC_INTERACT_RANGE
 	var npcs        : Array      = get_tree().get_nodes_in_group("interactable_npc")
@@ -176,10 +180,9 @@ func _try_dialogue() -> void:
 		nearest_npc.begin_interaction(self)
 		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks())
 		return
-	for door in doors:
-		if is_instance_valid(door) and global_position.distance_to(door.global_position) <= DOOR_INTERACT_RANGE:
-			dialogue_box.open("Hello!")
-			return
+	# Otherwise, enter the building whose door we're standing at.
+	if interior_manager != null and interior_manager.try_enter_nearest(global_position):
+		return
 
 func _hop() -> void:
 	if on_bike or _hopping:

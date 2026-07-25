@@ -9,6 +9,10 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var player = get_parent()
 
+	if player.in_interior:
+		visible = false
+		return
+
 	if GameManager.packages <= 0:
 		visible = false
 		return

@@ -5,6 +5,9 @@ const ORBIT_RADIUS := 38.0
 
 func _process(_delta: float) -> void:
 	var player = get_parent()
+	if player.in_interior:
+		visible = false
+		return
 	var mgr    = player.drop_pad_manager
 	if mgr == null:
 		visible = false

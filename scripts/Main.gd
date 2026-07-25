@@ -7,10 +7,11 @@ const TARGETS_PER_DAY  := 12
 const DAY_DURATION     := 240.0   # 4 minutes in seconds
 const START_PACKAGES   := 0
 
-const BikeScene        := preload("res://scenes/Bike.tscn")
-const BirdScene        := preload("res://scenes/Bird.tscn")
-const NPCManagerScript := preload("res://scripts/NPCManager.gd")
-const BIRD_COUNT       := 6
+const BikeScene             := preload("res://scenes/Bike.tscn")
+const BirdScene             := preload("res://scenes/Bird.tscn")
+const NPCManagerScript      := preload("res://scripts/NPCManager.gd")
+const InteriorManagerScript := preload("res://scripts/InteriorManager.gd")
+const BIRD_COUNT            := 6
 
 @onready var world          : Node2D          = $WorldGenerator
 @onready var player         : CharacterBody2D = $Player
@@ -32,6 +33,7 @@ var _first_day        : bool   = true
 var _continue_flow    : bool   = false   # loading a save: start drops now, don't advance the day
 var _home_door_node   : Node2D = null
 var _npc_manager      : Node2D = null
+var _interior_manager : Node2D = null
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -99,6 +101,15 @@ func _ready() -> void:
 	add_child(_npc_manager)
 	_npc_manager.setup(player, get_node_or_null("Doors"))
 	_npc_manager.spawn_all()
+
+	_interior_manager = InteriorManagerScript.new()
+	_interior_manager.name = "InteriorManager"
+	add_child(_interior_manager)
+	var doors_node := get_node_or_null("Doors")
+	var door_markers : Array = doors_node.get_children() if doors_node != null else []
+	_interior_manager.setup(player, camera, door_markers)
+	_interior_manager.sleep_requested.connect(_on_home_door_activated)
+	player.interior_manager = _interior_manager
 
 	title.show_title()
 
@@ -225,6 +236,12 @@ func _resolve_home_door() -> void:
 		player.home_door_node = _home_door_node
 
 func _begin_day() -> void:
+	# If a day change happens while the player is inside a building (e.g. time
+	# ran out, or they slept), pull them back outside first so control, camera,
+	# and in_interior state are restored before the new day is set up.
+	if _interior_manager != null and _interior_manager.is_inside():
+		_interior_manager.exit()
+
 	world.clear_targets()
 	_current_targets        = []
 	player.delivery_targets = []

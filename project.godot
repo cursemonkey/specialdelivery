@@ -24,6 +24,7 @@ config/features=PackedStringArray("4.6", "GL Compatibility")
 GameManager="*res://scripts/GameManager.gd"
 TimeManager="*res://scripts/TimeManager.gd"
 NPCRegistry="*res://scripts/NPCRegistry.gd"
+InteriorRegistry="*res://scripts/InteriorRegistry.gd"
 
 [display]
 

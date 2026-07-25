@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 60)",
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --import)",
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 150)"
+    ]
+  }
+}

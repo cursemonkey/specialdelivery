@@ -47,7 +47,8 @@ func _register_mayor_henderson() -> void:
 	# Every day: at City Hall through the daytime, home again by sunset/night
 	# (the home_anchor fallback covers any phase with no matching entry).
 	var sched : Array[NPCScheduleEntry] = [
-		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(0, 40)),
+		# Beside the City Hall entrance (not on the door) so the player can enter.
+		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(84, 42)),
 		NPCScheduleEntry.make([], Phase.NIGHT, "House19",           Vector2(0, 20)),
 	]
 	def.schedule = sched
