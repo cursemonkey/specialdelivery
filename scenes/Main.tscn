@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://bkmtelsev87pm" path="res://scripts/Main.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://worldgen" path="res://scenes/WorldGenerator.tscn" id="2"]
-[ext_resource type="Texture2D" uid="uid://dxljmknnyrt6g" path="res://assets/Backgrounds/CityMap1.1.png" id="2_nxtc6"]
 [ext_resource type="PackedScene" uid="uid://player" path="res://scenes/Player.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://hud" path="res://scenes/HUD.tscn" id="4"]
 [ext_resource type="Texture2D" uid="uid://kcqviynp85l4" path="res://assets/Backgrounds/Building_Rooftop_House.png" id="4_bjd11"]
@@ -17,35 +16,88 @@
 [ext_resource type="PackedScene" uid="uid://beu71wmx4dsfc" path="res://scenes/HomeSelection.tscn" id="11_homesel"]
 [ext_resource type="PackedScene" uid="uid://b7xberlv1o3u7" path="res://scenes/SaveSlotPanel.tscn" id="12_saveslot"]
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3p2gp"]
+load_path = "res://.godot/imported/CityMap1.1.png-457fada442c53509f0537c047d030626.ctex"
+
 [sub_resource type="TileSet" id="TileSet_bjd11"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_qmy6f"]
-vertices = PackedVector2Array(128.07031, 20.867188, 128.92188, 136.25, -8.0703125, 139.74219, -8.921875, 19.117188)
+vertices = PackedVector2Array(126.421875, 0.703125, 132.53906, 137.1875, -8.296875, 139.8125, -12.671875, -3.65625)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(-19, 9, 138, 11, 139, 146, -18, 150)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-23, -14, 136, -9, 143, 147, -18, 150)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_1iba3"]
-vertices = PackedVector2Array(4891.992, 515.65625, 4844.8594, 609.9219, -71.203125, 552.09375, -93.25, 465.53906, 888.96875, 430)
-polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(889, 420, 4448.9424, 496.17694, 4908, 506, 4851, 620, -79, 562, -106, 456)])
+vertices = PackedVector2Array(4841.3984, 609.8828, -71.203125, 552.09375, -93.25, 465.53906, 888.96875, 430, 4448.8203, 506.1797, 4845.578, 507.95313)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(0, 4, 5)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(889, 420, 4448.9424, 496.17694, 4856, 498, 4851, 620, -79, 562, -106, 456)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_ebg2g"]
-vertices = PackedVector2Array(4807.8125, -121.296875, 4850.3594, -41.023438, 4190.9688, -42, 3939.7422, -165.99219, -37.703125, -12.0625, -46.257813, -130.09375)
-polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(3, 2, 4, 5)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(4814, -131, 4867, -31, 4191, -32, -47, -2, -57, -140, 3940, -176)])
+vertices = PackedVector2Array(4808.0313, -120.890625, 4850.3594, -41.023438, 4190.9688, -42, 3997.711, -106.99219, 3541.6719, -140.99219, -37.703125, -12.0625, -46.25, -130.03125)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 3, 2, 5, 6)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4814, -131, 4903, -23, 4191, -32, -47, -2, -57, -140, 3632.9053, -136.30737, 3940, -136)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_xa025"]
+vertices = PackedVector2Array(4036.7813, -136, 4900.6563, -136, 4908.258, -26.242188, 4191.0703, -42, 3887.6719, -111.97656, -37.703125, -12.0625, -46.25, -129.96875, 3555.7266, -121)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(3, 5, 6, 7, 4)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4910, -146, 4919, -16, 4191, -32, -47, -2, -57, -140, 3556, -131, 3887, -122, 4036, -146)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_36rkl"]
+vertices = PackedVector2Array(3984.2031, -114, 3984.1875, -114, 4897.9766, -122.90625, 4907.8906, -26.242188, 4191.0703, -42, -37.703125, -12.0625, 3545.0703, -105, -46.242188, -129.92188)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2), PackedInt32Array(2, 3, 4, 0), PackedInt32Array(0, 4, 5, 6), PackedInt32Array(7, 6, 5)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4907, -133, 4919, -16, 4191, -32, -47, -2, -57, -140, 3545, -115, 3984, -124)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_2ofn6"]
-vertices = PackedVector2Array(-37.703125, -12.0703125, -46.25, -129.95313, 3913.1797, -114, 4831.203, -52.8125, 4748.6016, -147.8125)
-polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 3, 2)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(4753, -158, 4853, -43, -47, -2, -57, -140, 3913, -124)])
+vertices = PackedVector2Array(3913.3203, -114, 3913.3125, -114, 4804.867, -130.82031, 4814.047, -28.976563, -100.63281, -20.007813, -96.359375, -138.82813, 3057.0781, -87, 3104.9297, -88.5)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2), PackedInt32Array(3, 4, 5, 6), PackedInt32Array(3, 6, 7), PackedInt32Array(3, 7, 0, 2)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4814, -141, 4825, -19, -111, -10, -106, -149, 3057, -97, 3913, -124)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_yxlcp"]
-vertices = PackedVector2Array(4487.172, -417.0078, 4659.25, -751.2969, 4753.6094, -756.1797, 4605.1875, -402.85938, 4419.867, -139.96875, 4266.5234, -198.39844, 4188.9063, -41.976563, 3940.539, -166, -37.703125, -12.0625, -46.257813, -130.09375)
+vertices = PackedVector2Array(4487.2266, -417.07813, 4670.2188, -789, 4740.8906, -789, 4605.0234, -402.6172, 4419.867, -139.96875, 4266.5234, -198.39844, 4188.9063, -41.976563, 3940.539, -166, -37.703125, -12.0625, -46.257813, -130.09375)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(5, 0, 4, 6), PackedInt32Array(7, 5, 6), PackedInt32Array(7, 6, 8, 9)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(4769, -767, 4614, -398, 4426.3867, -131.86725, 4191, -32, -47, -2, -57, -140, 3940, -176, 4262, -208, 4479, -423, 4653, -761)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4755, -799, 4614, -398, 4426.3867, -131.86725, 4191, -32, -47, -2, -57, -140, 3940, -176, 4262, -208, 4479, -423, 4664, -799)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_2c4at"]
+vertices = PackedVector2Array(-37.703125, -12.0703125, -46.21875, -129.63281, 1026.4063, -93.00781, 1403.7813, -69.99219, 1814.2891, -77, 2138.8594, -90.5625, 2138.1172, -29.90625)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 5, 6), PackedInt32Array(4, 6, 0, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(2148, -20, -47, -2, -57, -140, 1027, -103, 1404, -80, 1814, -87, 2149, -101)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_fs0b5"]
+vertices = PackedVector2Array(1129.2734, -135.11719, 964.5781, -140.21094, 1550.6328, -656.6406, 1678.2969, -635.3281, 2312.5703, -1040.1016, 2702.5469, -1144.9531, 4897.742, -2394.2813, 4881.7188, -2264.4688)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(3, 2, 4, 5), PackedInt32Array(5, 4, 6, 7)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4891, -2258, 2707, -1136, 1684, -627, 1133, -125, 939, -131, 1545, -665, 2308, -1049, 4910, -2412)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_ma7h6"]
+vertices = PackedVector2Array(1005.09375, 2291.7578, 914.1094, 2299.1406, 946, -648.28125, 1017, 1097.8281, 1075.7578, -1381, 935.0078, -811.10156, 962.53125, -1381)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 3, 2), PackedInt32Array(4, 2, 5, 6)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(953, -1391, 1086, -1391, 1027, 1098, 1015, 2301, 904, 2310, 936, -648, 925, -811)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_e2s0e"]
+vertices = PackedVector2Array(983.3281, -1248.5234, 985.85156, -1411.4688, 1065.8672, -1415.4688, 1039, 905.8906, 943.1406, 1358.4375, 1034.1094, 1362.5391)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(4, 3, 5)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(976, -1421, 1076, -1426, 1049, 906, 1044, 1373, 933, 1368, 973.32825, -1248.6719)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_gsxep"]
+vertices = PackedVector2Array(-14.9375, -244.64063, -134.14844, -240.35156, -147.85156, -1113.6172, -10.046875, -1122.3438)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-158, -1123, 0, -1133, -5, -235, -144, -230)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_v0vrg"]
+vertices = PackedVector2Array(-133.14063, -183.6875, -135.96094, -1058.6797, -57.890625, -1056.2891, -48.546875, -189.88281, -96.67969, -69.140625, 48, -117.97656, 48, -89.67969, -249.49219, -100.27344, -251.57031, -133.54688)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(5, 6, 4, 3), PackedInt32Array(0, 4, 7, 8)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-146, -1069, -48, -1066, -38.603363, -194.93378, 58, -123, 58, -81, -97, -59, -259, -92, -262, -140, -143.16246, -190.31342)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_dg70y"]
+vertices = PackedVector2Array(983.3281, -1248.5234, 985.85156, -1411.4688, 1065.8672, -1415.4688, 1039, 905.96875, 944.14844, 1382.7266, 1041.9297, 1380.2422)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(4, 3, 5)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(976, -1421, 1076, -1426, 1049, 906, 1052, 1390, 934, 1393, 973.32825, -1248.6719)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_pnhog"]
+vertices = PackedVector2Array(944, 254.27344, 982.84375, -1187.9297, 1068.7578, -1234.1328, 1039, 905.8828, 943, 1358.4375, 1034.1094, 1362.5391)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(4, 3, 5)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(1079, -1251, 1049, 906, 1044, 1373, 933, 1368, 934, 254, 973, -1194)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_1nqs0"]
-vertices = PackedVector2Array(204.02344, 79.046875, 277.67188, 608.1094, 57.34375, 630.96875, 20.8125, 33.023438)
+vertices = PackedVector2Array(205.28125, 603.5781, 57.289063, 630.1719, 20.5625, 28.890625, 225.60938, 6.2109375)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(10, 20, 48, 642, 215, 612, 236, -5)])
 
@@ -55,14 +107,14 @@ polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-26, 18, -26, 190.16504, -26, 806, -155, 799, -164, 18)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_ft6cd"]
-vertices = PackedVector2Array(343.5078, 621.1328, -131.10156, 627.85156, -137.89063, -11, 377.4375, -11)
+vertices = PackedVector2Array(343.3203, 621.1328, -130.97656, 627.85156, -130.00781, 132.46875, 360.64063, 105.578125)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(388, -21, 353, 631, -141, 638, -148, -21)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(363, 120, 353, 631, -141, 638, -140, 123)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_cvmbd"]
-vertices = PackedVector2Array(557.1094, 631.3203, -67.71875, 896.2031, -102.49219, 204.77344, 564.8125, 190.21875)
+vertices = PackedVector2Array(583.1328, 238.53125, 587.89844, 563.77344, -96.14844, 895.1094, -102.890625, 205.49219)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(575, 180, 567, 638, -106, 911, -113, 195)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(593, 229, 598, 570, -106, 911, -113, 195)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_3p2gp"]
 vertices = PackedVector2Array(951.6328, 1499, 931.40625, 2057.3125, 726.1172, 2024.0234, 626.47656, 1781.4609, -79.96875, 1499, -47, 1834.2578)
@@ -70,14 +122,14 @@ polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Arr
 outlines = Array[PackedVector2Array]([PackedVector2Array(962, 1489, 941, 2069, 719, 2033, 620, 1792, -56, 1845, -91, 1489)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_nfivy"]
-vertices = PackedVector2Array(372.1797, 19.84375, 323.71875, 630.4297, -111.77344, 651.4922, -98.21094, 13.140625)
-polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(383, 10, 333, 640, -122, 662, -108, 3)])
+vertices = PackedVector2Array(372.4922, 19.851563, 343.46875, 602.1094, -106.84375, 607.8594, -98.97656, 69.9375, -98.140625, 13.140625)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(383, 10, 353, 612, -117, 618, -104, 76, -108, 3)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_bjd11"]
-vertices = PackedVector2Array(405.70313, 515.7422, -68.359375, 551.1719, -33.601563, -50.289063, 398.9922, 294.9297, 412.57813, -17.726563)
+vertices = PackedVector2Array(405.70313, 515.7422, -68.90625, 551.21094, -64.078125, -36.59375, 398.9922, 294.9297, 412.5703, -17.40625)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(2, 4, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(423, -27, 409, 295, 416, 525, -79, 562, -43, -61)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(423, -27, 409, 295, 409, 549, -79, 562, -74, -47)])
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -97,8 +149,9 @@ script = ExtResource("1")
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=-447676240]
 
 [node name="Background" type="Sprite2D" parent="." unique_id=294716201]
-texture = ExtResource("2_nxtc6")
+texture = SubResource("CompressedTexture2D_3p2gp")
 centered = false
+metadata/_edit_lock_ = true
 
 [node name="TileMapLayer" type="TileMapLayer" parent="Background" unique_id=609535863]
 tile_set = SubResource("TileSet_bjd11")
@@ -108,7 +161,7 @@ editor_description = "Array of Building Shapes"
 
 [node name="House33" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=867943652]
 position = Vector2(-7278, 3260)
-polygon = PackedVector2Array(10254, -2675, 10237, -2809, 10322, -2880, 10405, -2830, 10395, -2595)
+polygon = PackedVector2Array(10231, -2687, 10237, -2809, 10322, -2880, 10405, -2830, 10391, -2624)
 
 [node name="House34" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=4059282]
 position = Vector2(-7458, 3237)
@@ -116,14 +169,19 @@ polygon = PackedVector2Array(10251, -2652, 10237, -2809, 10341, -2857, 10422, -2
 
 [node name="House35" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=260723860]
 position = Vector2(-7657, 3236)
-polygon = PackedVector2Array(10255, -2672, 10237, -2809, 10325, -2852, 10405, -2830, 10403, -2596)
+polygon = PackedVector2Array(10255, -2672, 10237, -2809, 10325, -2852, 10419, -2815, 10419, -2611)
 
 [node name="House36" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=87557973]
 position = Vector2(-7838, 3222)
 polygon = PackedVector2Array(10368, -2603, 10216, -2685, 10324, -2862, 10423, -2833, 10423, -2635)
 
+[node name="Townhouse1" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1736451268]
+position = Vector2(-8037, 3219)
+polygon = PackedVector2Array(10368, -2603, 10216, -2685, 10324, -2862, 10423, -2833, 10423, -2635)
+
 [node name="Farm" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=892441404]
-polygon = PackedVector2Array(3614, 387, 3619, 78, 4071, 73, 4068, 384)
+position = Vector2(555, 91)
+polygon = PackedVector2Array(3632, 320, 3635, 162, 3809, 173, 3900, 176, 3897, 314)
 
 [node name="MechanicRoof" type="Sprite2D" parent="Background/Buildings" unique_id=1669481343]
 z_index = 1
@@ -135,7 +193,7 @@ region_rect = Rect2(0, 0, 253, 88.09999)
 
 [node name="Mechanic" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1122748757]
 position = Vector2(-3806, 1626)
-polygon = PackedVector2Array(5028, -610, 5113, -630, 5211, -612, 5211, -549, 5261, -552, 5265, -797, 5072, -804, 5035, -762)
+polygon = PackedVector2Array(5028, -610, 5099, -619, 5204, -602, 5211, -549, 5261, -552, 5265, -797, 5072, -804, 5035, -762)
 
 [node name="House1Roof" type="Sprite2D" parent="Background/Buildings" unique_id=1209709734]
 z_index = 1
@@ -162,7 +220,7 @@ position = Vector2(-15248, 6424)
 polygon = PackedVector2Array(18343, -5314, 18363, -5670, 18624, -5668, 18611, -5311)
 
 [node name="House3" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=2032701398]
-position = Vector2(-7624, 3212)
+position = Vector2(-7660, 3193)
 polygon = PackedVector2Array(11917, -2097, 12137, -2100, 12140, -2271, 12015, -2276, 11900, -2258)
 
 [node name="House4" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1952366585]
@@ -204,23 +262,23 @@ polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1062, 1386, 938,
 position = Vector2(-281, 506)
 polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 938, 1394)
 
-[node name="House10" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1236145223]
-position = Vector2(155, 515)
-polygon = PackedVector2Array(946, 1555, 1160, 1543, 1172, 1382, 951, 1385)
+[node name="House80" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1236145223]
+position = Vector2(155, 487)
+polygon = PackedVector2Array(945, 1530, 1101.1272, 1539.4402, 1160, 1543, 1160, 1378, 947, 1373)
 
-[node name="House11" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=94728437]
+[node name="House84" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=94728437]
 position = Vector2(404, 506)
-polygon = PackedVector2Array(946, 1555, 1157, 1553, 1168, 1389, 1026, 1343, 938, 1394)
+polygon = PackedVector2Array(946, 1555, 1124, 1575, 1168, 1389, 1026, 1343, 938, 1394)
 
 [node name="CollisionPolygon2D_Building_TownHall" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=838524041]
-polygon = PackedVector2Array(2593, 1884, 2766, 1879, 2874, 1723, 3020, 1736, 3025, 1854, 3243, 1856, 3193, 2115, 2588, 2087)
+polygon = PackedVector2Array(2602, 1851, 2766, 1848, 2874, 1723, 3020, 1736, 3025, 1854, 3198, 1861, 3172, 2048, 2620, 2045)
 
-[node name="House12" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1668242803]
-position = Vector2(2588, 537)
+[node name="House96" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1668242803]
+position = Vector2(2614, 532)
 polygon = PackedVector2Array(976, 1549, 1157, 1553, 1172, 1382, 961, 1378)
 
-[node name="House13" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1084458579]
-position = Vector2(2846, 546)
+[node name="House98" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1084458579]
+position = Vector2(2877, 530)
 polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 938, 1394)
 
 [node name="BakeryRoof" type="Sprite2D" parent="Background/Buildings" unique_id=317519471]
@@ -235,7 +293,7 @@ region_rect = Rect2(0, -2.1999931, 297.8, 179.99998)
 position = Vector2(1958, 529)
 polygon = PackedVector2Array(2272, 1506, 2439, 1560, 2587, 1449, 2619, 1353, 2246, 1338)
 
-[node name="House14Roof" type="Sprite2D" parent="Background/Buildings" unique_id=1751805917]
+[node name="House108Roof" type="Sprite2D" parent="Background/Buildings" unique_id=1751805917]
 z_index = 1
 position = Vector2(322, 2329.825)
 scale = Vector2(1.3754939, 1.746023)
@@ -243,97 +301,101 @@ texture = ExtResource("4_bjd11")
 region_enabled = true
 region_rect = Rect2(0, 0, 253, 88.09999)
 
-[node name="House14" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=67293388]
-position = Vector2(-733, 1028)
+[node name="House108" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=67293388]
+position = Vector2(-733, 1015)
 polygon = PackedVector2Array(946, 1555, 1157, 1553, 1172, 1382, 1056, 1362, 938, 1394)
 
-[node name="House15" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1414133041]
-position = Vector2(-757, 996)
-polygon = PackedVector2Array(2432, 1577, 2689, 1551, 2681, 1418, 2540, 1402, 2424, 1416)
+[node name="House110" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=733962615]
+position = Vector2(-348, 996)
+polygon = PackedVector2Array(946, 1555, 1210, 1553, 1252, 1531, 1243, 1369, 940, 1375)
 
-[node name="House16" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=911884643]
+[node name="House114" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1414133041]
 position = Vector2(-757, 996)
-polygon = PackedVector2Array(2686, 1568, 2897, 1566, 2912, 1395, 2678, 1407)
+polygon = PackedVector2Array(2432, 1577, 2684, 1564, 2681, 1418, 2540, 1402, 2424, 1416)
 
-[node name="House17" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=637864560]
+[node name="House116" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=911884643]
+position = Vector2(-757, 996)
+polygon = PackedVector2Array(2686, 1568, 2857, 1551, 2869, 1392, 2685, 1405)
+
+[node name="House120" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=637864560]
 position = Vector2(-339, 1027)
-polygon = PackedVector2Array(2686, 1568, 2897, 1566, 2912, 1395, 2678, 1407)
+polygon = PackedVector2Array(2684, 1553, 2897, 1555, 2912, 1395, 2679, 1397)
 
-[node name="House18" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1563822784]
+[node name="House124" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1563822784]
 position = Vector2(-328, 1032)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 2927, 1407)
+polygon = PackedVector2Array(2945, 1562, 3146, 1566, 3161, 1395, 2942, 1395)
 
-[node name="House19" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1153581547]
+[node name="House130" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1153581547]
 position = Vector2(-5, 1027)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3185, 1431, 3143, 1354, 2987, 1354, 2927, 1407)
+polygon = PackedVector2Array(2945, 1577, 3204, 1570, 3209, 1422, 3143, 1354, 2987, 1354, 2927, 1407)
 
-[node name="House20" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=2088989178]
+[node name="House134" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=2088989178]
 position = Vector2(249, 1036)
-polygon = PackedVector2Array(2935, 1568, 3172, 1570, 3169, 1405, 2927, 1407)
+polygon = PackedVector2Array(2984, 1557, 3168, 1552, 3169, 1405, 2979, 1407)
 
 [node name="Church" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1054376908]
 position = Vector2(1317, 1015)
-polygon = PackedVector2Array(2329, 1627, 2630, 1592, 2588, 1350, 2318, 1378)
+polygon = PackedVector2Array(2332, 1619, 2630, 1592, 2588, 1350, 2318, 1378)
 
-[node name="House21" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1036977819]
+[node name="House138" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1036977819]
 position = Vector2(1241, 1039)
 polygon = PackedVector2Array(2964, 1543, 3139, 1546, 3161, 1395, 2946, 1405)
 
-[node name="House22" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=61295258]
+[node name="House140" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=61295258]
 position = Vector2(1517, 1032)
+polygon = PackedVector2Array(2944, 1561, 3146, 1566, 3161, 1395, 2947, 1388)
+
+[node name="House150" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=529865520]
+position = Vector2(-2654, 1422)
 polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 2927, 1407)
 
-[node name="House23" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=529865520]
-position = Vector2(-2695, 1450)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 2927, 1407)
+[node name="House154" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1677656950]
+position = Vector2(-2315, 1432)
+polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3049, 1351, 2927, 1407)
 
-[node name="House24" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1677656950]
-position = Vector2(-2348, 1454)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1284, 2927, 1407)
-
-[node name="House25" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=420101536]
+[node name="House160" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=420101536]
 position = Vector2(-1859, 1458)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3070, 1386, 2927, 1407)
+polygon = PackedVector2Array(2933, 1535, 3102, 1576, 3149, 1485, 3146, 1405, 2927, 1407)
 
-[node name="House26" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1833561829]
+[node name="House162" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1833561829]
 position = Vector2(-1601, 1458)
 polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3056, 1391, 2927, 1407)
 
-[node name="House27" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1486101084]
+[node name="House166" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1486101084]
 position = Vector2(-1285, 1480)
-polygon = PackedVector2Array(2984, 1532, 3155, 1522, 3161, 1395, 3080, 1378, 2961, 1397)
+polygon = PackedVector2Array(3008, 1543, 3155, 1522, 3161, 1395, 3080, 1378, 2983, 1400)
 
-[node name="House28" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1449228809]
+[node name="House170" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1449228809]
 position = Vector2(-991, 1467)
-polygon = PackedVector2Array(2938, 1535, 3149, 1540, 3152, 1400, 3056, 1403, 2927, 1407)
+polygon = PackedVector2Array(2954, 1529, 3149, 1540, 3152, 1400, 3056, 1403, 2943, 1407)
 
 [node name="Library" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=416324004]
 position = Vector2(1317, 1015)
-polygon = PackedVector2Array(1068, 2086, 1379, 2090, 1403, 1859, 1083, 1857)
+polygon = PackedVector2Array(1060, 2070, 1141, 2075, 1206, 2056, 1379, 2090, 1442, 1989, 1403, 1859, 1113, 1855, 1044, 1963)
 
 [node name="School" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1984680678]
 position = Vector2(1931, 1038)
-polygon = PackedVector2Array(1047, 2076, 1471, 2067, 1474, 1866, 1045, 1868)
+polygon = PackedVector2Array(1066, 2024, 1239, 2088, 1344, 2063, 1427, 1993, 1428, 1876, 1054, 1862)
 
 [node name="Apartments" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=58801602]
 position = Vector2(2537, 1037)
 polygon = PackedVector2Array(1066, 2237, 1388, 2237, 1410, 1922, 1369, 1897, 1134, 1890, 1050, 1892)
 
-[node name="House29" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1571027830]
-position = Vector2(-3718, 2916)
-polygon = PackedVector2Array(7898, 223, 8238, 228, 8277, 180, 8282, -19, 7877, 11)
-
-[node name="House30" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=503795352]
+[node name="House180" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=503795352]
 position = Vector2(-1867, 1796)
-polygon = PackedVector2Array(2935, 1568, 3146, 1566, 3161, 1395, 3048, 1393, 2927, 1407)
+polygon = PackedVector2Array(2961, 1550, 3153, 1548, 3160, 1369, 3056, 1336, 2950, 1370)
 
-[node name="House31" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1209346275]
+[node name="House185" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1209346275]
 position = Vector2(-1275, 1800)
-polygon = PackedVector2Array(2954, 1568, 3146, 1566, 3161, 1395, 3064, 1396, 2951, 1407)
+polygon = PackedVector2Array(2969, 1542, 3134, 1539, 3134, 1399, 3050, 1373, 2954, 1399)
 
-[node name="House32" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=396982203]
+[node name="House190" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=396982203]
 position = Vector2(-995, 1800)
 polygon = PackedVector2Array(2911, 1578, 3146, 1585, 3158, 1386, 3099, 1362, 2959, 1367, 2897, 1396)
+
+[node name="House200" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1571027830]
+position = Vector2(-3718, 2916)
+polygon = PackedVector2Array(7898, 223, 8238, 228, 8277, 180, 8282, -19, 7901, -18)
 
 [node name="DropPads" type="StaticBody2D" parent="Background" unique_id=642770669]
 editor_description = "Array of Building Shapes"
@@ -344,7 +406,7 @@ position = Vector2(2977, 1223)
 navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 
 [node name="DropPad2" type="NavigationRegion2D" parent="Background/DropPads" unique_id=434442302]
-position = Vector2(1844, 2004)
+position = Vector2(1850, 1998)
 navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 
 [node name="DropPad3" type="NavigationRegion2D" parent="Background/DropPads" unique_id=1346600367]
@@ -355,12 +417,20 @@ navigation_polygon = SubResource("NavigationPolygon_qmy6f")
 position = Vector2(180, -1696)
 
 [node name="Road" type="NavigationRegion2D" parent="Background/Roads" unique_id=2037994425 groups=["road_zone"]]
-position = Vector2(-83, 1856)
+position = Vector2(-83, 1849)
 navigation_polygon = SubResource("NavigationPolygon_1iba3")
 
 [node name="Road3" type="NavigationRegion2D" parent="Background/Roads" unique_id=962296090 groups=["road_zone"]]
 position = Vector2(-155, 3936)
 navigation_polygon = SubResource("NavigationPolygon_ebg2g")
+
+[node name="Road5" type="NavigationRegion2D" parent="Background/Roads" unique_id=521546677 groups=["road_zone"]]
+position = Vector2(-145, 3432)
+navigation_polygon = SubResource("NavigationPolygon_xa025")
+
+[node name="Road6" type="NavigationRegion2D" parent="Background/Roads" unique_id=1397190714 groups=["road_zone"]]
+position = Vector2(-150, 4430)
+navigation_polygon = SubResource("NavigationPolygon_36rkl")
 
 [node name="Road2" type="NavigationRegion2D" parent="Background/Roads" unique_id=740245237 groups=["road_zone"]]
 position = Vector2(-55, 2935)
@@ -369,6 +439,42 @@ navigation_polygon = SubResource("NavigationPolygon_2ofn6")
 [node name="Road4" type="NavigationRegion2D" parent="Background/Roads" unique_id=282358996 groups=["road_zone"]]
 position = Vector2(-125, 5221)
 navigation_polygon = SubResource("NavigationPolygon_yxlcp")
+
+[node name="Road15" type="NavigationRegion2D" parent="Background/Roads" unique_id=1313385539 groups=["road_zone"]]
+position = Vector2(-125, 4800)
+navigation_polygon = SubResource("NavigationPolygon_2c4at")
+
+[node name="Road16" type="NavigationRegion2D" parent="Background/Roads" unique_id=608017686 groups=["road_zone"]]
+position = Vector2(-150, 4430)
+navigation_polygon = SubResource("NavigationPolygon_fs0b5")
+
+[node name="Road20" type="NavigationRegion2D" parent="Background/Roads" unique_id=1682267756 groups=["road_zone"]]
+position = Vector2(-166, 3712)
+navigation_polygon = SubResource("NavigationPolygon_ma7h6")
+
+[node name="Road22" type="NavigationRegion2D" parent="Background/Roads" unique_id=1246574277 groups=["road_zone"]]
+position = Vector2(486, 3088)
+navigation_polygon = SubResource("NavigationPolygon_ma7h6")
+
+[node name="Road24" type="NavigationRegion2D" parent="Background/Roads" unique_id=1015427710 groups=["road_zone"]]
+position = Vector2(1079, 3710)
+navigation_polygon = SubResource("NavigationPolygon_e2s0e")
+
+[node name="Road11" type="NavigationRegion2D" parent="Background/Roads" unique_id=808619288 groups=["road_zone"]]
+position = Vector2(2786, 3568)
+navigation_polygon = SubResource("NavigationPolygon_gsxep")
+
+[node name="Road26" type="NavigationRegion2D" parent="Background/Roads" unique_id=923730197 groups=["road_zone"]]
+position = Vector2(2777, 4970)
+navigation_polygon = SubResource("NavigationPolygon_v0vrg")
+
+[node name="Road28" type="NavigationRegion2D" parent="Background/Roads" unique_id=924363273 groups=["road_zone"]]
+position = Vector2(2317, 3667)
+navigation_polygon = SubResource("NavigationPolygon_dg70y")
+
+[node name="Road30" type="NavigationRegion2D" parent="Background/Roads" unique_id=1009886476 groups=["road_zone"]]
+position = Vector2(2936, 3773)
+navigation_polygon = SubResource("NavigationPolygon_pnhog")
 
 [node name="DirtRoads" type="Node2D" parent="Background" unique_id=886499066]
 position = Vector2(90, -848)
@@ -385,7 +491,7 @@ navigation_polygon = SubResource("NavigationPolygon_bb450")
 position = Vector2(1209, -1169)
 
 [node name="Grass5" type="NavigationRegion2D" parent="Background/Grass2" unique_id=354549419 groups=["grass_zone"]]
-position = Vector2(2533, 1170)
+position = Vector2(2530, 1164)
 navigation_polygon = SubResource("NavigationPolygon_ft6cd")
 
 [node name="Grass6" type="NavigationRegion2D" parent="Background/Grass2" unique_id=403542013 groups=["grass_zone"]]
@@ -408,7 +514,7 @@ navigation_polygon = SubResource("NavigationPolygon_bjd11")
 
 [node name="Farm" type="Node2D" parent="Doors" unique_id=102780875]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(3848, 350)
+position = Vector2(4268, 356)
 script = ExtResource("6")
 
 [node name="Townhouse" type="Node2D" parent="Doors" unique_id=1393849507]
@@ -418,242 +524,247 @@ script = ExtResource("6")
 
 [node name="Townhouse2" type="Node2D" parent="Doors" unique_id=1745282514]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(3001, 567)
+position = Vector2(3012, 528)
 script = ExtResource("6")
 
 [node name="Townhouse3" type="Node2D" parent="Doors" unique_id=370862321]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2828, 565)
+position = Vector2(2842, 493)
 script = ExtResource("6")
 
 [node name="Townhouse4" type="Node2D" parent="Doors" unique_id=1775669008]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2632, 542)
+position = Vector2(2640, 492)
 script = ExtResource("6")
 
 [node name="Mechanic" type="Node2D" parent="Doors" unique_id=1075933706]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1330, 985)
+position = Vector2(1358, 966)
 script = ExtResource("6")
 
 [node name="House1" type="Node2D" parent="Doors" unique_id=340700640]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1817, 1048)
+position = Vector2(1834, 1015)
 script = ExtResource("6")
 
 [node name="House2" type="Node2D" parent="Doors" unique_id=554597153]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2038, 1033)
+position = Vector2(2085, 1008)
 script = ExtResource("6")
 
 [node name="Hospital" type="Node2D" parent="Doors" unique_id=1494727977]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2720, 1078)
+position = Vector2(2745, 1056)
 script = ExtResource("6")
 
 [node name="Firehouse" type="Node2D" parent="Doors" unique_id=408254191]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(3268, 1071)
+position = Vector2(3246, 1050)
 script = ExtResource("6")
 
 [node name="House3" type="Node2D" parent="Doors" unique_id=1034542719]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(4351, 1096)
+position = Vector2(4384, 1035)
 script = ExtResource("6")
 
 [node name="Building1" type="Node2D" parent="Doors" unique_id=748293015]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(481, 1530)
+position = Vector2(514, 1508)
 script = ExtResource("6")
 
 [node name="House4" type="Node2D" parent="Doors" unique_id=1375850684]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(815, 1527)
+position = Vector2(829, 1508)
 script = ExtResource("6")
 
 [node name="Grocery" type="Node2D" parent="Doors" unique_id=1836489503]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1353, 1552)
+position = Vector2(1350, 1466)
 script = ExtResource("6")
 
 [node name="House5" type="Node2D" parent="Doors" unique_id=437017592]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1817, 1542)
+position = Vector2(1842, 1492)
 script = ExtResource("6")
 
 [node name="House6" type="Node2D" parent="Doors" unique_id=494555516]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2040, 1535)
+position = Vector2(2076, 1485)
 script = ExtResource("6")
 
 [node name="Pub" type="Node2D" parent="Doors" unique_id=1929234090]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2470, 1520)
+position = Vector2(2489, 1468)
 script = ExtResource("6")
 
 [node name="House7" type="Node2D" parent="Doors" unique_id=53854372]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3299, 1579)
+position = Vector2(3363, 1532)
 script = ExtResource("6")
 
 [node name="Hardware" type="Node2D" parent="Doors" unique_id=1899566905]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3940, 1562)
+position = Vector2(3995, 1526)
 script = ExtResource("6")
 
 [node name="House8" type="Node2D" parent="Doors" unique_id=720770449]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(502, 2001)
+position = Vector2(541, 1976)
 script = ExtResource("6")
 
 [node name="House9" type="Node2D" parent="Doors" unique_id=20132027]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(768, 2001)
+position = Vector2(798, 1973)
 script = ExtResource("6")
 
-[node name="House10" type="Node2D" parent="Doors" unique_id=1325054868]
+[node name="House80" type="Node2D" parent="Doors" unique_id=1325054868]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1207, 2026)
+position = Vector2(1206, 2006)
 script = ExtResource("6")
 
-[node name="House11" type="Node2D" parent="Doors" unique_id=1761181808]
+[node name="House84" type="Node2D" parent="Doors" unique_id=1761181808]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1404, 2027)
+position = Vector2(1397, 2036)
 script = ExtResource("6")
 
 [node name="Building_TownHall" type="Node2D" parent="Doors" unique_id=516814554]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2898, 2070)
+position = Vector2(2893, 1991)
 script = ExtResource("6")
 
-[node name="House12" type="Node2D" parent="Doors" unique_id=1765588549]
+[node name="House96" type="Node2D" parent="Doors" unique_id=1765588549]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3641, 2073)
+position = Vector2(3675, 2047)
 script = ExtResource("6")
 
-[node name="House13" type="Node2D" parent="Doors" unique_id=224871217]
+[node name="House98" type="Node2D" parent="Doors" unique_id=224871217]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3915, 2068)
+position = Vector2(3934, 2037)
 script = ExtResource("6")
 
 [node name="Bakery" type="Node2D" parent="Doors" unique_id=1553536485]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(4510, 2028)
+position = Vector2(4317, 2002)
 script = ExtResource("6")
 
-[node name="House14" type="Node2D" parent="Doors" unique_id=631904800]
+[node name="House108" type="Node2D" parent="Doors" unique_id=631904800]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(292, 2538)
+position = Vector2(358, 2538)
 script = ExtResource("6")
 
-[node name="House15" type="Node2D" parent="Doors" unique_id=746327615]
+[node name="House110" type="Node2D" parent="Doors" unique_id=750851911]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1761, 2543)
+position = Vector2(740, 2532)
 script = ExtResource("6")
 
-[node name="House16" type="Node2D" parent="Doors" unique_id=1111858987]
+[node name="House114" type="Node2D" parent="Doors" unique_id=746327615]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2020, 2548)
+position = Vector2(1794, 2568)
 script = ExtResource("6")
 
-[node name="House17" type="Node2D" parent="Doors" unique_id=284706293]
+[node name="House116" type="Node2D" parent="Doors" unique_id=1111858987]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2459, 2573)
+position = Vector2(2053, 2545)
 script = ExtResource("6")
 
-[node name="House18" type="Node2D" parent="Doors" unique_id=178129427]
+[node name="House120" type="Node2D" parent="Doors" unique_id=284706293]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2718, 2573)
+position = Vector2(2478, 2570)
 script = ExtResource("6")
 
-[node name="House19" type="Node2D" parent="Doors" unique_id=1350590510]
+[node name="House124" type="Node2D" parent="Doors" unique_id=178129427]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3019, 2573)
+position = Vector2(2715, 2562)
 script = ExtResource("6")
 
-[node name="House20" type="Node2D" parent="Doors" unique_id=2141494449]
+[node name="House130" type="Node2D" parent="Doors" unique_id=1350590510]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3332, 2578)
+position = Vector2(3015, 2584)
+script = ExtResource("6")
+
+[node name="House134" type="Node2D" parent="Doors" unique_id=2141494449]
+editor_description = "THis is the door for CollisionPolygon2D_building"
+position = Vector2(3355, 2578)
 script = ExtResource("6")
 
 [node name="Church" type="Node2D" parent="Doors" unique_id=1475860463]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3822, 2581)
+position = Vector2(3823, 2608)
 script = ExtResource("6")
 
-[node name="House21" type="Node2D" parent="Doors" unique_id=319859178]
+[node name="House138" type="Node2D" parent="Doors" unique_id=319859178]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(4281, 2566)
+position = Vector2(4278, 2528)
 script = ExtResource("6")
 
-[node name="House22" type="Node2D" parent="Doors" unique_id=1744545739]
+[node name="House140" type="Node2D" parent="Doors" unique_id=1744545739]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(4581, 2577)
+position = Vector2(4571, 2535)
 script = ExtResource("6")
 
-[node name="House23" type="Node2D" parent="Doors" unique_id=973690526]
+[node name="House150" type="Node2D" parent="Doors" unique_id=973690526]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(361, 2976)
+position = Vector2(413, 2929)
 script = ExtResource("6")
 
-[node name="House24" type="Node2D" parent="Doors" unique_id=1538797901]
+[node name="House154" type="Node2D" parent="Doors" unique_id=1538797901]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(711, 2990)
+position = Vector2(766, 2929)
 script = ExtResource("6")
 
-[node name="House25" type="Node2D" parent="Doors" unique_id=1504779424]
+[node name="House160" type="Node2D" parent="Doors" unique_id=1504779424]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1121, 2978)
+position = Vector2(1165, 2937)
 script = ExtResource("6")
 
-[node name="House26" type="Node2D" parent="Doors" unique_id=1259799414]
+[node name="House162" type="Node2D" parent="Doors" unique_id=1259799414]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1460, 3005)
+position = Vector2(1477, 2958)
 script = ExtResource("6")
 
-[node name="House27" type="Node2D" parent="Doors" unique_id=1058156585]
+[node name="House166" type="Node2D" parent="Doors" unique_id=1058156585]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1781, 2997)
+position = Vector2(1825, 2958)
 script = ExtResource("6")
 
-[node name="House28" type="Node2D" parent="Doors" unique_id=234606964]
+[node name="House170" type="Node2D" parent="Doors" unique_id=234606964]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(2069, 2997)
+position = Vector2(2080, 2933)
 script = ExtResource("6")
 
-[node name="House29" type="Node2D" parent="Doors" unique_id=97484324]
+[node name="House180" type="Node2D" parent="Doors" unique_id=1274499205]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(4375, 3082)
+position = Vector2(1222, 3256)
 script = ExtResource("6")
 
-[node name="House30" type="Node2D" parent="Doors" unique_id=1274499205]
+[node name="House185" type="Node2D" parent="Doors" unique_id=1238285443]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1163, 3321)
+position = Vector2(1795, 3259)
 script = ExtResource("6")
 
-[node name="House31" type="Node2D" parent="Doors" unique_id=1238285443]
-editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(1761, 3331)
-script = ExtResource("6")
-
-[node name="House32" type="Node2D" parent="Doors" unique_id=868065841]
+[node name="House190" type="Node2D" parent="Doors" unique_id=868065841]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(1987, 3354)
+position = Vector2(2015, 3313)
 script = ExtResource("6")
 
 [node name="School" type="Node2D" parent="Doors" unique_id=804493730]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3073, 3061)
+position = Vector2(3103, 3002)
 script = ExtResource("6")
 
 [node name="Library" type="Node2D" parent="Doors" unique_id=1267539702]
 editor_description = "This iis the door location for the Pub."
-position = Vector2(2543, 3096)
+position = Vector2(2590, 2998)
 script = ExtResource("6")
 
 [node name="Apartments" type="Node2D" parent="Doors" unique_id=1111586627]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3757, 3253)
+position = Vector2(3793, 3198)
+script = ExtResource("6")
+
+[node name="House200" type="Node2D" parent="Doors" unique_id=97484324]
+editor_description = "THis is the door for CollisionPolygon2D_building"
+position = Vector2(4400, 3054)
 script = ExtResource("6")
 
 [node name="WorldGenerator" parent="." unique_id=2012542759 instance=ExtResource("2")]

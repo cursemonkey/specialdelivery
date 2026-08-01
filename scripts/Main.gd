@@ -9,10 +9,11 @@ const START_PACKAGES   := 0
 
 const BikeScene             := preload("res://scenes/Bike.tscn")
 const BirdScene             := preload("res://scenes/Bird.tscn")
-const NPCManagerScript      := preload("res://scripts/NPCManager.gd")
-const InteriorManagerScript := preload("res://scripts/InteriorManager.gd")
-const DayTransitionScene    := preload("res://scenes/DayTransition.tscn")
-const BIRD_COUNT            := 6
+const NPCManagerScript       := preload("res://scripts/NPCManager.gd")
+const InteriorManagerScript  := preload("res://scripts/InteriorManager.gd")
+const RoadblockManagerScript := preload("res://scripts/RoadblockManager.gd")
+const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
+const BIRD_COUNT             := 6
 
 @onready var world          : Node2D          = $WorldGenerator
 @onready var player         : CharacterBody2D = $Player
@@ -33,9 +34,10 @@ var _birds            : Array[Node] = []
 var _first_day        : bool   = true
 var _continue_flow    : bool   = false   # loading a save: start drops now, don't advance the day
 var _home_door_node   : Node2D = null
-var _npc_manager      : Node2D = null
-var _interior_manager : Node2D = null
-var _day_transition   : CanvasLayer = null
+var _npc_manager       : Node2D = null
+var _interior_manager  : Node2D = null
+var _roadblock_manager : Node2D = null
+var _day_transition    : CanvasLayer = null
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -116,6 +118,11 @@ func _ready() -> void:
 	_day_transition = DayTransitionScene.instantiate()
 	add_child(_day_transition)
 	_day_transition.continue_requested.connect(_on_sleep_continue)
+
+	_roadblock_manager = RoadblockManagerScript.new()
+	_roadblock_manager.name = "RoadblockManager"
+	add_child(_roadblock_manager)
+	_roadblock_manager.setup()
 
 	title.show_title()
 
@@ -277,6 +284,9 @@ func _begin_day() -> void:
 	_spawn_bike()
 	player.reset_trail()
 	_spawn_birds()
+
+	if _roadblock_manager != null:
+		_roadblock_manager.spawn_for_day(player.global_position)
 
 	GameManager.show_message(
 		"☀️ %s! Watch for supply drops — pick them up to get deliveries!" \
