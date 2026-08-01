@@ -27,7 +27,17 @@ outlines = Array[PackedVector2Array]([PackedVector2Array(-19, 9, 138, 11, 139, 1
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_1iba3"]
 vertices = PackedVector2Array(4891.992, 515.65625, 4844.8594, 609.9219, -71.203125, 552.09375, -93.25, 465.53906, 888.96875, 430)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(889, 420, 4908, 506, 4851, 620, -79, 562, -106, 456)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(889, 420, 4448.9424, 496.17694, 4908, 506, 4851, 620, -79, 562, -106, 456)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_ebg2g"]
+vertices = PackedVector2Array(4807.8125, -121.296875, 4850.3594, -41.023438, 4190.9688, -42, 3939.7422, -165.99219, -37.703125, -12.0625, -46.257813, -130.09375)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(3, 2, 4, 5)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4814, -131, 4867, -31, 4191, -32, -47, -2, -57, -140, 3940, -176)])
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_2ofn6"]
+vertices = PackedVector2Array(-37.703125, -12.0703125, -46.25, -129.95313, 3913.1797, -114, 4831.203, -52.8125, 4748.6016, -147.8125)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 3, 2)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(4753, -158, 4853, -43, -47, -2, -57, -140, 3913, -124)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_yxlcp"]
 vertices = PackedVector2Array(4487.172, -417.0078, 4659.25, -751.2969, 4753.6094, -756.1797, 4605.1875, -402.85938, 4419.867, -139.96875, 4266.5234, -198.39844, 4188.9063, -41.976563, 3940.539, -166, -37.703125, -12.0625, -46.257813, -130.09375)
@@ -349,12 +359,12 @@ position = Vector2(-83, 1856)
 navigation_polygon = SubResource("NavigationPolygon_1iba3")
 
 [node name="Road3" type="NavigationRegion2D" parent="Background/Roads" unique_id=962296090 groups=["road_zone"]]
-position = Vector2(-145, 3881)
-navigation_polygon = SubResource("NavigationPolygon_yxlcp")
+position = Vector2(-155, 3936)
+navigation_polygon = SubResource("NavigationPolygon_ebg2g")
 
 [node name="Road2" type="NavigationRegion2D" parent="Background/Roads" unique_id=740245237 groups=["road_zone"]]
-position = Vector2(-69, 2388)
-navigation_polygon = SubResource("NavigationPolygon_yxlcp")
+position = Vector2(-55, 2935)
+navigation_polygon = SubResource("NavigationPolygon_2ofn6")
 
 [node name="Road4" type="NavigationRegion2D" parent="Background/Roads" unique_id=282358996 groups=["road_zone"]]
 position = Vector2(-125, 5221)
