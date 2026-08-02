@@ -205,7 +205,11 @@ func _process(delta: float) -> void:
 	_day_timer += delta
 	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)
 	hud.update_timer(remaining)
-	_apply_sky_tint(_day_timer)
+	# Indoors, ignore the sunset/night colour filter (keep interiors neutral).
+	if player.in_interior:
+		sky.color = Color(1.0, 1.0, 1.0)
+	else:
+		_apply_sky_tint(_day_timer)
 	TimeManager.set_day_progress(_day_timer / DAY_DURATION)
 	drop_pads.tick(delta)
 	_tick_stats(delta)

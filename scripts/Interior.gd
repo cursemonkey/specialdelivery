@@ -93,8 +93,18 @@ func _input(event: InputEvent) -> void:
 func _draw() -> void:
 	# Black backdrop far beyond the room so the screen stays black around it.
 	draw_rect(Rect2(-3000, -3000, _size.x + 6000, _size.y + 6000), Color.BLACK)
-	# White room floor + wall outline.
+	# White room floor with a faint grey checkerboard so motion reads clearly.
 	draw_rect(Rect2(Vector2.ZERO, _size), Color(0.93, 0.93, 0.93))
+	var cell : float = 32.0
+	var cols : int   = int(ceil(_size.x / cell))
+	var rows : int   = int(ceil(_size.y / cell))
+	for j in rows:
+		for i in cols:
+			if (i + j) % 2 == 1:
+				var x : float = float(i) * cell
+				var y : float = float(j) * cell
+				draw_rect(Rect2(x, y, minf(cell, _size.x - x), minf(cell, _size.y - y)),
+						Color(0.85, 0.85, 0.87))
 	draw_rect(Rect2(Vector2.ZERO, _size), Color(0.14, 0.14, 0.14), false, WALL_THICKNESS)
 	# Open the doorway in the south wall and mark it.
 	var gap : Vector2 = _door_gap()
