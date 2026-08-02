@@ -58,7 +58,7 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	sprite.shirt_color = def.shirt_color
 	sprite.pants_color = def.pants_color
 	sprite.hair_color  = def.hair_color
-	npc._retarget()
+	npc._retarget(true)
 
 ## Resolve every door anchor a definition references into world positions.
 func _resolve_anchors(def: NPCDefinition) -> Dictionary:
@@ -102,7 +102,7 @@ func _spawn_background_npcs() -> void:
 		sprite.pants_color = Color("#565659")
 		sprite.hair_color  = Color("#777777")
 		sprite.skin_color  = Color("#a8a8a8")   # classic grey NPC-meme skin
-		npc._retarget()
+		npc._retarget(true)
 
 # ── Helpers ────────────────────────────────────────────────
 func _door_pos(door_name: String) -> Vector2:

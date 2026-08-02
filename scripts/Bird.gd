@@ -101,6 +101,9 @@ func _follow(delta: float) -> void:
 		_sprite.rotation  = dir.angle()
 
 # ── Contact ────────────────────────────────────────────────
+func is_following() -> bool:
+	return _state == State.FOLLOWING
+
 func _on_body_entered(body: Node) -> void:
 	if _state == State.FOLLOWING:
 		return

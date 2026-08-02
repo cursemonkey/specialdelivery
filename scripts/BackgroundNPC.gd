@@ -6,7 +6,7 @@ extends NPCBase
 
 var route_points : Array[Vector2] = []
 
-func _retarget() -> void:
+func _retarget(_immediate: bool = false) -> void:
 	if route_points.is_empty():
 		return
 	var idx : int = mini(TimeManager.phase, route_points.size() - 1)

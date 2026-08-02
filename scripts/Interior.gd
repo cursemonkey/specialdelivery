@@ -33,6 +33,12 @@ func build(def: InteriorDefinition, is_home: bool) -> void:
 func player_spawn_point() -> Vector2:
 	return Vector2(_size.x * 0.5, _size.y - 46.0)
 
+## A spot inside the room for the `index`-th of `count` NPCs — spread across the
+## upper part of the room, ahead of the player who enters from the south.
+func interior_npc_spot(index: int, count: int) -> Vector2:
+	var x : float = _size.x * float(index + 1) / float(count + 1)
+	return Vector2(x, _size.y * 0.45)
+
 # x-range [left, right] of the doorway gap in the south wall.
 func _door_gap() -> Vector2:
 	var half : float = _doorway_w * 0.5

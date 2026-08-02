@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://hud"]
+[gd_scene load_steps=3 format=3 uid="uid://hud"]
 
 [ext_resource type="Script" uid="uid://c8ikiiq0vltgp" path="res://scripts/HUD.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/StatBars.gd" id="2_stats"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1353618837]
 script = ExtResource("1")
@@ -44,6 +45,17 @@ text = "📅 Day 1"
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "⏱ 6:00"
+
+[node name="StatBars" type="Control" parent="."]
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -40.0
+offset_top = 8.0
+offset_right = 40.0
+offset_bottom = 150.0
+script = ExtResource("2_stats")
 
 [node name="StatusPanel" type="PanelContainer" parent="." unique_id=1522901081]
 anchors_preset = 1

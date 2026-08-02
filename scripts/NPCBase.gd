@@ -32,6 +32,7 @@ var _stuck_timer  : float   = 0.0
 var _detour_timer : float   = 0.0
 var _detour_dir   : Vector2 = Vector2.ZERO
 var _last_pos     : Vector2 = Vector2.ZERO
+var _arrived      : bool    = true   # true once the current move target is reached
 
 @onready var _sprite : NPCSprite = $NPCSprite
 
@@ -39,9 +40,11 @@ func _ready() -> void:
 	add_to_group("npc")
 	_last_pos    = global_position
 	_move_target = global_position
-	TimeManager.phase_changed.connect(func(_phase: int) -> void: _retarget())
-	TimeManager.day_started.connect(func(_weekday: int) -> void: _retarget())
-	_retarget()
+	# Phase changes let NPCs walk to the new spot; a new day (and spawn) places
+	# them immediately at their morning location.
+	TimeManager.phase_changed.connect(func(_phase: int) -> void: _retarget(false))
+	TimeManager.day_started.connect(func(_weekday: int) -> void: _retarget(true))
+	_retarget(true)
 
 func _physics_process(delta: float) -> void:
 	# Knockback overrides everything until it decays.
@@ -71,6 +74,9 @@ func _physics_process(delta: float) -> void:
 		if pushed:
 			move_and_slide()
 		_animate(false, delta)
+		if not _arrived:
+			_arrived = true
+			_on_arrived()
 		return
 
 	var dir : Vector2 = to_target.normalized()
@@ -84,8 +90,14 @@ func _physics_process(delta: float) -> void:
 
 # ── Public API ─────────────────────────────────────────────
 func set_move_target(pos: Vector2) -> void:
+	if pos.distance_to(_move_target) > 1.0:
+		_arrived = false
 	_move_target = pos
 	_has_target  = true
+
+## Overridable: called once when the NPC reaches its move target.
+func _on_arrived() -> void:
+	pass
 
 ## Player walked into us on foot: a gentle shove in `dir` (slower than walking
 ## pace) so they can slowly herd the NPC forward. Re-applied each frame of
@@ -106,8 +118,9 @@ func face_toward(pos: Vector2) -> void:
 	_sprite.set_facing(facing, 0)
 
 # ── Overridables ───────────────────────────────────────────
-## Decide where to walk for the current TimeManager weekday/phase.
-func _retarget() -> void:
+## Decide where to walk for the current TimeManager weekday/phase. `immediate`
+## means place at the destination now (spawn / new day) rather than walk there.
+func _retarget(_immediate: bool = false) -> void:
 	pass
 
 # ── Internals ──────────────────────────────────────────────

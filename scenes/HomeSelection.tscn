@@ -40,7 +40,7 @@ theme_override_constants/v_separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-text = "Townhouse 3  —  $100,000"
+text = "Townhouse 15  —  $100,000"
 theme_override_font_sizes/font_size = 13
 
 [node name="ApartmentsBtn" type="Button" parent="ChoicePanel/Margin/Grid"]
@@ -54,7 +54,7 @@ theme_override_font_sizes/font_size = 13
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-text = "House 28  —  $300,000"
+text = "House 84  —  $300,000"
 theme_override_font_sizes/font_size = 13
 
 [node name="House10Btn" type="Button" parent="ChoicePanel/Margin/Grid"]

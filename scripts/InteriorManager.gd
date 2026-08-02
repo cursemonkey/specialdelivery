@@ -17,6 +17,7 @@ var _markers : Array           = []   # door-marker Node2Ds (name = building id)
 var _active  : Node    = null
 var _return  : Vector2 = Vector2.ZERO
 var _saved   : Rect2   = Rect2()
+var _inside_npcs : Array = []   # NPCs materialized inside the active interior
 var current_building_id : String = ""
 
 func setup(player: CharacterBody2D, camera: Camera2D, door_markers: Array) -> void:
@@ -86,7 +87,26 @@ func enter(building_id: String) -> void:
 	else:
 		GameManager.show_message("🚪 Inside. Walk out the south doorway to leave.", 4.0)
 
+	_inside_npcs.clear()
+	_sync_inside_npcs()
 	_try_auto_deliver(building_id)
+
+func _process(_delta: float) -> void:
+	if _active != null:
+		_sync_inside_npcs()   # materialize anyone who walks in while we're inside
+
+## Materialize any NPCs whose schedule currently has them inside this building
+## but who aren't shown yet, and lay them out along the room.
+func _sync_inside_npcs() -> void:
+	var added : bool = false
+	for npc in get_tree().get_nodes_in_group("regular_npc"):
+		if npc.is_inside_building(current_building_id) and not _inside_npcs.has(npc):
+			_inside_npcs.append(npc)
+			added = true
+	if added:
+		for i in _inside_npcs.size():
+			if is_instance_valid(_inside_npcs[i]):
+				_inside_npcs[i].show_in_interior(STAGE_ORIGIN + _active.interior_npc_spot(i, _inside_npcs.size()))
 
 ## If the building we entered is a live delivery target and the player has a
 ## package, drop it off automatically (the door markers are ArtBuildings, so the
@@ -107,6 +127,10 @@ func _try_auto_deliver(building_id: String) -> void:
 func exit() -> void:
 	if not is_inside():
 		return
+	for npc in _inside_npcs:
+		if is_instance_valid(npc):
+			npc.leave_interior()
+	_inside_npcs.clear()
 	_active.queue_free()
 	_active = null
 	_player.in_interior = false

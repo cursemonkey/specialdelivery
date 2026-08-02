@@ -39,6 +39,66 @@ var snap_to_direction     : bool = true
 var max_drops_per_day     : int  = 4
 var max_packages_per_drop : int  = 3
 
+# ── Player day-stats (0..max, reset each day) ──────────────
+var max_hp     : int = 20
+var max_energy : int = 20
+var max_rizz   : int = 20
+var hp     : int = 20   # full each day; spinouts cost 1; 0 ends the day
+var energy : int = 20   # full each day; moving drains it; 0 = half speed
+var rizz   : int = 0    # starts at 0; each point adds 1% delivery tip
+
+signal hp_changed(v: int)
+signal energy_changed(v: int)
+signal rizz_changed(v: int)
+signal out_of_health()
+
+func add_hp(delta: int) -> void:
+	var was : int = hp
+	hp = clampi(hp + delta, 0, max_hp)
+	hp_changed.emit(hp)
+	if was > 0 and hp == 0:
+		out_of_health.emit()
+
+func add_energy(delta: int) -> void:
+	energy = clampi(energy + delta, 0, max_energy)
+	energy_changed.emit(energy)
+
+func add_rizz(delta: int) -> void:
+	rizz = clampi(rizz + delta, 0, max_rizz)
+	rizz_changed.emit(rizz)
+
+## Reset the per-day stats: full health & energy, zero rizz. Also clears the
+## day's delivery ledger.
+func reset_day_stats() -> void:
+	hp     = max_hp
+	energy = max_energy
+	rizz   = 0
+	_ledger.clear()
+	hp_changed.emit(hp)
+	energy_changed.emit(energy)
+	rizz_changed.emit(rizz)
+
+func rizz_over_half() -> bool:
+	return float(rizz) / float(max_rizz) > 0.5
+
+# ── Delivery ledger ────────────────────────────────────────
+# One entry per delivery: {name, value, tip}. value = speed-scaled base pay,
+# tip = the Rizz bonus on top. Read at day-end, cleared at day start.
+var _ledger : Array = []
+
+func get_ledger() -> Array:
+	return _ledger
+
+## Record a delivery, splitting the speed-scaled value from the Rizz tip, add
+## the total to cash, and return that total.
+func register_delivery(base_earned: int, landing_time: float, target_name: String) -> int:
+	var value : int = int(round(float(base_earned) * _delivery_mult(landing_time)))
+	var tip   : int = int(round(float(value) * float(rizz) * 0.01))
+	var total : int = value + tip
+	_ledger.append({"name": target_name, "value": value, "tip": tip})
+	on_delivery_complete(total)
+	return total
+
 const SAVE_SLOT_COUNT : int = 5
 var current_slot      : int = -1   # which slot autosaves write to; -1 = none chosen yet
 
@@ -53,9 +113,12 @@ const DELIVERY_SLOW_TIME : float = 120.0
 const DELIVERY_MAX_MULT  : float = 2.0
 const DELIVERY_MIN_MULT  : float = 1.0
 
-## Scale a base payout by how fast the package got delivered after landing.
+## Scale a base payout by how fast the package got delivered after landing, then
+## add the Rizz tip (+1% per Rizz point).
 func delivery_payout(base_earned: int, landing_time: float) -> int:
-	return int(round(base_earned * _delivery_mult(landing_time)))
+	var pay : float = float(base_earned) * _delivery_mult(landing_time)
+	pay *= 1.0 + float(rizz) * 0.01
+	return int(round(pay))
 
 ## Short flavour tag for the delivery message, based on speed.
 func delivery_speed_tag(landing_time: float) -> String:

@@ -13,6 +13,7 @@ const NPCManagerScript       := preload("res://scripts/NPCManager.gd")
 const InteriorManagerScript  := preload("res://scripts/InteriorManager.gd")
 const RoadblockManagerScript := preload("res://scripts/RoadblockManager.gd")
 const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
+const LedgerScreenScene      := preload("res://scenes/LedgerScreen.tscn")
 const BIRD_COUNT             := 6
 
 @onready var world          : Node2D          = $WorldGenerator
@@ -38,6 +39,16 @@ var _npc_manager       : Node2D = null
 var _interior_manager  : Node2D = null
 var _roadblock_manager : Node2D = null
 var _day_transition    : CanvasLayer = null
+var _ledger_screen     : CanvasLayer = null
+var _day_ending        : bool = false
+
+var _energy_accum : float = 0.0   # fractional energy drained this second
+var _rizz_accum   : float = 0.0   # fractional rizz gained from following birds
+
+const DOCTOR_LETTER : Array = [
+	"A letter from the town doctor:",
+	"\"You pushed yourself too hard out there and collapsed. I've had you brought home to rest. Please take better care of yourself — mind those crashes!\"",
+]
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -72,7 +83,7 @@ func _ready() -> void:
 	home_selection.dialogue_box_ref = get_node_or_null("DialogueBox")
 	home_selection.background_ref   = $Background
 	var _door_positions : Dictionary = {}
-	for _id in ["Townhouse3", "Apartments", "House28", "House10"]:
+	for _id in ["Townhouse15", "Apartments", "House84", "House10"]:
 		var _door : Node2D = get_node_or_null("Doors/" + _id)
 		if _door != null:
 			_door_positions[_id] = _door.global_position
@@ -115,14 +126,15 @@ func _ready() -> void:
 	_interior_manager.sleep_requested.connect(_on_home_door_activated)
 	player.interior_manager = _interior_manager
 
-	_day_transition = DayTransitionScene.instantiate()
-	add_child(_day_transition)
-	_day_transition.continue_requested.connect(_on_sleep_continue)
-
 	_roadblock_manager = RoadblockManagerScript.new()
 	_roadblock_manager.name = "RoadblockManager"
 	add_child(_roadblock_manager)
 	_roadblock_manager.setup()
+
+	_ledger_screen = LedgerScreenScene.instantiate()
+	add_child(_ledger_screen)
+
+	GameManager.out_of_health.connect(_on_collapsed)
 
 	title.show_title()
 
@@ -196,10 +208,45 @@ func _process(delta: float) -> void:
 	_apply_sky_tint(_day_timer)
 	TimeManager.set_day_progress(_day_timer / DAY_DURATION)
 	drop_pads.tick(delta)
+	_tick_stats(delta)
 	if _day_timer >= DAY_DURATION:
 		_day_running = false
 		drop_pads.end_day()
 		_on_day_time_up()
+
+# Energy drains while moving (bike 1/min, foot 2/min); Rizz gains 1/min per
+# bird that's currently following the player.
+func _tick_stats(delta: float) -> void:
+	if player.velocity.length() > 5.0:
+		var rate : float = (2.0 if player.on_bike else 3.0) / 60.0   # bike 2/min, walking 3/min
+		_energy_accum += rate * delta
+		while _energy_accum >= 1.0:
+			_energy_accum -= 1.0
+			GameManager.add_energy(-1)
+
+	var following : int = 0
+	for b in _birds:
+		if is_instance_valid(b) and b.is_following():
+			following += 1
+	if following > 0:
+		_rizz_accum += (float(following) / 60.0) * delta
+		while _rizz_accum >= 1.0:
+			_rizz_accum -= 1.0
+			GameManager.add_rizz(1)
+
+# Out of health: end the day, deliver the doctor's letter, wake at home.
+func _on_collapsed() -> void:
+	if not _day_running:
+		return
+	_day_running = false
+	drop_pads.end_day()
+	player.input_locked = true
+	# Doctor's letter first, then the day-end ledger, then wake at home.
+	var dbox := get_node_or_null("DialogueBox")
+	if dbox != null:
+		dbox.open(DOCTOR_LETTER, func() -> void: _end_day(_next_day))
+	else:
+		_end_day(_next_day)
 
 # ── Sky tint ───────────────────────────────────────────────
 func _apply_sky_tint(elapsed: float) -> void:
@@ -254,6 +301,10 @@ func _begin_day() -> void:
 	# and in_interior state are restored before the new day is set up.
 	if _interior_manager != null and _interior_manager.is_inside():
 		_interior_manager.exit()
+
+	GameManager.reset_day_stats()   # full HP & energy, zero rizz for the new day
+	_energy_accum = 0.0
+	_rizz_accum   = 0.0
 
 	world.clear_targets()
 	_current_targets        = []
@@ -360,35 +411,46 @@ func _on_home_selected(home_id: String, price: int) -> void:
 	drop_pads.start_day(DAY_DURATION)
 	GameManager.show_message("🏠 Welcome home! Your mortgage: -$%d" % price)
 
+# ── End of day ─────────────────────────────────────────────
+# All day-end triggers funnel here: freeze the day, show the ledger, and on
+# Continue apply the undelivered dock and run the continuation (start next day).
+func _end_day(after: Callable) -> void:
+	if _day_ending:
+		return
+	_day_ending  = true
+	_day_running = false
+	drop_pads.end_day()
+	hud.update_timer(0.0)
+	player.input_locked = true
+
+	var undelivered : int  = GameManager.packages   # all packages come from pads
+	var rizz_saved  : bool = GameManager.rizz_over_half()
+	var dock        : int  = 0 if rizz_saved else undelivered * 5
+
+	_ledger_screen.present(GameManager.get_ledger(), undelivered, dock, rizz_saved,
+		func() -> void:
+			if dock > 0:
+				GameManager.add_cash(-dock)
+			player.input_locked = false
+			_day_ending = false
+			after.call()
+	)
+
+func _next_day() -> void:
+	world._scatter_pickups()
+	_begin_day()
+
 func _on_home_door_activated() -> void:
 	if not _day_running:
 		return
-	_day_running = false
-	drop_pads.end_day()
-	player.input_locked = true
-	_day_transition.begin()   # fade to black + "Continue" prompt
-
-func _on_sleep_continue() -> void:
-	world._scatter_pickups()
-	_begin_day()
-	_day_transition.reveal()
-	player.input_locked = false
+	_end_day(_next_day)
 
 func _on_next_day() -> void:
-	_day_running = false
-	drop_pads.end_day()
-	hud.update_timer(0.0)
-	await get_tree().create_timer(0.3).timeout
-	world._scatter_pickups()
-	_begin_day()
+	_end_day(_next_day)
 
 func _on_skip_day() -> void:
-	_day_running = false
 	hud.hide_day_complete_prompt()
-	hud.update_timer(0.0)
-	await get_tree().create_timer(0.3).timeout
-	world._scatter_pickups()
-	_begin_day()
+	_end_day(_next_day)
 
 func _on_continue_playing() -> void:
 	hud.hide_day_complete_prompt()
@@ -420,8 +482,5 @@ func _on_pad_picked_up(_pad_idx: int, count: int, landing_times: Array) -> void:
 # ── Timer expired ──────────────────────────────────────────
 func _on_day_time_up() -> void:
 	hud.hide_day_complete_prompt()
-	hud.update_timer(0.0)
-	GameManager.show_message("⏰ %s is over! Starting next day…" % GameManager.date_label())
-	await get_tree().create_timer(2.5).timeout
-	world._scatter_pickups()
-	_begin_day()
+	GameManager.show_message("⏰ %s is over!" % GameManager.date_label())
+	_end_day(_next_day)

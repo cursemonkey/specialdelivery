@@ -7,9 +7,9 @@ const MAYOR_TEXT = [
 ]
 
 const HOME_NAMES = {
-	"Townhouse3": "Townhouse 3  —  $100,000",
+	"Townhouse15": "Townhouse 15  —  $100,000",
 	"Apartments":  "Apartments  —  $150,000",
-	"House28":     "House 28  —  $300,000",
+	"House84":     "House 84  —  $300,000",
 	"House10":     "House 10  —  $500,000",
 }
 
@@ -37,9 +37,9 @@ var _pending_price : int    = 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
-	townhouse_btn.pressed.connect(func(): _preview("Townhouse3", 100000))
+	townhouse_btn.pressed.connect(func(): _preview("Townhouse15", 100000))
 	apartments_btn.pressed.connect(func(): _preview("Apartments",  150000))
-	house28_btn.pressed.connect(func():    _preview("House28",     300000))
+	house28_btn.pressed.connect(func():    _preview("House84",     300000))
 	house10_btn.pressed.connect(func():    _preview("House10",     500000))
 	yes_btn.pressed.connect(_on_yes)
 	wait_btn.pressed.connect(_on_wait)

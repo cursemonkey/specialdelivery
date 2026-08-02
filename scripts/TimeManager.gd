@@ -19,9 +19,13 @@ var day_progress  : float = 0.0   # 0.0 → 1.0 across the day
 var year          : int   = 1
 var season        : int   = Calendar.Season.FALL
 var day_of_season : int   = 1     # 1-based day within the current season
+var week          : int   = 0     # 0-based week number (weeks are DAY_NAMES.size() days)
+var week_parity   : int   = 0     # week % 2, for alternating-week schedules
 
 func start_day(day_number: int) -> void:
 	weekday      = (day_number - 1) % GameManager.DAY_NAMES.size()
+	week         = (day_number - 1) / GameManager.DAY_NAMES.size()
+	week_parity  = week % 2
 	day_progress = 0.0
 	var date : Dictionary = Calendar.date_for_day(day_number)
 	year          = date.year

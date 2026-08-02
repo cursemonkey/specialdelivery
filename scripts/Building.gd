@@ -69,8 +69,7 @@ func receive_package(from_pos: Vector2) -> void:
 	is_target    = false
 	_flash_timer = 0.6
 	var base     := EARN_MIN + randi() % (EARN_MAX - EARN_MIN + 1)
-	var earned   := GameManager.delivery_payout(base, package_landing_time)
-	GameManager.on_delivery_complete(earned)
+	var earned   := GameManager.register_delivery(base, package_landing_time, str(name))
 	GameManager.show_message("📦 Delivered! +$%d%s" \
 			% [earned, GameManager.delivery_speed_tag(package_landing_time)])
 	_spawn_stars()

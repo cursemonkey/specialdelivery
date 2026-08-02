@@ -32,15 +32,47 @@ func _add(def: NPCDefinition) -> void:
 # Add a villager by writing a _register_* function and calling it here.
 func _register_all() -> void:
 	_register_mayor_henderson()
+	_register_doctor_carrington()
 	_register_mabel()
 	_register_gus()
 	_register_poppy()
+
+func _register_doctor_carrington() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "doctor_carrington"
+	def.display_name = "Doctor Carrington"
+	def.home_anchor  = "Townhouse10"
+	def.shirt_color  = Color("#a8ecc8")   # mint clothing
+	def.pants_color  = Color("#5fc9a3")   # deeper mint
+	def.hair_color   = Color("#f49ac2")   # pink hair
+	# First match wins, so the day/day-of-week overrides come before the base
+	# alternating-week routine. week_parity: 0 = even weeks, 1 = odd weeks. Every
+	# entry is interior (true) — she's inside these buildings, found by going in.
+	var sched : Array[NPCScheduleEntry] = [
+		# Sundays: church during the day.
+		NPCScheduleEntry.make([0], Phase.DAY,    "Church",  Vector2(0, 40), -1, true),
+		# Wednesdays: the grocery store in the afternoon.
+		NPCScheduleEntry.make([3], Phase.SUNSET, "Grocery", Vector2(0, 40), -1, true),
+		# Even weeks: at the hospital early, home at night.
+		NPCScheduleEntry.make([], Phase.DAY,    "Hospital",   Vector2(0, 40), 0, true),
+		NPCScheduleEntry.make([], Phase.SUNSET, "Hospital",   Vector2(0, 40), 0, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  "Townhouse10", Vector2(0, 20), 0, true),
+		# Odd weeks: home by day, to the hospital at sunset, stays overnight.
+		NPCScheduleEntry.make([], Phase.DAY,    "Townhouse10", Vector2(0, 20), 1, true),
+		NPCScheduleEntry.make([], Phase.SUNSET, "Hospital",   Vector2(0, 40), 1, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  "Hospital",   Vector2(0, 40), 1, true),
+	]
+	def.schedule = sched
+	def.dialogue_lines = [
+		#DialogueLine.make("Please take care of your health.", DialogueLine.CALM),
+	]
+	_add(def)
 
 func _register_mayor_henderson() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "mayor_henderson"
 	def.display_name = "Mayor Henderson"
-	def.home_anchor  = "House19"          # a home just south of City Hall
+	def.home_anchor  = "House96"          # a home just south of City Hall
 	def.shirt_color  = Color("#6a4a8a")   # mayoral purple
 	def.pants_color  = Color("#33333f")
 	def.hair_color   = Color("#9a9aa0")
@@ -49,7 +81,7 @@ func _register_mayor_henderson() -> void:
 	var sched : Array[NPCScheduleEntry] = [
 		# Beside the City Hall entrance (not on the door) so the player can enter.
 		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(84, 42)),
-		NPCScheduleEntry.make([], Phase.NIGHT, "House19",           Vector2(0, 20)),
+		NPCScheduleEntry.make([], Phase.NIGHT, "House96",           Vector2(0, 20)),
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
@@ -66,7 +98,7 @@ func _register_mabel() -> void:
 	def.hair_color   = Color("#e0d8c8")
 	var sched : Array[NPCScheduleEntry] = [
 		NPCScheduleEntry.make([1, 2, 3], Phase.DAY,    "Building1", Vector2(-30, 40)),
-		NPCScheduleEntry.make([4, 5],    Phase.DAY,    "House28",   Vector2(30, 30)),
+		NPCScheduleEntry.make([4, 5],    Phase.DAY,    "House84",   Vector2(30, 30)),
 		NPCScheduleEntry.make([2, 3],    Phase.SUNSET, "Pub",       Vector2(20, 30)),
 		NPCScheduleEntry.make([],        Phase.NIGHT,  "Apartments", Vector2(0, 20)),
 	]
@@ -81,7 +113,7 @@ func _register_gus() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "gus"
 	def.display_name = "Gus"
-	def.home_anchor  = "House28"
+	def.home_anchor  = "House84"
 	def.shirt_color  = Color("#5a7aa0")
 	def.hair_color   = Color("#7a6a4a")
 	var sched : Array[NPCScheduleEntry] = [

@@ -16,7 +16,7 @@ const SLOW_DURATION   := 1.0
 const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
 const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
 const DOOR_INTERACT_RANGE := 4 * TILE_SIZE   # how close player must be to talk at a door
-const NPC_INTERACT_RANGE  := 2.5 * TILE_SIZE # how close player must be to talk to an NPC
+const NPC_INTERACT_RANGE  := 4.5 * TILE_SIZE # how close player must be to talk to an NPC
 const TRAIL_STEP       := 12.0            # px between recorded trail positions
 const NPC_RUNOVER_SPEED := 40.0           # min bike speed for a spin-out crash
 const SPIN_DURATION     := 0.8            # seconds of lost control after hitting an NPC
@@ -127,10 +127,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
 		_toggle_pause()
 		return
-	# Inside a building: movement still polls in _physics_process, but bike /
-	# throw / door interactions are suppressed. The Interior handles E (sleep).
-	if in_interior:
-		return
+	# E (talk to a nearby NPC / advance dialogue) works inside and outside.
 	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
 		_try_dialogue()
 		return
@@ -141,6 +138,10 @@ func _input(event: InputEvent) -> void:
 	if dialogue_box != null and dialogue_box.visible:
 		if event.is_action_pressed("mount_bike") or event.is_action_pressed("throw_package"):
 			dialogue_box.close()
+		return
+	# Inside a building: movement still polls in _physics_process, but bike /
+	# throw / hop are suppressed. The Interior handles E at the bed (sleep).
+	if in_interior:
 		return
 	if get_tree().paused:
 		return
@@ -365,6 +366,8 @@ func _spin_out() -> void:
 	if _spin_timer > 0.0:
 		return
 	_spin_timer = SPIN_DURATION
+	GameManager.add_hp(-1)      # spinouts cost health …
+	GameManager.add_rizz(-1)    # … and a point of rizz
 	GameManager.show_message("💫 Crash! You spun out!")
 
 func _process_bike_easy(delta: float) -> void:
@@ -437,11 +440,13 @@ func _try_throw() -> void:
 func apply_boost() -> void:
 	boost_timer = BOOST_DURATION
 	boost_aura.visible = true
+	GameManager.add_rizz(1)     # grabbing a speed-up looks cool: +1 rizz
 	GameManager.show_message("💨 Speed Boost!")
 
 func apply_slow() -> void:
 	slow_timer = SLOW_DURATION
 	slow_aura.visible = true
+	GameManager.add_rizz(-1)    # a slowdown is a bad look: -1 rizz
 	GameManager.show_message("😵 Slowed down!")
 
 func _tick_effects(delta: float) -> void:
@@ -476,13 +481,19 @@ func _is_in_any_region(regions: Array[NavigationRegion2D]) -> bool:
 ## Resolution is best-surface-wins, checked in this fixed priority order:
 ## Road (fastest) > Dirt Road (neutral) > Grass (slowest).
 func _speed_mult(apply_surface: bool = true) -> float:
-	if boost_timer > 0.0: return BOOST_MULT
-	if slow_timer  > 0.0: return SLOW_MULT
-	if not apply_surface: return 1.0
-	if _is_in_any_region(road_regions):      return 1.2
-	if _is_in_any_region(dirt_road_regions): return 1.0
-	if _is_in_any_region(grass_regions):     return 0.8
-	return 1.0
+	var m := 1.0
+	if boost_timer > 0.0:
+		m = BOOST_MULT
+	elif slow_timer > 0.0:
+		m = SLOW_MULT
+	elif apply_surface:
+		if _is_in_any_region(road_regions):        m = 1.2
+		elif _is_in_any_region(dirt_road_regions): m = 1.0
+		elif _is_in_any_region(grass_regions):     m = 0.8
+	# Out of energy: move at half speed.
+	if GameManager.energy <= 0:
+		m *= 0.5
+	return m
 
 # ── Helpers ────────────────────────────────────────────────
 func _get_dir() -> Vector2:
