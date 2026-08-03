@@ -50,10 +50,9 @@ func _refresh() -> void:
 	day_label.text   = "📅 %s" % GameManager.date_label_hud()
 	time_label.text  = "⏱ 6:00"
 
-func update_timer(remaining: float) -> void:
-	var m := int(remaining) / 60
-	var s := int(remaining) % 60
-	time_label.text = "⏱ %d:%02d" % [m, s]
+## Shows the in-game clock (TimeManager.hour), e.g. "⏱ 6:00 AM".
+func update_timer(_hour: float) -> void:
+	time_label.text = "⏱ %s" % TimeManager.clock_label()
 
 func show_day_complete_prompt(bonus: int) -> void:
 	bonus_label.text = "🎉 All delivered! +$%d bonus!" % bonus

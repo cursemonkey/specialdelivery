@@ -184,6 +184,19 @@ func add_packages(count: int) -> void:
 func add_targets(count: int) -> void:
 	total_targets += count
 
+# Door markers were renumbered in the map; saves written before that still hold
+# the old names. Translate them on load so an existing home keeps working (this
+# is what drives the home-door spawn, the bed, and the map's home icon).
+const HOME_ID_MIGRATIONS : Dictionary = {
+	"Townhouse3": "Townhouse15",
+	"Townhouse2": "Townhouse10",
+	"House28":    "House84",
+	"House19":    "House96",
+}
+
+func migrate_home_id(id: String) -> String:
+	return HOME_ID_MIGRATIONS.get(id, id)
+
 func _slot_path(slot: int) -> String:
 	return "user://save_slot_%d.json" % slot
 
@@ -247,7 +260,7 @@ func load_game(slot: int) -> bool:
 	current_slot = slot
 	cash     = int(parsed.get("cash",     0))
 	day      = int(parsed.get("day",      1))
-	home_id  = str(parsed.get("home_id",  ""))
+	home_id  = migrate_home_id(str(parsed.get("home_id",  "")))
 	mortgage = int(parsed.get("mortgage", 0))
 	cash_changed.emit(cash)
 	day_changed.emit(day)

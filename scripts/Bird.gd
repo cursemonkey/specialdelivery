@@ -104,6 +104,14 @@ func _follow(delta: float) -> void:
 func is_following() -> bool:
 	return _state == State.FOLLOWING
 
+## Stop following the player (they went indoors) and go back to wandering.
+func stop_following() -> void:
+	if _state != State.FOLLOWING:
+		return
+	_player = null
+	_state  = State.WANDERING
+	_pick_wander_direction()
+
 func _on_body_entered(body: Node) -> void:
 	if _state == State.FOLLOWING:
 		return

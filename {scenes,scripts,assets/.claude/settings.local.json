@@ -21,7 +21,9 @@
       "Bash(timeout 45 \"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless -s _postest.gd)",
       "Bash(echo \"exit=$?\")",
       "Bash(rm -f _postest.gd)",
-      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 150)"
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 150)",
+      "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 90)",
+      "Read(//c/Users/dave/AppData/Roaming/Godot/app_userdata/**)"
     ]
   }
 }

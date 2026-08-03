@@ -5,6 +5,7 @@ extends Node2D
 ## the player + camera are moved into it.
 
 signal sleep_requested
+signal entered_building
 
 const InteriorScene : PackedScene = preload("res://scenes/Interior.tscn")
 const STAGE_ORIGIN  : Vector2     = Vector2(100000, 100000)   # far from the world map
@@ -95,6 +96,7 @@ func enter(building_id: String) -> void:
 
 	_inside_npcs.clear()
 	_sync_inside_npcs()
+	entered_building.emit()   # birds don't follow the player indoors
 	_try_auto_deliver(building_id)
 
 func _process(_delta: float) -> void:

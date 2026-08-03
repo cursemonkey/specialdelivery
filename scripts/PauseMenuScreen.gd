@@ -20,7 +20,10 @@ var background_ref   : Node2D = null
 var drop_pad_manager : Node   = null
 var save_slot_panel  : Node   = null
 
-var _pad_markers : Array[Label] = []
+var _pad_markers  : Array[Label] = []
+var _home_marker  : Control      = null
+var home_position : Vector2      = Vector2.ZERO   # set by Main once a home is chosen
+var has_home      : bool         = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -64,8 +67,10 @@ func _on_save_slot_chosen(slot: int) -> void:
 
 func _on_map_button_pressed() -> void:
 	_ensure_pad_markers()
+	_ensure_home_marker()
 	map_view.visible = true
 	_update_player_marker()
+	_update_home_marker()
 
 func _on_close_map_pressed() -> void:
 	map_view.visible = false
@@ -172,6 +177,60 @@ func _process(_delta: float) -> void:
 	if map_view.visible:
 		_update_player_marker()
 		_update_pad_markers()
+		_update_home_marker()
+
+# ── Home marker ────────────────────────────────────────────
+# Drawn with primitives rather than an emoji glyph: the default font has no
+# colour-emoji coverage, so "🏠" renders blank.
+func _ensure_home_marker() -> void:
+	if _home_marker != null:
+		return
+	_home_marker = Control.new()
+	_home_marker.custom_minimum_size = Vector2(18, 18)
+	_home_marker.size = Vector2(18, 18)
+	_home_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_home_marker.draw.connect(_draw_home_icon)
+	map_texture.add_child(_home_marker)
+
+func _draw_home_icon() -> void:
+	var c    : Control = _home_marker
+	var w    : float   = c.size.x
+	var h    : float   = c.size.y
+	var roof : Color   = Color(0.85, 0.25, 0.2)
+	var wall : Color   = Color(0.98, 0.95, 0.88)
+	var line : Color   = Color(0.15, 0.1, 0.08)
+	# Body
+	c.draw_rect(Rect2(w * 0.22, h * 0.45, w * 0.56, h * 0.45), wall)
+	c.draw_rect(Rect2(w * 0.22, h * 0.45, w * 0.56, h * 0.45), line, false, 1.0)
+	# Roof
+	var pts : PackedVector2Array = PackedVector2Array([
+		Vector2(w * 0.10, h * 0.48),
+		Vector2(w * 0.50, h * 0.12),
+		Vector2(w * 0.90, h * 0.48),
+	])
+	c.draw_colored_polygon(pts, roof)
+	c.draw_polyline(pts + PackedVector2Array([pts[0]]), line, 1.0)
+	# Door
+	c.draw_rect(Rect2(w * 0.42, h * 0.62, w * 0.16, h * 0.28), line)
+
+func _update_home_marker() -> void:
+	if _home_marker == null:
+		return
+	if not has_home or background_ref == null or map_texture.texture == null:
+		_home_marker.visible = false
+		return
+	var tex_size  : Vector2 = map_texture.texture.get_size()
+	var rect_size : Vector2 = map_texture.size
+	if tex_size.x <= 0.0 or rect_size.x <= 0.0:
+		_home_marker.visible = false
+		return
+	_home_marker.visible = true
+	var fit_scale      : float   = min(rect_size.x / tex_size.x, rect_size.y / tex_size.y)
+	var displayed_size : Vector2 = tex_size * fit_scale
+	var img_offset     : Vector2 = (rect_size - displayed_size) / 2.0
+	var world_pos      : Vector2 = home_position - background_ref.global_position
+	_home_marker.position = img_offset + world_pos * fit_scale - _home_marker.size / 2.0
+	_home_marker.queue_redraw()
 
 func _update_player_marker() -> void:
 	if player_ref == null or background_ref == null or map_texture.texture == null:

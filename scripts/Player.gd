@@ -490,9 +490,9 @@ func _speed_mult(apply_surface: bool = true) -> float:
 		if _is_in_any_region(road_regions):        m = 1.2
 		elif _is_in_any_region(dirt_road_regions): m = 1.0
 		elif _is_in_any_region(grass_regions):     m = 0.8
-	# Out of energy: move at half speed.
+	# Out of energy: move at 70% speed.
 	if GameManager.energy <= 0:
-		m *= 0.5
+		m *= 0.7
 	return m
 
 # ── Helpers ────────────────────────────────────────────────

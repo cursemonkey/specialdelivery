@@ -4,7 +4,7 @@ extends Node2D
 const TILE             := 16
 const PLAYER_START     := Vector2(1819, 1635)  # south of House5
 const TARGETS_PER_DAY  := 12
-const DAY_DURATION     := 240.0   # 4 minutes in seconds
+const DAY_DURATION     := 720.0   # 12 real minutes = 24 in-game hours (2 hrs/min)
 const START_PACKAGES   := 0
 
 const BikeScene             := preload("res://scenes/Bike.tscn")
@@ -124,6 +124,7 @@ func _ready() -> void:
 	var door_markers : Array = doors_node.get_children() if doors_node != null else []
 	_interior_manager.setup(player, camera, door_markers)
 	_interior_manager.sleep_requested.connect(_on_home_door_activated)
+	_interior_manager.entered_building.connect(_on_entered_building)
 	player.interior_manager = _interior_manager
 
 	_roadblock_manager = RoadblockManagerScript.new()
@@ -135,6 +136,7 @@ func _ready() -> void:
 	add_child(_ledger_screen)
 
 	GameManager.out_of_health.connect(_on_collapsed)
+	TimeManager.midnight_passed.connect(_on_midnight)
 
 	title.show_title()
 
@@ -203,27 +205,58 @@ func _process(delta: float) -> void:
 		return
 	GameManager.play_clock += delta
 	_day_timer += delta
-	var remaining := maxf(DAY_DURATION - _day_timer, 0.0)
-	hud.update_timer(remaining)
+	TimeManager.advance(delta)
+	hud.update_timer(TimeManager.hour)
 	# Indoors, ignore the sunset/night colour filter (keep interiors neutral).
 	if player.in_interior:
 		sky.color = Color(1.0, 1.0, 1.0)
 	else:
-		_apply_sky_tint(_day_timer)
-	TimeManager.set_day_progress(_day_timer / DAY_DURATION)
+		_apply_sky_tint(TimeManager.daylight())
 	drop_pads.tick(delta)
 	_tick_stats(delta)
-	if _day_timer >= DAY_DURATION:
-		_day_running = false
-		drop_pads.end_day()
-		_on_day_time_up()
 
-# Energy drains while moving (bike 1/min, foot 2/min); Rizz gains 1/min per
-# bird that's currently following the player.
+# Midnight: show the ledger for the day just finished, then keep playing
+# through the small hours until the player goes to bed.
+func _on_midnight() -> void:
+	if not _day_running or _day_ending:
+		return
+	GameManager.day += 1               # the calendar day rolls at midnight
+	GameManager.day_changed.emit(GameManager.day)
+	TimeManager.advance_calendar_day(GameManager.day)
+	_end_day(_resume_after_midnight)
+
+# After the midnight ledger the same session continues — no respawn, no reset of
+# the clock; the player carries on until they choose to sleep.
+func _resume_after_midnight() -> void:
+	GameManager.reset_day_stats()
+	_energy_accum = 0.0
+	_rizz_accum   = 0.0
+	world.clear_targets()
+	player.delivery_targets = []
+	drop_pads.start_day(DAY_DURATION)
+	_day_running = true
+	GameManager.show_message("🌙 A new day begins — %s." % GameManager.date_label())
+
+# Going indoors scatters any birds trailing the player — they wait outside, and
+# the Rizz bonus they were providing stops with them.
+func _on_entered_building() -> void:
+	var scattered : int = 0
+	for b in _birds:
+		if is_instance_valid(b) and b.is_following():
+			b.stop_following()
+			scattered += 1
+	if scattered > 0:
+		_rizz_accum = 0.0
+		GameManager.show_message("🐦 Your bird%s waited outside." \
+				% ("s" if scattered > 1 else ""))
+
+# Energy drains while moving, priced in game hours (bike 1.5/hr, walking 2/hr);
+# Rizz gains 1 per game hour per bird that's currently following the player.
 func _tick_stats(delta: float) -> void:
+	var game_hours : float = delta * TimeManager.HOURS_PER_SECOND
 	if player.velocity.length() > 5.0:
-		var rate : float = (2.0 if player.on_bike else 3.0) / 60.0   # bike 2/min, walking 3/min
-		_energy_accum += rate * delta
+		var rate : float = 1.5 if player.on_bike else 2.0   # per game hour
+		_energy_accum += rate * game_hours
 		while _energy_accum >= 1.0:
 			_energy_accum -= 1.0
 			GameManager.add_energy(-1)
@@ -233,7 +266,7 @@ func _tick_stats(delta: float) -> void:
 		if is_instance_valid(b) and b.is_following():
 			following += 1
 	if following > 0:
-		_rizz_accum += (float(following) / 60.0) * delta
+		_rizz_accum += float(following) * game_hours
 		while _rizz_accum >= 1.0:
 			_rizz_accum -= 1.0
 			GameManager.add_rizz(1)
@@ -253,18 +286,17 @@ func _on_collapsed() -> void:
 		_end_day(_next_day)
 
 # ── Sky tint ───────────────────────────────────────────────
-func _apply_sky_tint(elapsed: float) -> void:
-	var sunset_start : float = DAY_DURATION * 0.5
-	var night_start  : float = DAY_DURATION * 0.75
-	var phase_len    : float = DAY_DURATION * 0.25
-	if elapsed >= night_start:
-		var t: float = clamp((elapsed - night_start) / phase_len, 0.0, 1.0)
-		sky.color = Color(1.0, 0.65, 0.3).lerp(Color(0.35, 0.45, 0.85), t)
-	elif elapsed >= sunset_start:
-		var t: float = clamp((elapsed - sunset_start) / phase_len, 0.0, 1.0)
-		sky.color = Color(1.0, 1.0, 1.0).lerp(Color(1.0, 0.65, 0.3), t)
+## Driven by TimeManager.daylight(): 0 = full night, 1 = full daylight. The
+## golden hour sits in the middle of each transition (dawn 6–8am, dusk 7–9pm).
+const NIGHT_TINT  : Color = Color(0.35, 0.45, 0.85)
+const GOLDEN_TINT : Color = Color(1.0, 0.65, 0.3)
+const DAY_TINT    : Color = Color(1.0, 1.0, 1.0)
+
+func _apply_sky_tint(light: float) -> void:
+	if light >= 0.5:
+		sky.color = GOLDEN_TINT.lerp(DAY_TINT, (light - 0.5) / 0.5)
 	else:
-		sky.color = Color(1.0, 1.0, 1.0)
+		sky.color = NIGHT_TINT.lerp(GOLDEN_TINT, light / 0.5)
 
 # ── Game flow ──────────────────────────────────────────────
 func start_game(slot: int) -> void:
@@ -296,10 +328,18 @@ func _resolve_home_door() -> void:
 	if GameManager.home_id.is_empty():
 		return
 	_home_door_node = get_node_or_null("Doors/" + GameManager.home_id)
-	if _home_door_node != null:
-		player.home_door_node = _home_door_node
+	if _home_door_node == null:
+		push_warning("Home door '%s' not found under Doors/ — no bed or map icon." \
+				% GameManager.home_id)
+		return
+	player.home_door_node = _home_door_node
+	# Let the pause-menu map show a 🏠 icon at the player's home.
+	var pause_screen := get_node_or_null("PauseMenuLayer/PauseMenuScreen")
+	if pause_screen != null:
+		pause_screen.home_position = _home_door_node.global_position
+		pause_screen.has_home      = true
 
-func _begin_day() -> void:
+func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 	# If a day change happens while the player is inside a building (e.g. time
 	# ran out, or they slept), pull them back outside first so control, camera,
 	# and in_interior state are restored before the new day is set up.
@@ -331,11 +371,16 @@ func _begin_day() -> void:
 		_continue_flow = false
 		drop_pads.start_day(DAY_DURATION)   # resume the loaded day; don't advance
 	else:
-		GameManager.start_new_day(0)
+		# The day counter is advanced by whoever ended the day (sleep / midnight),
+		# so only reset the per-day bookkeeping here.
+		GameManager.day_cash        = 0
+		GameManager.delivered_count = 0
+		GameManager.total_targets   = 0
+		GameManager.set_packages(0)
 		GameManager.save_game()
 		drop_pads.start_day(DAY_DURATION)
 
-	TimeManager.start_day(GameManager.day)
+	TimeManager.start_day(GameManager.day, at_hour)
 	_spawn_bike()
 	player.reset_trail()
 	_spawn_birds()
@@ -424,7 +469,6 @@ func _end_day(after: Callable) -> void:
 	_day_ending  = true
 	_day_running = false
 	drop_pads.end_day()
-	hud.update_timer(0.0)
 	player.input_locked = true
 
 	var undelivered : int  = GameManager.packages   # all packages come from pads
@@ -444,10 +488,27 @@ func _next_day() -> void:
 	world._scatter_pickups()
 	_begin_day()
 
+## Sleeping: advance the clock 7 hours and wake up there. If that sleep carries
+## the player past midnight, the day's ledger is shown as they go to bed (the
+## calendar day rolls while they're asleep).
 func _on_home_door_activated() -> void:
 	if not _day_running:
 		return
-	_end_day(_next_day)
+	if TimeManager.sleep_crosses_midnight():
+		_end_day(_sleep_into_new_day)
+	else:
+		# Early nap — no ledger, just lose the hours and carry on the same day.
+		TimeManager.skip_hours(TimeManager.SLEEP_HOURS)
+		GameManager.reset_day_stats()
+		GameManager.show_message("😴 You slept until %s." % TimeManager.clock_label())
+
+func _sleep_into_new_day() -> void:
+	GameManager.day += 1
+	GameManager.day_changed.emit(GameManager.day)
+	var wake : float = fposmod(TimeManager.hour + TimeManager.SLEEP_HOURS, 24.0)
+	world._scatter_pickups()
+	_begin_day(wake)
+	GameManager.show_message("☀️ You wake at %s — %s." % [TimeManager.clock_label(), GameManager.date_label()])
 
 func _on_next_day() -> void:
 	_end_day(_next_day)
@@ -483,8 +544,5 @@ func _on_pad_picked_up(_pad_idx: int, count: int, landing_times: Array) -> void:
 		% [new_targets.size(), "s" if new_targets.size() > 1 else ""]
 	)
 
-# ── Timer expired ──────────────────────────────────────────
-func _on_day_time_up() -> void:
-	hud.hide_day_complete_prompt()
-	GameManager.show_message("⏰ %s is over!" % GameManager.date_label())
-	_end_day(_next_day)
+# The day no longer ends on a timer — it ends when the player sleeps, collapses
+# (0 HP), or the midnight ledger rolls the calendar over.
