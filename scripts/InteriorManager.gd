@@ -20,6 +20,9 @@ var _saved   : Rect2   = Rect2()
 var _inside_npcs : Array = []   # NPCs materialized inside the active interior
 var current_building_id : String = ""
 
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 func setup(player: CharacterBody2D, camera: Camera2D, door_markers: Array) -> void:
 	_player  = player
 	_camera  = camera
@@ -68,6 +71,9 @@ func enter(building_id: String) -> void:
 
 	var def : InteriorDefinition = InteriorRegistry.get_definition(building_id)
 	_active = InteriorScene.instantiate()
+	# Match the Player (PROCESS_MODE_ALWAYS) so the interior's input/processing
+	# stays consistent with it while dialogue or menus pause the tree.
+	_active.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_active)
 	_active.global_position = STAGE_ORIGIN
 	_active.player_ref = _player

@@ -138,6 +138,8 @@ func begin_interaction(player: Node2D) -> void:
 
 func get_dialogue() -> Array:
 	if dialogue_lines.is_empty():
+		# Fallback is a DialogueLine (not a bare String) so it still resolves a
+		# portrait via the neutral/base art.
 		return [DialogueLine.make("%s waves hello!" % npc_name)]
 	return dialogue_lines
 

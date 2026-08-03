@@ -49,9 +49,12 @@ func _register_doctor_carrington() -> void:
 	# alternating-week routine. week_parity: 0 = even weeks, 1 = odd weeks. Every
 	# entry is interior (true) — she's inside these buildings, found by going in.
 	var sched : Array[NPCScheduleEntry] = [
-		# Sundays: church during the day.
+		# Sundays: church during the day, then out front on the steps at sunset
+		# (outdoors, so she can be met on the street).
 		NPCScheduleEntry.make([0], Phase.DAY,    "Church",  Vector2(0, 40), -1, true),
-		# Wednesdays: the grocery store in the afternoon.
+		NPCScheduleEntry.make([0], Phase.SUNSET, "Church",  Vector2(70, 55), -1, false),
+		# Wednesdays: outside the grocery by day, inside it in the afternoon.
+		NPCScheduleEntry.make([3], Phase.DAY,    "Grocery", Vector2(60, 55), -1, false),
 		NPCScheduleEntry.make([3], Phase.SUNSET, "Grocery", Vector2(0, 40), -1, true),
 		# Even weeks: at the hospital early, home at night.
 		NPCScheduleEntry.make([], Phase.DAY,    "Hospital",   Vector2(0, 40), 0, true),
@@ -64,7 +67,7 @@ func _register_doctor_carrington() -> void:
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
-		#DialogueLine.make("Please take care of your health.", DialogueLine.CALM),
+		DialogueLine.make("Please take care of your health.", DialogueLine.CALM),
 	]
 	_add(def)
 

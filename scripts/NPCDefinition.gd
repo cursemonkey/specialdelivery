@@ -44,7 +44,16 @@ func portrait_texture(mood: String = "") -> Texture2D:
 		return _load_portrait(portrait_path)
 	if id.is_empty():
 		return null
-	return _load_portrait(PORTRAIT_DIR + "%s.jpg" % id)
+	var base : Texture2D = _load_portrait(PORTRAIT_DIR + "%s.jpg" % id)
+	if base != null:
+		return base
+	# No neutral base authored yet — fall back to any mood art that does exist
+	# so the portrait slot still fills in.
+	for m in [DialogueLine.CALM, DialogueLine.HAPPY, DialogueLine.SURPRISED, DialogueLine.MAD]:
+		var alt : Texture2D = _load_portrait(PORTRAIT_DIR + "%s_%s.jpg" % [id, m])
+		if alt != null:
+			return alt
+	return null
 
 func _load_portrait(path: String) -> Texture2D:
 	if ResourceLoader.exists(path):
