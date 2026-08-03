@@ -73,6 +73,16 @@ func _ready() -> void:
 	player.road_regions      = _road_nodes
 	player.dirt_road_regions = _dirt_road_nodes
 	player.grass_regions     = _grass_nodes
+
+	# NPC pathfinding prefers roads: travel_cost multiplies a region's crossing
+	# cost, so pathfinding routes along roads/dirt roads and only cuts across
+	# grass when that's genuinely shorter.
+	for r in _road_nodes:
+		r.travel_cost = 1.0
+	for r in _dirt_road_nodes:
+		r.travel_cost = 1.5
+	for r in _grass_nodes:
+		r.travel_cost = 6.0
 	player.drop_pad_manager = drop_pads
 
 	drop_pads.player_ref = player
@@ -317,7 +327,9 @@ func continue_game(slot: int) -> void:
 	# schedules drops for the resumed day without advancing to a new one.
 	_first_day     = false
 	_continue_flow = true
-	_begin_day()
+	# Resume at the saved time of day (packages/HP/energy/rizz still reset to
+	# their defaults inside _begin_day), starting inside the player's home.
+	_begin_day(GameManager.loaded_hour)
 
 func _apply_settings() -> void:
 	player.snap_to_direction        = GameManager.snap_to_direction
@@ -356,7 +368,6 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 	_day_timer   = 0.0
 	_day_running = true
 	_bonus_paid  = false
-	sky.color    = Color(1.0, 1.0, 1.0)
 
 	if _home_door_node != null:
 		player.global_position = _home_door_node.global_position + Vector2(0, 10)
@@ -369,7 +380,13 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 		# drop_pads.start_day() is called by _on_home_selected after selection
 	elif _continue_flow:
 		_continue_flow = false
-		drop_pads.start_day(DAY_DURATION)   # resume the loaded day; don't advance
+		# Resume the loaded day (don't advance it), but start with a clean slate:
+		# packages/targets reset alongside the HP/energy/rizz reset above.
+		GameManager.day_cash        = 0
+		GameManager.delivered_count = 0
+		GameManager.total_targets   = 0
+		GameManager.set_packages(0)
+		drop_pads.start_day(DAY_DURATION)
 	else:
 		# The day counter is advanced by whoever ended the day (sleep / midnight),
 		# so only reset the per-day bookkeeping here.
@@ -381,6 +398,8 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 		drop_pads.start_day(DAY_DURATION)
 
 	TimeManager.start_day(GameManager.day, at_hour)
+	# Match the sky to the resumed time rather than assuming full daylight.
+	_apply_sky_tint(TimeManager.daylight())
 	_spawn_bike()
 	player.reset_trail()
 	_spawn_birds()

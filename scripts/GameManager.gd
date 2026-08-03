@@ -101,6 +101,8 @@ func register_delivery(base_earned: int, landing_time: float, target_name: Strin
 
 const SAVE_SLOT_COUNT : int = 5
 var current_slot      : int = -1   # which slot autosaves write to; -1 = none chosen yet
+# Clock time read from the last loaded save, applied by Main when resuming.
+var loaded_hour       : float = TimeManager.DAY_START_HOUR
 
 # Monotonic in-game seconds, advanced by Main only during active play (frozen
 # while paused). Used to time deliveries from pad-landing to drop-off.
@@ -239,6 +241,7 @@ func save_game(slot: int = -1) -> void:
 		"day":       day,
 		"home_id":   home_id,
 		"mortgage":  mortgage,
+		"hour":      TimeManager.hour,   # resume the in-game clock where we left off
 	}
 	var file : FileAccess = FileAccess.open(_slot_path(slot), FileAccess.WRITE)
 	if file == null:
@@ -262,6 +265,8 @@ func load_game(slot: int) -> bool:
 	day      = int(parsed.get("day",      1))
 	home_id  = migrate_home_id(str(parsed.get("home_id",  "")))
 	mortgage = int(parsed.get("mortgage", 0))
+	# Older saves have no clock — fall back to the normal 6am start.
+	loaded_hour = float(parsed.get("hour", TimeManager.DAY_START_HOUR))
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	return true

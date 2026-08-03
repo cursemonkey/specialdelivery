@@ -23,7 +23,9 @@
       "Bash(rm -f _postest.gd)",
       "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 150)",
       "Bash(\"/c/Program Files/Godot_v4.6.1-stable/Godot_v4.6.1-stable_win64_console.exe\" --headless --quit-after 90)",
-      "Read(//c/Users/dave/AppData/Roaming/Godot/app_userdata/**)"
+      "Read(//c/Users/dave/AppData/Roaming/Godot/app_userdata/**)",
+      "Bash(cd \"/d/David/SpecialDelivery/godot_claude_v0.0.2/cozy_delivery\" && grep -nE '\"day\"|\"cash\"|\"hour\"|save_game|func save_game' scripts/GameManager.gd | head -20; echo \"=== actual save contents ===\"; cat \"/c/Users/dave/AppData/Roaming/Godot/app_userdata/Cozy Delivery Co/save_slot_2.json\")",
+      "Read(//c/Users/dave/AppData/Roaming/Godot/app_userdata/Cozy Delivery Co/**)"
     ]
   }
 }

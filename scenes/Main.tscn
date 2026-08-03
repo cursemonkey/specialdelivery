@@ -57,9 +57,9 @@ polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32
 outlines = Array[PackedVector2Array]([PackedVector2Array(4755, -799, 4614, -398, 4426.3867, -131.86725, 4191, -32, -47, -2, -57, -140, 3940, -176, 4262, -208, 4479, -423, 4664, -799)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_2c4at"]
-vertices = PackedVector2Array(-37.703125, -12.0703125, -46.21875, -129.63281, 1026.4063, -93.00781, 1403.7813, -69.99219, 1814.2891, -77, 2138.8594, -90.5625, 2138.1172, -29.90625)
+vertices = PackedVector2Array(-37.703125, -12.046875, -46.21875, -129.63281, 1026.4063, -93.00781, 1403.7813, -69.99219, 1814.3594, -77, 2148.9922, -95.49219, 2155.9688, -24.929688)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 5, 6), PackedInt32Array(4, 6, 0, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(2148, -20, -47, -2, -57, -140, 1027, -103, 1404, -80, 1814, -87, 2149, -101)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(2167, -15, -47, -2, -57, -140, 1027, -103, 1404, -80, 1814, -87, 2158, -106)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_fs0b5"]
 vertices = PackedVector2Array(1129.2734, -135.11719, 964.5781, -140.21094, 1550.6328, -656.6406, 1678.2969, -635.3281, 2312.5703, -1040.1016, 2702.5469, -1144.9531, 4897.742, -2394.2813, 4881.7188, -2264.4688)
@@ -87,9 +87,9 @@ polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32
 outlines = Array[PackedVector2Array]([PackedVector2Array(-146, -1069, -48, -1066, -38.603363, -194.93378, 58, -123, 58, -81, -97, -59, -259, -92, -262, -140, -143.16246, -190.31342)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_dg70y"]
-vertices = PackedVector2Array(983.3281, -1248.5234, 985.85156, -1411.4688, 1065.8672, -1415.4688, 1039, 905.96875, 944.14844, 1382.7266, 1041.9297, 1380.2422)
+vertices = PackedVector2Array(983.3281, -1248.5234, 985.85156, -1411.4688, 1065.8672, -1415.4688, 1039, 905.97656, 943.15625, 1397.5625, 1042.9219, 1393.4063)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4), PackedInt32Array(4, 3, 5)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(976, -1421, 1076, -1426, 1049, 906, 1052, 1390, 934, 1393, 973.32825, -1248.6719)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(976, -1421, 1076, -1426, 1049, 906, 1053, 1403, 933, 1408, 973.32825, -1248.6719)])
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_pnhog"]
 vertices = PackedVector2Array(944, 254.27344, 982.84375, -1187.9297, 1068.7578, -1234.1328, 1039, 905.8828, 943, 1358.4375, 1034.1094, 1362.5391)
@@ -172,8 +172,8 @@ position = Vector2(-8037, 3219)
 polygon = PackedVector2Array(10368, -2603, 10216, -2685, 10242, -2930, 10396, -2883, 10423, -2635)
 
 [node name="Townhouse25" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=4059282]
-position = Vector2(-7458, 3237)
-polygon = PackedVector2Array(10251, -2652, 10237, -2809, 10341, -2857, 10422, -2844, 10404, -2572)
+position = Vector2(-7458, 3218)
+polygon = PackedVector2Array(10251, -2652, 10237, -2809, 10341, -2857, 10422, -2844, 10390, -2582)
 
 [node name="Townhouse15" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=87557973]
 position = Vector2(-7838, 3222)
@@ -782,7 +782,7 @@ script = ExtResource("6")
 
 [node name="Apartments" type="Node2D" parent="Doors" unique_id=1111586627]
 editor_description = "THis is the door for CollisionPolygon2D_building"
-position = Vector2(3793, 3198)
+position = Vector2(3767, 3242)
 script = ExtResource("6")
 
 [node name="House200" type="Node2D" parent="Doors" unique_id=97484324]
