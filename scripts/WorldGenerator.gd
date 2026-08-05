@@ -1,7 +1,7 @@
 extends Node2D
 ## WorldGenerator — builds the town at runtime:
 ##   • Paints grass / road tiles on a TileMap
-##   • Scatters Pickup nodes (tricks & traps) on road tiles
+##   • Scatters Pickup nodes (ramps, puddles & potholes) across the road zones
 ##   • Exposes select_targets() and clear_targets() for day management
 ##     (delivery targets are the hand-drawn ArtBuilding nodes in the scene)
 
@@ -9,10 +9,6 @@ const TILE          := 16
 const COLS          := 80
 const ROWS          := 60
 const ROAD_W        := 4
-
-# Full map bounds for pickup spawning (matches camera limits in Main.gd)
-const MAP_COLS      := 415
-const MAP_ROWS      := 313
 
 # Horizontal road top-edges (tile rows) — 1 road = 2 row bands of buildings
 const ROAD_ROWS     := [28]
@@ -96,45 +92,138 @@ func _is_road_col(c: int) -> bool:
 	return false
 
 # ── Pickup scattering ──────────────────────────────────────
-const PICKUP_MIN_SEPARATION := 6   # tiles — one minimum house width
+## Ramps and hazards live on the road surface only. Candidate points are drawn
+## from the road_zone NavigationRegion2D polygons (the same strips the player's
+## surface-speed check and the roadblock manager use), area-weighted so long
+## roads get proportionally more than short ones.
+
+const RAMP_COUNT    := 90
+const PUDDLE_COUNT  := 30
+const POTHOLE_COUNT := 30
+
+const PICKUP_MIN_SEPARATION := 96.0   # px between features — about one house width
+const ROAD_EDGE_INSET       := 10.0   # px pulled off the kerb so nothing hangs over
 
 func _scatter_pickups() -> void:
 	_clear_pickups()
-	var placed : Array[Vector2i] = []
-	var tricks  := 0
-	var traps   := 0
-	var attempts := 0
-	while (tricks < 90 or traps < 60) and attempts < 15000:
-		attempts += 1
-		var coord := Vector2i(randi_range(0, MAP_COLS - 1), randi_range(0, MAP_ROWS - 1))
-		if _pickup_too_close(coord, placed):
-			continue
-		if tricks < 90:
-			_spawn_pickup(coord, Pickup.Kind.TRICK)
-			tricks += 1
-		elif traps < 60:
-			_spawn_pickup(coord, Pickup.Kind.TRAP)
-			traps += 1
-		placed.append(coord)
 
-func _pickup_too_close(coord: Vector2i, placed: Array[Vector2i]) -> bool:
+	var tris : Array = _road_triangles()
+	if tris.is_empty():
+		push_warning("WorldGenerator: no road_zone regions found — no pickups spawned.")
+		return
+	var cumulative : Array[float] = _cumulative_areas(tris)
+
+	# Interleaved so a failure to place late in the run thins every kind evenly
+	# rather than starving whichever came last.
+	var wanted : Array[int] = []
+	for i in RAMP_COUNT:    wanted.append(Pickup.Kind.RAMP)
+	for i in PUDDLE_COUNT:  wanted.append(Pickup.Kind.PUDDLE)
+	for i in POTHOLE_COUNT: wanted.append(Pickup.Kind.POTHOLE)
+	wanted.shuffle()
+
+	var placed : Array[Vector2] = []
+	var index  := 0
+	var attempts := 0
+	var max_attempts : int = wanted.size() * 40
+	while index < wanted.size() and attempts < max_attempts:
+		attempts += 1
+		var pos : Vector2 = _random_road_point(tris, cumulative)
+		if _pickup_too_close(pos, placed):
+			continue
+		_spawn_pickup(pos, wanted[index], _road_angle_at(pos))
+		placed.append(pos)
+		index += 1
+
+## Every road polygon triangulated into global-space triangles.
+func _road_triangles() -> Array:
+	var tris : Array = []
+	for r in get_tree().get_nodes_in_group("road_zone"):
+		var np : NavigationPolygon = r.navigation_polygon
+		if np == null or np.vertices.size() < 3:
+			continue
+		# Inset shrinks each outline toward its centre so points land on the
+		# road proper rather than right on the kerb line.
+		for oi in np.get_outline_count():
+			var outline : PackedVector2Array = np.get_outline(oi)
+			if outline.size() < 3:
+				continue
+			var shrunk : Array = Geometry2D.offset_polygon(outline, -ROAD_EDGE_INSET)
+			for poly in shrunk:
+				if poly.size() < 3:
+					continue
+				var global_poly : PackedVector2Array = PackedVector2Array()
+				for pt in poly:
+					global_poly.append(r.to_global(pt))
+				var idx : PackedInt32Array = Geometry2D.triangulate_polygon(global_poly)
+				for i in range(0, idx.size(), 3):
+					tris.append([global_poly[idx[i]], global_poly[idx[i + 1]], global_poly[idx[i + 2]]])
+	return tris
+
+func _cumulative_areas(tris: Array) -> Array[float]:
+	var out : Array[float] = []
+	var running := 0.0
+	for t in tris:
+		running += absf((t[1] - t[0]).cross(t[2] - t[0])) * 0.5
+		out.append(running)
+	return out
+
+## Uniformly random point over the whole road surface: pick a triangle weighted
+## by area, then a barycentric point inside it.
+func _random_road_point(tris: Array, cumulative: Array[float]) -> Vector2:
+	var total : float = cumulative[cumulative.size() - 1]
+	var pick  : float = _rng.randf() * total
+	var lo := 0
+	var hi := cumulative.size() - 1
+	while lo < hi:
+		var mid : int = (lo + hi) / 2
+		if cumulative[mid] < pick:
+			lo = mid + 1
+		else:
+			hi = mid
+	var t : Array = tris[lo]
+	var u : float = _rng.randf()
+	var v : float = _rng.randf()
+	if u + v > 1.0:
+		u = 1.0 - u
+		v = 1.0 - v
+	return t[0] + (t[1] - t[0]) * u + (t[2] - t[0]) * v
+
+## Heading of the road strip containing `pos`, so ramps point along traffic
+## rather than into the kerb. Uses the long axis of the containing region's
+## bounding box; falls back to a random heading if nothing contains the point.
+func _road_angle_at(pos: Vector2) -> float:
+	for r in get_tree().get_nodes_in_group("road_zone"):
+		var np : NavigationPolygon = r.navigation_polygon
+		if np == null:
+			continue
+		var local : Vector2 = r.to_local(pos)
+		for oi in np.get_outline_count():
+			var outline : PackedVector2Array = np.get_outline(oi)
+			if outline.size() < 3:
+				continue
+			if not Geometry2D.is_point_in_polygon(local, outline):
+				continue
+			var bb : Rect2 = Rect2(outline[0], Vector2.ZERO)
+			for pt in outline:
+				bb = bb.expand(pt)
+			# Long axis of the strip, pointing either way along it.
+			var along : float = 0.0 if bb.size.x >= bb.size.y else PI / 2.0
+			if _rng.randf() < 0.5:
+				along += PI
+			return along + r.global_rotation
+	return _rng.randf() * TAU
+
+func _pickup_too_close(pos: Vector2, placed: Array[Vector2]) -> bool:
 	for other in placed:
-		var dx := coord.x - other.x
-		var dy := coord.y - other.y
-		if dx * dx + dy * dy < PICKUP_MIN_SEPARATION * PICKUP_MIN_SEPARATION:
+		if pos.distance_squared_to(other) < PICKUP_MIN_SEPARATION * PICKUP_MIN_SEPARATION:
 			return true
 	return false
 
-func _spawn_pickup(coord: Vector2i, kind: int) -> void:
+func _spawn_pickup(pos: Vector2, kind: int, angle: float) -> void:
 	var p : Area2D = PickupScene.instantiate()
 	pkg_layer.add_child(p)
-	p.position = Vector2(coord.x * TILE + TILE / 2.0,
-						 coord.y * TILE + TILE / 2.0)
-	p.setup(kind)
-	p.body_entered.connect(_on_pickup_body_entered.bind(p))
-
-func _on_pickup_body_entered(body: Node2D, pickup: Area2D) -> void:
-	pass  # handled inside Pickup.gd
+	p.global_position = pos
+	p.setup(kind, angle)
 
 func _clear_pickups() -> void:
 	for child in pkg_layer.get_children():

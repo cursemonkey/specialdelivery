@@ -22,6 +22,7 @@ const NPC_RUNOVER_SPEED := 40.0           # min bike speed for a spin-out crash
 const SPIN_DURATION     := 0.8            # seconds of lost control after hitting an NPC
 const SPIN_VISUAL_SPEED := 2.0 * TAU / 0.8   # two full sprite rotations per spin-out
 const EASY_TURN_SPEED    := 6.0           # rad/sec the easy-mode bike can re-aim itself
+const RAMP_HOP_HEIGHT    := 14.0          # px of air gained off a speed ramp
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -443,13 +444,48 @@ func apply_boost() -> void:
 	GameManager.add_rizz(1)     # grabbing a speed-up looks cool: +1 rizz
 	GameManager.show_message("💨 Speed Boost!")
 
+## Hitting a wedge ramp: speed boost plus a short air-time hop.
+func apply_ramp() -> void:
+	boost_timer = BOOST_DURATION
+	boost_aura.visible = true
+	GameManager.add_rizz(1)     # catching air looks cool: +1 rizz
+	GameManager.show_message("🛹 Ramp! Nice air!")
+	_air_hop()
+
+## Hitting a puddle: lose control and spin out. Cheaper than an NPC crash —
+## it costs rizz and the lost momentum, but no health.
+func apply_puddle() -> void:
+	if _spin_timer > 0.0:
+		return
+	_spin_timer = SPIN_DURATION
+	GameManager.add_rizz(-1)
+	GameManager.show_message("💦 Splash! You hydroplaned!")
+
 func apply_slow() -> void:
 	slow_timer = SLOW_DURATION
 	slow_aura.visible = true
 	GameManager.add_rizz(-1)    # a slowdown is a bad look: -1 rizz
-	GameManager.show_message("😵 Slowed down!")
+	GameManager.show_message("🕳️ Pothole! Slowed down!")
+
+## Small jump arc on whichever sprite is currently showing. Purely visual —
+## movement carries on underneath, so it can't strand the player mid-air.
+func _air_hop() -> void:
+	if _hopping:
+		return
+	var spr : Node2D = bike_sprite if on_bike else foot_sprite
+	var base : float = 0.0 if not on_bike else spr.position.y
+	_hopping = true
+	var tween := create_tween()
+	tween.tween_property(spr, "position:y", base - RAMP_HOP_HEIGHT, 0.16).set_ease(Tween.EASE_OUT)
+	tween.tween_property(spr, "position:y", base, 0.22).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func(): _hopping = false)
 
 func _tick_effects(delta: float) -> void:
+	# On the bike the spin timer is driven by the bike movement handlers (which
+	# also whirl the sprite). On foot nothing else drains it, so do it here —
+	# otherwise a puddle hit while walking would leave the timer stuck.
+	if not on_bike and _spin_timer > 0.0:
+		_spin_timer -= delta
 	if boost_timer > 0.0:
 		boost_timer -= delta
 		if boost_timer <= 0.0:

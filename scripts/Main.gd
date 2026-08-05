@@ -519,6 +519,7 @@ func _on_home_door_activated() -> void:
 		# Early nap — no ledger, just lose the hours and carry on the same day.
 		TimeManager.skip_hours(TimeManager.SLEEP_HOURS)
 		GameManager.reset_day_stats()
+		world._scatter_pickups()   # street features redistribute on every sleep
 		GameManager.show_message("😴 You slept until %s." % TimeManager.clock_label())
 
 func _sleep_into_new_day() -> void:

@@ -1,40 +1,53 @@
 class_name Pickup
 
 extends Area2D
-## A street pickup: either a "trick" (blue square = speed boost)
-## or a "trap" (red circle = slowdown).
+## A permanent street feature. Three kinds:
+##   • RAMP    — wedge ramp: speed boost + a small jump
+##   • PUDDLE  — blue oval: spin-out
+##   • POTHOLE — black circle: slowdown only
+##
+## These are scenery, not collectables: they stay put after being hit and only
+## disappear when the world redistributes them (see WorldGenerator._scatter_pickups).
 
-enum Kind { TRICK, TRAP }
+enum Kind { RAMP, PUDDLE, POTHOLE }
 
-var kind : Kind = Kind.TRICK
-var _active := true
-var _pulse  := 0.0
+## Seconds before the same body can set this off again. Without it the effect
+## would re-fire every frame the player overlaps the shape.
+const RETRIGGER_DELAY := 1.2
+
+var kind     : Kind  = Kind.RAMP
+var _pulse   : float = 0.0
+var _angle   : float = 0.0   # RAMP only — direction the wedge points
+var _cooldown: float = 0.0
 
 @onready var _sprite : Node2D = $PickupSprite
 
-func setup(k: Kind) -> void:
-	kind = k
+func setup(k: Kind, angle: float = 0.0) -> void:
+	kind   = k
+	_angle = angle
 	queue_redraw()
 
 func _process(delta: float) -> void:
-	if not _active:
-		return
+	if _cooldown > 0.0:
+		_cooldown -= delta
 	_pulse = fmod(_pulse + delta * 3.5, TAU)
-	$PickupSprite.queue_redraw()
+	_sprite.queue_redraw()
 
 func _on_body_entered(body: Node2D) -> void:
-	if not _active:
+	if _cooldown > 0.0:
 		return
 	if not body is CharacterBody2D:
 		return
 	if not body.has_method("apply_boost"):
 		return
-	_active = false
-	visible = false
-	if kind == Kind.TRICK:
-		body.apply_boost()
-	else:
-		body.apply_slow()
+	_cooldown = RETRIGGER_DELAY
+	match kind:
+		Kind.RAMP:
+			body.apply_ramp()
+		Kind.PUDDLE:
+			body.apply_puddle()
+		Kind.POTHOLE:
+			body.apply_slow()
 
 # ── PickupSprite child draws itself ────────────────────────
 # (handled in PickupSprite.gd)
@@ -43,3 +56,6 @@ func get_pulse() -> float:
 
 func get_kind() -> Kind:
 	return kind
+
+func get_angle() -> float:
+	return _angle
