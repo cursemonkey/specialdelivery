@@ -48,6 +48,8 @@ func _ready() -> void:
 	# them immediately at their morning location.
 	TimeManager.phase_changed.connect(func(_phase: int) -> void: _retarget(false))
 	TimeManager.day_started.connect(func(_weekday: int) -> void: _retarget(true))
+	# Hour-based schedule entries (e.g. shift work) change on the hour.
+	TimeManager.hour_changed.connect(func(_h: int) -> void: _retarget(false))
 	_retarget(true)
 
 func _physics_process(delta: float) -> void:

@@ -1,6 +1,6 @@
 extends Node
 
-const DAY_NAMES := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+const DAY_NAMES := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 func day_name() -> String:
 	return DAY_NAMES[(day - 1) % DAY_NAMES.size()]

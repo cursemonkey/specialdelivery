@@ -51,6 +51,7 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	npc.conversation     = def.conversation
 	npc.portrait         = def.portrait_texture()
 	npc.anchor_positions = _resolve_anchors(def)
+	npc.home_anchor      = def.home_anchor
 	npc.home_position    = npc.anchor_positions.get(def.home_anchor, Vector2.ZERO) + def.home_offset
 	npc.global_position  = npc.home_position
 

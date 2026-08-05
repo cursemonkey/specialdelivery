@@ -23,6 +23,9 @@ extends Resource
 # Conversation. `dialogue_lines` is the simple linear fallback used until a
 # real tree exists; assign `conversation` later and have it take precedence.
 @export var dialogue_lines : Array    = []
+# When true, talking plays ONE randomly chosen line from dialogue_lines instead
+# of stepping through all of them in order.
+@export var random_dialogue : bool    = false
 var conversation           : Resource = null
 
 const PORTRAIT_DIR : String = "res://assets/Portraits/"
@@ -49,7 +52,8 @@ func portrait_texture(mood: String = "") -> Texture2D:
 		return base
 	# No neutral base authored yet — fall back to any mood art that does exist
 	# so the portrait slot still fills in.
-	for m in [DialogueLine.CALM, DialogueLine.HAPPY, DialogueLine.SURPRISED, DialogueLine.MAD]:
+	for m in [DialogueLine.CALM, DialogueLine.HAPPY, DialogueLine.SURPRISED,
+			DialogueLine.MAD, DialogueLine.SAD]:
 		var alt : Texture2D = _load_portrait(PORTRAIT_DIR + "%s_%s.jpg" % [id, m])
 		if alt != null:
 			return alt

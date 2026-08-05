@@ -22,6 +22,9 @@ const SUNSET_END    : float = 21.0   # 9pm, full night
 signal phase_changed(new_phase: int)
 signal day_started(weekday: int)
 signal midnight_passed()
+## Emitted when the clock crosses into a new whole hour — hour-based NPC
+## schedules re-evaluate on this.
+signal hour_changed(new_hour: int)
 
 var phase         : int   = Phase.DAY
 var weekday       : int   = 0     # 0 = Sunday … 5 = Friday (mirrors GameManager.DAY_NAMES)
@@ -60,6 +63,8 @@ func advance(delta: float) -> void:
 	if rolled:
 		hour = fposmod(hour, 24.0)
 	_update_phase()
+	if int(hour) != int(before) or rolled:
+		hour_changed.emit(int(hour))
 	if rolled and before < 24.0:
 		midnight_passed.emit()
 

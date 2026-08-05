@@ -33,6 +33,46 @@ func _add(def: NPCDefinition) -> void:
 func _register_all() -> void:
 	_register_mayor_henderson()
 	_register_doctor_carrington()
+	_register_elsie_carrington()
+
+## Elsie Carrington — Doctor Carrington's mother, a nurse at the hospital.
+## Alternating shift weeks, Saturdays at the pub, Mondays running errands.
+func _register_elsie_carrington() -> void:
+	const SAT : int = 6
+	const MON : int = 1
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "elsie_carrington"
+	def.display_name = "Elsie Carrington"
+	def.home_anchor  = "House60"
+	def.shirt_color  = Color("#bfe4f5")   # nurse blues
+	def.pants_color  = Color("#4a6b82")
+	def.hair_color   = Color("#d8d2cc")   # greying
+	# week_parity 0 = day-shift weeks, 1 = night-shift weeks. Day-off entries come
+	# first so they override the shift for that weekday.
+	var sched : Array[NPCScheduleEntry] = [
+		# Saturdays off — pub from 6pm to 2am.
+		NPCScheduleEntry.make_hours([SAT], 18.0, 2.0, "Pub", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([SAT], 2.0, 18.0, "House60", Vector2(0, 20), -1, true),
+		# Mondays off — grocery at 10am, bakery/cafe at 1pm, home from 4pm.
+		NPCScheduleEntry.make_hours([MON], 10.0, 13.0, "Grocery", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([MON], 13.0, 16.0, "Bakery",  Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([MON], 16.0, 10.0, "House60", Vector2(0, 20), -1, true),
+		# Day-shift weeks: hospital 8am–6pm, otherwise home.
+		NPCScheduleEntry.make_hours([], 8.0, 18.0, "Hospital", Vector2(0, 40), 0, true),
+		NPCScheduleEntry.make_hours([], 18.0, 8.0, "House60",  Vector2(0, 20), 0, true),
+		# Night-shift weeks: hospital 6pm–4am, otherwise home.
+		NPCScheduleEntry.make_hours([], 18.0, 4.0, "Hospital", Vector2(0, 40), 1, true),
+		NPCScheduleEntry.make_hours([], 4.0, 18.0, "House60",  Vector2(0, 20), 1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Lovin' life, guy?", DialogueLine.HAPPY),
+		DialogueLine.make("My daughter doesn't always get along with me.", DialogueLine.SAD),
+		DialogueLine.make("My daughter complains I live too hard.", DialogueLine.MAD),
+		DialogueLine.make("How's it goin', guy?", DialogueLine.CALM),
+	]
+	_add(def)
 	_register_mabel()
 	_register_gus()
 	_register_poppy()
@@ -66,8 +106,14 @@ func _register_doctor_carrington() -> void:
 		NPCScheduleEntry.make([], Phase.NIGHT,  "Hospital",   Vector2(0, 40), 1, true),
 	]
 	def.schedule = sched
+	# One of these is picked at random each time the player talks to her; the
+	# mood on each line selects the matching portrait.
+	def.random_dialogue = true
 	def.dialogue_lines = [
 		DialogueLine.make("Please take care of your health.", DialogueLine.CALM),
+		DialogueLine.make("Well now, you're looking well! Keep that up.", DialogueLine.HAPPY),
+		DialogueLine.make("Another crash? Honestly, slow down out there!", DialogueLine.MAD),
+		DialogueLine.make("Rest when you need it — the packages will keep.", DialogueLine.CALM),
 	]
 	_add(def)
 

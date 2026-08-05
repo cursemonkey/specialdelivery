@@ -8,6 +8,7 @@ const HAPPY     := "happy"
 const MAD       := "mad"
 const SURPRISED := "surprised"
 const CALM      := "calm"
+const SAD       := "sad"
 
 var text : String = ""
 var mood : String = ""

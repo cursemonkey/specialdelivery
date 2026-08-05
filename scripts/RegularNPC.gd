@@ -7,6 +7,7 @@ extends NPCBase
 
 var npc_name        : String                  = "Villager"
 var home_position   : Vector2                 = Vector2.ZERO
+var home_anchor     : String                  = ""   # door name backing home_position
 var schedule        : Array[NPCScheduleEntry] = []
 var dialogue_lines  : Array                   = []   # Array of DialogueLine
 var conversation    : Resource                = null # future branching tree
@@ -42,17 +43,23 @@ func _retarget(immediate: bool = false) -> void:
 	if _pinned:
 		return   # currently displayed in an interior; don't move
 	for entry in schedule:
-		if entry.matches(TimeManager.weekday, TimeManager.phase, TimeManager.week_parity):
+		if entry.matches(TimeManager.weekday, TimeManager.phase, TimeManager.week_parity, TimeManager.hour):
 			if entry.interior:
 				_target_interior(entry.anchor, _resolve(entry.anchor, entry.offset), immediate)
 			else:
+				# Standing outside a building: keep clear of its doorway.
 				_pending_interior = ""
 				_come_outside()
-				set_move_target(_resolve(entry.anchor, entry.offset))
+				var door : Vector2 = anchor_positions.get(entry.anchor, home_position)
+				set_move_target(_clear_of_door(door, _resolve(entry.anchor, entry.offset)))
 			return
 	_pending_interior = ""
 	_come_outside()
-	set_move_target(home_position)
+	set_move_target(_clear_of_door(_home_door_pos(), home_position))
+
+## The home door itself (home_position already includes the definition offset).
+func _home_door_pos() -> Vector2:
+	return anchor_positions.get(home_anchor, home_position)
 
 func _target_interior(building_id: String, door_pos: Vector2, immediate: bool) -> void:
 	if _inside and current_interior == building_id:
@@ -124,9 +131,25 @@ func _set_group(g: String, on: bool) -> void:
 	elif not on and is_in_group(g):
 		remove_from_group(g)
 
+## Minimum distance an idling NPC must keep from a doorway, so nobody loiters in
+## a door the player needs to use. Only applies to resting spots — NPCs actually
+## entering or leaving a building still walk right up to the door.
+const DOOR_CLEARANCE : float = 20.0
+
 func _resolve(anchor: String, offset: Vector2) -> Vector2:
 	var base : Vector2 = anchor_positions.get(anchor, home_position)
 	return base + offset
+
+## Push a standing spot away from its doorway if it's too close. The direction
+## is kept (so an NPC meant to wait south of a door still waits south of it),
+## just extended out to DOOR_CLEARANCE.
+func _clear_of_door(door_pos: Vector2, spot: Vector2) -> Vector2:
+	var away : Vector2 = spot - door_pos
+	if away.length() >= DOOR_CLEARANCE:
+		return spot
+	if away.length() < 0.01:
+		away = Vector2.DOWN   # spot sits exactly on the door: step south of it
+	return door_pos + away.normalized() * DOOR_CLEARANCE
 
 ## Called by Player just before opening the dialogue box. The tree pauses
 ## while dialogue is open; the short halt keeps the NPC standing politely
@@ -141,6 +164,10 @@ func get_dialogue() -> Array:
 		# Fallback is a DialogueLine (not a bare String) so it still resolves a
 		# portrait via the neutral/base art.
 		return [DialogueLine.make("%s waves hello!" % npc_name)]
+	# Random-chatter NPCs say one line per conversation; others play the whole
+	# sequence in order.
+	if definition != null and definition.random_dialogue:
+		return [dialogue_lines[randi() % dialogue_lines.size()]]
 	return dialogue_lines
 
 func get_portrait() -> Texture2D:
