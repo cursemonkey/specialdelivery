@@ -21,6 +21,7 @@ var drop_pad_manager : Node   = null
 var save_slot_panel  : Node   = null
 
 var _pad_markers  : Array[Label] = []
+var _npc_markers  : Array        = []   # [{npc: RegularNPC, dot: Control}]
 var _home_marker  : Control      = null
 var home_position : Vector2      = Vector2.ZERO   # set by Main once a home is chosen
 var has_home      : bool         = false
@@ -68,9 +69,11 @@ func _on_save_slot_chosen(slot: int) -> void:
 func _on_map_button_pressed() -> void:
 	_ensure_pad_markers()
 	_ensure_home_marker()
+	_ensure_npc_markers()
 	map_view.visible = true
 	_update_player_marker()
 	_update_home_marker()
+	_update_npc_markers()
 
 func _on_close_map_pressed() -> void:
 	map_view.visible = false
@@ -178,6 +181,7 @@ func _process(_delta: float) -> void:
 		_update_player_marker()
 		_update_pad_markers()
 		_update_home_marker()
+		_update_npc_markers()
 
 # ── Home marker ────────────────────────────────────────────
 # Drawn with primitives rather than an emoji glyph: the default font has no
@@ -245,6 +249,62 @@ func _update_player_marker() -> void:
 	var world_pos       : Vector2 = player_ref.global_position - background_ref.global_position
 	var marker_pos      : Vector2 = img_offset + world_pos * fit_scale
 	player_marker.position = marker_pos - player_marker.size / 2.0
+
+# ── NPC markers ────────────────────────────────────────────
+# One circular dot per named NPC, tinted with that NPC's shirt colour. NPCs who
+# are indoors are shown at their building's door; NPCs away from town are hidden.
+const NPC_DOT_SIZE : float = 12.0
+
+func _ensure_npc_markers() -> void:
+	if not _npc_markers.is_empty():
+		return
+	for npc in get_tree().get_nodes_in_group("regular_npc"):
+		var dot : Control = Control.new()
+		dot.custom_minimum_size = Vector2(NPC_DOT_SIZE, NPC_DOT_SIZE)
+		dot.size = Vector2(NPC_DOT_SIZE, NPC_DOT_SIZE)
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var tint : Color = Color(0.9, 0.9, 0.9)
+		if npc.definition != null:
+			tint = npc.definition.shirt_color
+		dot.draw.connect(_draw_npc_dot.bind(dot, tint))
+		map_texture.add_child(dot)
+		_npc_markers.append({"npc": npc, "dot": dot})
+
+func _draw_npc_dot(dot: Control, tint: Color) -> void:
+	var c : Vector2 = dot.size * 0.5
+	var r : float   = dot.size.x * 0.5
+	dot.draw_circle(c, r, Color(0, 0, 0, 0.55))          # outline/shadow
+	dot.draw_circle(c, r - 1.5, tint)                     # body
+	dot.draw_circle(c - Vector2(0, r * 0.3), r * 0.28, Color(1, 1, 1, 0.5))   # highlight
+
+func _update_npc_markers() -> void:
+	if background_ref == null or map_texture.texture == null:
+		return
+	var tex_size  : Vector2 = map_texture.texture.get_size()
+	var rect_size : Vector2 = map_texture.size
+	if tex_size.x <= 0.0 or rect_size.x <= 0.0:
+		return
+	var fit_scale      : float   = min(rect_size.x / tex_size.x, rect_size.y / tex_size.y)
+	var displayed_size : Vector2 = tex_size * fit_scale
+	var img_offset     : Vector2 = (rect_size - displayed_size) / 2.0
+
+	for entry in _npc_markers:
+		var npc : Node    = entry.npc
+		var dot : Control = entry.dot
+		if not is_instance_valid(npc):
+			dot.visible = false
+			continue
+		var info : Dictionary = npc.map_marker_position()
+		if not info.valid:
+			dot.visible = false
+			continue
+		dot.visible = true
+		var world_pos : Vector2 = info.position - background_ref.global_position
+		dot.position = img_offset + world_pos * fit_scale - dot.size / 2.0
+		# Indoors markers sit slightly above the door so they read as "in here".
+		if info.indoors:
+			dot.position.y -= NPC_DOT_SIZE * 0.5
+		dot.queue_redraw()
 
 func _ensure_pad_markers() -> void:
 	if not _pad_markers.is_empty() or drop_pad_manager == null:

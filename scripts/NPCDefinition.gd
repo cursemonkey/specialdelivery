@@ -16,6 +16,8 @@ extends Resource
 @export var shirt_color    : Color = Color("#c46a5a")
 @export var pants_color    : Color = Color("#4a4a5e")
 @export var hair_color     : Color = Color("#3a2a1a")
+@export var skin_color     : Color = Color("#e8c8a0")
+@export var bald           : bool  = false
 
 # Daily routine.
 @export var schedule       : Array[NPCScheduleEntry] = []
@@ -33,6 +35,39 @@ const PORTRAIT_DIR : String = "res://assets/Portraits/"
 # Dialogue portrait. Leave empty to use the id-based convention
 # res://assets/Portraits/<id>.jpg; set explicitly to override the neutral base.
 @export var portrait_path  : String   = ""
+
+# Seasonal absence: the NPC is away from town (not spawned at all) from
+# away_from (season, day) through away_to (season, day), inclusive. The range
+# may wrap past the end of the year. Leave away_season_from at -1 to disable.
+@export var away_season_from : int = -1
+@export var away_day_from    : int = 1
+@export var away_season_to   : int = -1
+@export var away_day_to      : int = 1
+
+func set_away(from_season: int, from_day: int, to_season: int, to_day: int) -> void:
+	away_season_from = from_season
+	away_day_from    = from_day
+	away_season_to   = to_season
+	away_day_to      = to_day
+
+## True if this NPC is out of town on the given absolute day.
+func is_away_on(absolute_day: int) -> bool:
+	if away_season_from < 0 or away_season_to < 0:
+		return false
+	var d     : Dictionary = Calendar.date_for_day(absolute_day)
+	var today : int = _day_of_year(d.season, d.day)
+	var from  : int = _day_of_year(away_season_from, away_day_from)
+	var to    : int = _day_of_year(away_season_to,   away_day_to)
+	if from <= to:
+		return today >= from and today <= to
+	# Range wraps past the end of the year (e.g. Spring 10 → Fall 20).
+	return today >= from or today <= to
+
+static func _day_of_year(season: int, day: int) -> int:
+	var total : int = 0
+	for i in season:
+		total += Calendar.SEASON_LENGTHS[i]
+	return total + day
 
 ## The portrait texture for this NPC in the given mood (see DialogueLine mood
 ## constants). Falls back to the neutral base portrait when the mood-specific

@@ -34,6 +34,38 @@ func _register_all() -> void:
 	_register_mayor_henderson()
 	_register_doctor_carrington()
 	_register_elsie_carrington()
+	_register_spider()
+
+## Spider — lives with Elsie Carrington, plays in a band. Out at the pub most
+## nights, but stays in with Elsie on her days off (Saturday and Monday), and
+## leaves town on tour from Spring 10 to Fall 20.
+func _register_spider() -> void:
+	const SAT : int = 6   # Elsie's days off
+	const MON : int = 1
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "spider"
+	def.display_name = "Spider"
+	def.home_anchor  = "House60"          # same house as Elsie
+	def.shirt_color  = Color("#b3352f")   # red shirt
+	def.pants_color  = Color("#43301f")   # dark brown pants
+	def.skin_color   = Color("#e8c8a0")   # caucasian
+	def.bald         = true
+	# On tour: away from town Spring 10 → Fall 20 (wraps past the year end).
+	def.set_away(Calendar.Season.SPRING, 10, Calendar.Season.FALL, 20)
+	var sched : Array[NPCScheduleEntry] = [
+		# Elsie's days off — he stays home with her instead of going out.
+		NPCScheduleEntry.make_hours([SAT, MON], 0.0, 24.0, "House60", Vector2(0, 20), -1, true),
+		# Every other night: pub from 8pm to 5am, home the rest of the day.
+		NPCScheduleEntry.make_hours([], 20.0, 5.0, "Pub",     Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([], 5.0, 20.0, "House60", Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Hey there. Catch us play sometime, yeah?", DialogueLine.HAPPY),
+		DialogueLine.make("Long night. Long tour. Same difference.", DialogueLine.CALM),
+	]
+	_add(def)
 
 ## Elsie Carrington — Doctor Carrington's mother, a nurse at the hospital.
 ## Alternating shift weeks, Saturdays at the pub, Mondays running errands.

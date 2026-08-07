@@ -24,6 +24,7 @@ var _inside          : bool    = false
 var current_interior : String  = ""
 var _pending_interior: String  = ""   # walking to this building's door, then going inside
 var _pinned          : bool    = false
+var _away            : bool    = false   # out of town this part of the year
 var _prepin_pos      : Vector2 = Vector2.ZERO
 var _col_layer       : int     = 1
 var _col_mask        : int     = 1
@@ -42,6 +43,16 @@ func _ready() -> void:
 func _retarget(immediate: bool = false) -> void:
 	if _pinned:
 		return   # currently displayed in an interior; don't move
+	# Out of town for the season (e.g. on tour): hide entirely and skip the
+	# schedule until they're back.
+	if definition != null and definition.is_away_on(GameManager.day):
+		if not _away:
+			_away = true
+			_apply_presence()
+		return
+	if _away:
+		_away = false
+		_apply_presence()
 	for entry in schedule:
 		if entry.matches(TimeManager.weekday, TimeManager.phase, TimeManager.week_parity, TimeManager.hour):
 			if entry.interior:
@@ -82,6 +93,25 @@ func _on_arrived() -> void:
 func is_inside_building(building_id: String) -> bool:
 	return _inside and current_interior == building_id
 
+## True while this NPC is out of town (on tour etc.) — no map marker.
+func is_away() -> bool:
+	return _away
+
+## Where this NPC should be shown on the world map. Indoors they're physically
+## parked at the interior staging area, so report the door of the building
+## they're in instead. Returns false in `valid` when they shouldn't be shown.
+func map_marker_position() -> Dictionary:
+	if _away:
+		return {"valid": false, "position": Vector2.ZERO, "indoors": false}
+	if _inside:
+		var door : Vector2 = anchor_positions.get(current_interior, home_position)
+		return {"valid": true, "position": door, "indoors": true}
+	if _pinned:
+		# Displayed inside an interior the player is visiting; use the door too.
+		var d2 : Vector2 = anchor_positions.get(current_interior, _prepin_pos)
+		return {"valid": true, "position": d2, "indoors": true}
+	return {"valid": true, "position": global_position, "indoors": false}
+
 ## Materialize this NPC inside an interior instance at `pos` (called by
 ## InteriorManager when the player enters the building it's in).
 func show_in_interior(pos: Vector2) -> void:
@@ -118,12 +148,14 @@ func _come_outside() -> void:
 		_apply_presence()
 
 # Visible & interactable when outside or pinned; collidable only when outside.
+# Being away from town hides them regardless.
 func _apply_presence() -> void:
-	var shown : bool = (not _inside) or _pinned
+	var shown : bool = ((not _inside) or _pinned) and not _away
 	visible = shown
 	_set_group("interactable_npc", shown)
-	collision_layer = _col_layer if not _inside else 0
-	collision_mask  = _col_mask  if not _inside else 0
+	var solid : bool = shown and not _inside
+	collision_layer = _col_layer if solid else 0
+	collision_mask  = _col_mask  if solid else 0
 
 func _set_group(g: String, on: bool) -> void:
 	if on and not is_in_group(g):

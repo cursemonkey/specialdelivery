@@ -59,6 +59,8 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	sprite.shirt_color = def.shirt_color
 	sprite.pants_color = def.pants_color
 	sprite.hair_color  = def.hair_color
+	sprite.skin_color  = def.skin_color
+	sprite.bald        = def.bald
 	npc._retarget(true)
 
 ## Resolve every door anchor a definition references into world positions.

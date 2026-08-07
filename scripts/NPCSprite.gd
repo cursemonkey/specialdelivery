@@ -8,6 +8,7 @@ extends Node2D
 @export var pants_color : Color = Color("#4a4a5e")
 @export var hair_color  : Color = Color("#3a2a1a")
 @export var skin_color  : Color = Color("#e8c8a0")
+@export var bald        : bool  = false
 # Background villagers set this: a blank, expressionless "NPC-meme" face
 # (dead dot eyes + a flat straight mouth) instead of the direction-aware eyes.
 @export var meme_style  : bool  = false
@@ -40,8 +41,11 @@ func _draw() -> void:
 	# Head
 	draw_rect(Rect2(-5, -13, 10, 11), skin_color)
 
-	# Hair
-	draw_rect(Rect2(-5, -16, 10, 4), hair_color)
+	# Hair — bald characters get a rounded scalp in skin tone instead.
+	if bald:
+		draw_rect(Rect2(-4, -15, 8, 3), skin_color)
+	else:
+		draw_rect(Rect2(-5, -16, 10, 4), hair_color)
 
 	if meme_style:
 		_draw_meme_face()
