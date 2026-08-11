@@ -20,6 +20,10 @@ extends Resource
 @export var use_hours   : bool       = false         # true = match on start_hour/end_hour, not phase
 @export var start_hour  : float      = 0.0           # inclusive
 @export var end_hour    : float      = 0.0           # exclusive; may wrap past midnight (e.g. 18 → 4)
+@export var seasons     : Array[int] = []            # empty = all seasons; else Calendar.Season values
+## Wander radius in px around the anchor spot. 0 = stand still; >0 makes the NPC
+## drift to random points within this radius (outdoor entries only).
+@export var wander      : float      = 0.0
 
 static func make(days: Array[int], entry_phase: int, anchor_name: String, pos_offset: Vector2 = Vector2.ZERO, parity: int = -1, is_interior: bool = false) -> NPCScheduleEntry:
 	var entry : NPCScheduleEntry = NPCScheduleEntry.new()
@@ -45,16 +49,28 @@ static func make_hours(days: Array[int], from_hour: float, to_hour: float, ancho
 	entry.interior    = is_interior
 	return entry
 
-func matches(day: int, current_phase: int, current_week_parity: int = -1, current_hour: float = -1.0) -> bool:
+func matches(day: int, current_phase: int, current_week_parity: int = -1, current_hour: float = -1.0, current_season: int = -1) -> bool:
 	if week_parity != -1 and week_parity != current_week_parity:
 		return false
 	if not (weekdays.is_empty() or weekdays.has(day)):
+		return false
+	if not seasons.is_empty() and current_season >= 0 and not seasons.has(current_season):
 		return false
 	if use_hours:
 		if current_hour < 0.0:
 			return false
 		return _hour_in_range(current_hour)
 	return phase == current_phase
+
+## Chainable tweaks, so callers don't need ever-longer positional arg lists:
+##   NPCScheduleEntry.make_hours(...).in_seasons([...]).wandering(120.0)
+func in_seasons(season_list: Array[int]) -> NPCScheduleEntry:
+	seasons = season_list
+	return self
+
+func wandering(radius: float) -> NPCScheduleEntry:
+	wander = radius
+	return self
 
 func _hour_in_range(h: float) -> bool:
 	if is_equal_approx(start_hour, end_hour):

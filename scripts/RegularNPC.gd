@@ -25,6 +25,10 @@ var current_interior : String  = ""
 var _pending_interior: String  = ""   # walking to this building's door, then going inside
 var _pinned          : bool    = false
 var _away            : bool    = false   # out of town this part of the year
+var _wander_centre   : Vector2 = Vector2.ZERO
+var _wander_radius   : float   = 0.0     # > 0 while drifting around _wander_centre
+var _on_duty         : bool    = false   # posted to a police roadblock
+var _duty_post       : Vector2 = Vector2.ZERO
 var _prepin_pos      : Vector2 = Vector2.ZERO
 var _col_layer       : int     = 1
 var _col_mask        : int     = 1
@@ -43,6 +47,11 @@ func _ready() -> void:
 func _retarget(immediate: bool = false) -> void:
 	if _pinned:
 		return   # currently displayed in an interior; don't move
+	if _on_duty:
+		# Posted to a police roadblock: stay put until stood down.
+		_come_outside()
+		set_move_target(_duty_post)
+		return
 	# Out of town for the season (e.g. on tour): hide entirely and skip the
 	# schedule until they're back.
 	if definition != null and definition.is_away_on(GameManager.day):
@@ -54,19 +63,37 @@ func _retarget(immediate: bool = false) -> void:
 		_away = false
 		_apply_presence()
 	for entry in schedule:
-		if entry.matches(TimeManager.weekday, TimeManager.phase, TimeManager.week_parity, TimeManager.hour):
+		if entry.matches(TimeManager.weekday, TimeManager.phase, TimeManager.week_parity,
+				TimeManager.hour, TimeManager.season):
 			if entry.interior:
+				_wander_centre = Vector2.ZERO
+				_wander_radius = 0.0
 				_target_interior(entry.anchor, _resolve(entry.anchor, entry.offset), immediate)
 			else:
 				# Standing outside a building: keep clear of its doorway.
 				_pending_interior = ""
 				_come_outside()
 				var door : Vector2 = anchor_positions.get(entry.anchor, home_position)
-				set_move_target(_clear_of_door(door, _resolve(entry.anchor, entry.offset)))
+				var spot : Vector2 = _clear_of_door(door, _resolve(entry.anchor, entry.offset))
+				_wander_radius = entry.wander
+				if _wander_radius > 0.0:
+					_wander_centre = spot
+					set_move_target(_pick_wander_point())
+				else:
+					_wander_centre = Vector2.ZERO
+					set_move_target(spot)
 			return
 	_pending_interior = ""
 	_come_outside()
+	_wander_centre = Vector2.ZERO
+	_wander_radius = 0.0
 	set_move_target(_clear_of_door(_home_door_pos(), home_position))
+
+## A random point within the current wander area, kept clear of the doorway.
+func _pick_wander_point() -> Vector2:
+	var a : float = randf() * TAU
+	var r : float = sqrt(randf()) * _wander_radius   # uniform over the disc
+	return _wander_centre + Vector2(cos(a), sin(a)) * r
 
 ## The home door itself (home_position already includes the definition offset).
 func _home_door_pos() -> Vector2:
@@ -88,6 +115,11 @@ func _on_arrived() -> void:
 		var b : String = _pending_interior
 		_pending_interior = ""
 		_go_inside(b, global_position)
+		return
+	# Wandering: pause a beat, then drift to another nearby spot.
+	if _wander_radius > 0.0:
+		_halt_timer = maxf(_halt_timer, randf_range(1.5, 4.0))
+		set_move_target(_pick_wander_point())
 
 # ── Interior presence ──────────────────────────────────────
 func is_inside_building(building_id: String) -> bool:
@@ -96,6 +128,26 @@ func is_inside_building(building_id: String) -> bool:
 ## True while this NPC is out of town (on tour etc.) — no map marker.
 func is_away() -> bool:
 	return _away
+
+# ── Police duty ────────────────────────────────────────────
+## Send this officer to man a roadblock. They drive there (cruiser speed) and
+## stay until released, ignoring their normal schedule.
+func post_to_duty(post: Vector2) -> void:
+	_on_duty   = true
+	_duty_post = post
+	_pending_interior = ""
+	_wander_radius = 0.0
+	_come_outside()
+	# Arrive by cruiser: they cover the distance quickly rather than strolling.
+	global_position = post
+	set_move_target(post)
+	_apply_presence()
+
+func release_from_duty() -> void:
+	if not _on_duty:
+		return
+	_on_duty = false
+	_retarget(true)
 
 ## Where this NPC should be shown on the world map. Indoors they're physically
 ## parked at the interior staging area, so report the door of the building
@@ -216,9 +268,17 @@ func portrait_for_mood(mood: String) -> Texture2D:
 ## portrait for that line's emotion. Tolerates plain Strings as neutral lines.
 func get_dialogue_blocks() -> Array:
 	var blocks : Array = []
+	var who    : String = display_label()
 	for line in get_dialogue():
 		if line is DialogueLine:
-			blocks.append({"text": line.text, "portrait": portrait_for_mood(line.mood)})
+			blocks.append({"text": line.text, "portrait": portrait_for_mood(line.mood), "speaker": who})
 		else:
-			blocks.append({"text": str(line), "portrait": portrait_for_mood("")})
+			blocks.append({"text": str(line), "portrait": portrait_for_mood(""), "speaker": who})
 	return blocks
+
+## The name shown beside this NPC's portrait. NPCs with no name of their own
+## fall back to a stable "NPC 1", "NPC 2", … label based on their id.
+func display_label() -> String:
+	if not npc_name.is_empty() and npc_name != "Villager":
+		return npc_name
+	return NPCRegistry.fallback_name_for(id)

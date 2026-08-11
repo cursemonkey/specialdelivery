@@ -11,9 +11,10 @@ const BikeScene             := preload("res://scenes/Bike.tscn")
 const BirdScene             := preload("res://scenes/Bird.tscn")
 const NPCManagerScript       := preload("res://scripts/NPCManager.gd")
 const InteriorManagerScript  := preload("res://scripts/InteriorManager.gd")
-const RoadblockManagerScript := preload("res://scripts/RoadblockManager.gd")
+const PoliceManagerScript    := preload("res://scripts/PoliceManager.gd")
 const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
 const LedgerScreenScene      := preload("res://scenes/LedgerScreen.tscn")
+const CutsceneScene          := preload("res://scenes/Cutscene.tscn")
 const BIRD_COUNT             := 6
 
 @onready var world          : Node2D          = $WorldGenerator
@@ -37,18 +38,14 @@ var _continue_flow    : bool   = false   # loading a save: start drops now, don'
 var _home_door_node   : Node2D = null
 var _npc_manager       : Node2D = null
 var _interior_manager  : Node2D = null
-var _roadblock_manager : Node2D = null
+var _police_manager    : Node2D = null
 var _day_transition    : CanvasLayer = null
 var _ledger_screen     : CanvasLayer = null
+var _cutscene          : CanvasLayer = null
 var _day_ending        : bool = false
 
 var _energy_accum : float = 0.0   # fractional energy drained this second
 var _rizz_accum   : float = 0.0   # fractional rizz gained from following birds
-
-const DOCTOR_LETTER : Array = [
-	"A letter from the town doctor:",
-	"\"You pushed yourself too hard out there and collapsed. I've had you brought home to rest. Please take better care of yourself — mind those crashes!\"",
-]
 
 func _ready() -> void:
 	var bg_size = $Background.texture.get_size() * $Background.scale
@@ -137,13 +134,16 @@ func _ready() -> void:
 	_interior_manager.entered_building.connect(_on_entered_building)
 	player.interior_manager = _interior_manager
 
-	_roadblock_manager = RoadblockManagerScript.new()
-	_roadblock_manager.name = "RoadblockManager"
-	add_child(_roadblock_manager)
-	_roadblock_manager.setup()
+	_police_manager = PoliceManagerScript.new()
+	_police_manager.name = "PoliceManager"
+	add_child(_police_manager)
+	_police_manager.setup()
 
 	_ledger_screen = LedgerScreenScene.instantiate()
 	add_child(_ledger_screen)
+
+	_cutscene = CutsceneScene.instantiate()
+	add_child(_cutscene)
 
 	GameManager.out_of_health.connect(_on_collapsed)
 	TimeManager.midnight_passed.connect(_on_midnight)
@@ -281,19 +281,41 @@ func _tick_stats(delta: float) -> void:
 			_rizz_accum -= 1.0
 			GameManager.add_rizz(1)
 
-# Out of health: end the day, deliver the doctor's letter, wake at home.
+# Out of health: play the collapse cutscene, show the day's ledger, then wake
+# up in your own bed at 6am having lost a day.
 func _on_collapsed() -> void:
-	if not _day_running:
+	if not _day_running or _day_ending:
 		return
 	_day_running = false
 	drop_pads.end_day()
 	player.input_locked = true
-	# Doctor's letter first, then the day-end ledger, then wake at home.
-	var dbox := get_node_or_null("DialogueBox")
-	if dbox != null:
-		dbox.open(DOCTOR_LETTER, func() -> void: _end_day(_next_day))
-	else:
-		_end_day(_next_day)
+	# Whichever Carrington is more plausible as your carer: the doctor by day,
+	# her mother the nurse otherwise.
+	var carer : String = "doctor_carrington" if TimeManager.hour < 18.0 else "elsie_carrington"
+	var carer_def : NPCDefinition = NPCRegistry.get_definition(carer)
+	var carer_name : String = carer_def.display_name if carer_def != null else "The doctor"
+	_cutscene.play("Your bedroom — later that day", [
+		{"text": "Everything goes grey at the edges. The pavement comes up to meet you..."},
+		{"speaker": carer, "mood": "calm",
+		 "text": "Easy now. You collapsed out on your route — we brought you home."},
+		{"speaker": carer, "mood": "mad",
+		 "text": "You pushed yourself far too hard. I've written you off for the rest of the day."},
+		{"speaker": carer, "mood": "calm",
+		 "text": "Rest up. Your deliveries can wait until tomorrow — doctor's orders."},
+		{"text": "%s sees themselves out. You've lost a day." % carer_name},
+	], _after_collapse_cutscene)
+
+func _after_collapse_cutscene() -> void:
+	# Ledger for the day that just ended, then wake at 6am tomorrow, in bed.
+	_end_day(_wake_after_collapse)
+
+func _wake_after_collapse() -> void:
+	GameManager.day += 1
+	GameManager.day_changed.emit(GameManager.day)
+	world._scatter_pickups()
+	_begin_day(TimeManager.DAY_START_HOUR)   # 6am, spawns inside the player's home
+	GameManager.show_message("☀️ You wake at %s, a day behind — %s." \
+			% [TimeManager.clock_label(), GameManager.date_label()])
 
 # ── Sky tint ───────────────────────────────────────────────
 ## Driven by TimeManager.daylight(): 0 = full night, 1 = full daylight. The
@@ -404,8 +426,8 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 	player.reset_trail()
 	_spawn_birds()
 
-	if _roadblock_manager != null:
-		_roadblock_manager.spawn_for_day(player.global_position)
+	if _police_manager != null:
+		_police_manager.plan_for_day(player.global_position)
 
 	GameManager.show_message(
 		"☀️ %s! Watch for supply drops — pick them up to get deliveries!" \

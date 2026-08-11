@@ -28,6 +28,18 @@ func has(id: String) -> bool:
 func _add(def: NPCDefinition) -> void:
 	_defs[def.id] = def
 
+## Stable placeholder name for an NPC with no name of its own: the first such
+## NPC is "NPC 1", the next "NPC 2", and so on. Keyed by id so a given NPC keeps
+## the same number for the whole session.
+var _fallback_names : Dictionary = {}
+
+func fallback_name_for(id: String) -> String:
+	if id.is_empty():
+		return "NPC"
+	if not _fallback_names.has(id):
+		_fallback_names[id] = "NPC %d" % (_fallback_names.size() + 1)
+	return _fallback_names[id]
+
 # ── The cast ───────────────────────────────────────────────
 # Add a villager by writing a _register_* function and calling it here.
 func _register_all() -> void:
@@ -35,6 +47,97 @@ func _register_all() -> void:
 	_register_doctor_carrington()
 	_register_elsie_carrington()
 	_register_spider()
+	_register_flower_campbell()
+	_register_kali()
+	_register_darin()
+
+## Kali — police officer, 7am–7pm, off Tuesdays and Saturdays.
+func _register_kali() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "kali"
+	def.display_name = "Officer Kali"
+	def.home_anchor  = "House70"
+	def.shirt_color  = Color("#2f4a7a")   # police blues
+	def.pants_color  = Color("#26324a")
+	def.hair_color   = Color("#2b2118")
+	def.schedule     = _police_schedule("House70", [2, 6])   # off Tue(2) & Sat(6)
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Keep it slow through town, alright?", DialogueLine.CALM),
+		DialogueLine.make("Nice riding out there. Stay safe!", DialogueLine.HAPPY),
+	]
+	_add(def)
+
+## Darin — senior police officer, 7am–7pm, off Sundays and Mondays.
+func _register_darin() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "darin"
+	def.display_name = "Sergeant Darin"
+	def.home_anchor  = "House72"
+	def.shirt_color  = Color("#1e3560")   # darker blues — senior officer
+	def.pants_color  = Color("#1b2436")
+	def.hair_color   = Color("#6a6259")   # greying
+	def.schedule     = _police_schedule("House72", [0, 1])   # off Sun(0) & Mon(1)
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Thirty years on this beat. Seen it all.", DialogueLine.CALM),
+		DialogueLine.make("Slow down, kid. Packages aren't worth a crash.", DialogueLine.MAD),
+	]
+	_add(def)
+
+## Shared officer routine: on shift at the station 7am–7pm on working days,
+## home otherwise. On days they're assigned a roadblock, PoliceManager overrides
+## the daytime posting and sends them out to the scene instead.
+func _police_schedule(home: String, days_off: Array[int]) -> Array[NPCScheduleEntry]:
+	var work_days : Array[int] = []
+	for d in range(GameManager.DAY_NAMES.size()):
+		if not days_off.has(d):
+			work_days.append(d)
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours(work_days, 7.0, 19.0, "Police", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, home, Vector2(0, 20), -1, true),
+	]
+	return sched
+
+## True if this officer is on shift right now (used by PoliceManager).
+func officer_works_today(id: String, weekday: int) -> bool:
+	var off : Dictionary = {"kali": [2, 6], "darin": [0, 1]}
+	if not off.has(id):
+		return false
+	return not off[id].has(weekday)
+
+## Flower Campbell — lives and works on the farm. Out in the fields on spring and
+## summer mornings, indoors the rest of the day, church on Sundays and the
+## grocery on Thursday afternoons.
+func _register_flower_campbell() -> void:
+	const SUN : int = 0
+	const THU : int = 4
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "flower_campbell"
+	def.display_name = "Flower Campbell"
+	def.home_anchor  = "Farm"
+	def.shirt_color  = Color("#c0392b")   # red shirt
+	def.pants_color  = Color("#33509c")   # blue pants
+	def.hair_color   = Color("#c1440e")   # red hair
+	var spring_summer : Array[int] = [Calendar.Season.SPRING, Calendar.Season.SUMMER]
+	var sched : Array[NPCScheduleEntry] = [
+		# Sundays: church during the day.
+		NPCScheduleEntry.make_hours([SUN], 9.0, 13.0, "Church", Vector2(0, 40), -1, true),
+		# Thursday afternoons: the grocery store.
+		NPCScheduleEntry.make_hours([THU], 13.0, 17.0, "Grocery", Vector2(0, 40), -1, true),
+		# Spring & summer mornings: wandering the fields outside the farmhouse.
+		NPCScheduleEntry.make_hours([], 6.0, 12.0, "Farm", Vector2(0, 60), -1, false) \
+				.in_seasons(spring_summer).wandering(110.0),
+		# Everything else: inside the farmhouse.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, "Farm", Vector2(0, 30), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Mornin'! The fields are lookin' good this year.", DialogueLine.HAPPY),
+		DialogueLine.make("Nothin' beats a quiet morning out here.", DialogueLine.CALM),
+	]
+	_add(def)
 
 ## Spider — lives with Elsie Carrington, plays in a band. Out at the pub most
 ## nights, but stays in with Elsie on her days off (Saturday and Monday), and

@@ -5,7 +5,8 @@ const FAST_MULTIPLIER : float = 3.0
 
 @onready var label          : Label       = $Panel/Margin/DialogueLabel
 @onready var portrait_frame : Control     = $PortraitFrame
-@onready var portrait_rect  : TextureRect = $PortraitFrame/PortraitTexture
+@onready var portrait_rect  : TextureRect = $PortraitFrame/VBox/PortraitTexture
+@onready var name_label     : Label       = $PortraitFrame/VBox/NameLabel
 
 var _blocks        : Array    = []   # each: {text: String, portrait: Texture2D}
 var _block_index   : int      = 0
@@ -36,12 +37,17 @@ func _current_portrait() -> Texture2D:
 		return _blocks[_block_index].get("portrait", null)
 	return null
 
+func _current_speaker() -> String:
+	if _block_index < _blocks.size():
+		return str(_blocks[_block_index].get("speaker", ""))
+	return ""
+
 # Simple form: a String or Array of Strings, one portrait for every block.
-func open(texts: Variant, on_finish: Callable = Callable(), portrait: Texture2D = null) -> void:
+func open(texts: Variant, on_finish: Callable = Callable(), portrait: Texture2D = null, speaker: String = "") -> void:
 	var arr : Array = [texts] if texts is String else texts
 	var blocks : Array = []
 	for t in arr:
-		blocks.append({"text": str(t), "portrait": portrait})
+		blocks.append({"text": str(t), "portrait": portrait, "speaker": speaker})
 	open_blocks(blocks, on_finish)
 
 # Rich form: each block is {text: String, portrait: Texture2D}, so the portrait
@@ -54,16 +60,18 @@ func open_blocks(blocks: Array, on_finish: Callable = Callable()) -> void:
 	visible = true
 	get_tree().paused = true
 
-func set_portrait(portrait: Texture2D) -> void:
-	portrait_rect.texture = portrait
-	portrait_frame.visible = portrait != null
+func set_portrait(portrait: Texture2D, speaker_name: String = "") -> void:
+	portrait_rect.texture  = portrait
+	name_label.text        = speaker_name
+	name_label.visible     = not speaker_name.is_empty()
+	portrait_frame.visible = portrait != null or not speaker_name.is_empty()
 
 func _start_block() -> void:
 	_char_progress           = 0.0
 	typing                   = true
 	label.text               = _current_text()
 	label.visible_characters = 0
-	set_portrait(_current_portrait())
+	set_portrait(_current_portrait(), _current_speaker())
 
 # E or Space: skip typing → reveal block, advance to next block, or close.
 func advance() -> void:

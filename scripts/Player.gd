@@ -362,6 +362,18 @@ func _handle_npc_collisions() -> void:
 				_spin_out()
 			elif not on_bike:
 				npc.push(velocity)
+		elif collider is Vehicle:
+			# Riding into a parked vehicle: costs health and rizz, and spins out.
+			var cur_speed : float = velocity.length() if GameManager.easy_bike else absf(bike_speed)
+			if on_bike and cur_speed > NPC_RUNOVER_SPEED:
+				_hit_vehicle(collider)
+
+func _hit_vehicle(vehicle: Vehicle) -> void:
+	if _spin_timer > 0.0:
+		return   # already spinning from this crash
+	var msg : String = vehicle.on_hit_by_player()
+	_spin_timer = SPIN_DURATION
+	GameManager.show_message(msg)
 
 func _spin_out() -> void:
 	if _spin_timer > 0.0:

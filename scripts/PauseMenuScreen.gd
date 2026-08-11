@@ -288,23 +288,48 @@ func _update_npc_markers() -> void:
 	var displayed_size : Vector2 = tex_size * fit_scale
 	var img_offset     : Vector2 = (rect_size - displayed_size) / 2.0
 
+	# Several NPCs are often in the same building (Elsie and Spider share a home;
+	# Elsie's hospital shifts overlap Doctor Carrington's). Group markers by the
+	# spot they resolve to so they can be fanned out instead of stacking.
+	var groups : Dictionary = {}   # rounded world pos -> [entries]
 	for entry in _npc_markers:
-		var npc : Node    = entry.npc
-		var dot : Control = entry.dot
+		var npc : Node = entry.npc
 		if not is_instance_valid(npc):
-			dot.visible = false
+			entry.dot.visible = false
 			continue
 		var info : Dictionary = npc.map_marker_position()
 		if not info.valid:
-			dot.visible = false
+			entry.dot.visible = false
 			continue
-		dot.visible = true
-		var world_pos : Vector2 = info.position - background_ref.global_position
-		dot.position = img_offset + world_pos * fit_scale - dot.size / 2.0
-		# Indoors markers sit slightly above the door so they read as "in here".
-		if info.indoors:
-			dot.position.y -= NPC_DOT_SIZE * 0.5
-		dot.queue_redraw()
+		entry["info"] = info
+		var key : Vector2i = Vector2i(info.position.round())
+		if not groups.has(key):
+			groups[key] = []
+		groups[key].append(entry)
+
+	for key in groups:
+		var members : Array = groups[key]
+		for i in members.size():
+			var entry : Dictionary = members[i]
+			var dot   : Control    = entry.dot
+			var info  : Dictionary = entry.info
+			dot.visible = true
+			var world_pos : Vector2 = info.position - background_ref.global_position
+			var base      : Vector2 = img_offset + world_pos * fit_scale - dot.size / 2.0
+			# Indoors markers sit slightly above the door so they read as "in here".
+			if info.indoors:
+				base.y -= NPC_DOT_SIZE * 0.5
+			dot.position = base + _fan_offset(i, members.size())
+			dot.queue_redraw()
+
+## Spread co-located markers so each stays visible: a single NPC sits centred,
+## two or more fan out evenly around the shared point.
+func _fan_offset(index: int, count: int) -> Vector2:
+	if count <= 1:
+		return Vector2.ZERO
+	var radius : float = NPC_DOT_SIZE * 0.62
+	var angle  : float = TAU * float(index) / float(count) - PI * 0.5
+	return Vector2(cos(angle), sin(angle)) * radius
 
 func _ensure_pad_markers() -> void:
 	if not _pad_markers.is_empty() or drop_pad_manager == null:
