@@ -25,6 +25,7 @@ const CHARS_PER_SEC : float = 34.0
 @onready var speaker   : Label       = $Panel/Margin/VBox/SpeakerLabel
 @onready var hint      : Label       = $Panel/Margin/VBox/HintLabel
 @onready var portrait  : TextureRect = $PortraitFrame/VBox/PortraitTexture
+@onready var name_label: Label       = $PortraitFrame/VBox/NameLabel
 @onready var frame     : Control     = $PortraitFrame
 
 var _lines    : Array    = []
@@ -69,16 +70,22 @@ func _show_line() -> void:
 
 	var id : String = str(line.get("speaker", ""))
 	if id.is_empty():
-		speaker.text = ""
+		speaker.text  = ""
 		frame.visible = false
 	else:
 		var def : NPCDefinition = NPCRegistry.get_definition(id)
-		speaker.text = def.display_name if def != null else id
+		var who : String = id
+		if def != null and not def.display_name.is_empty() and def.display_name != "Villager":
+			who = def.display_name
+		else:
+			who = NPCRegistry.fallback_name_for(id)
+		speaker.text = who
 		var tex : Texture2D = null
 		if def != null:
 			tex = def.portrait_texture(str(line.get("mood", "")))
-		portrait.texture = tex
-		frame.visible = tex != null
+		portrait.texture  = tex
+		name_label.text   = who
+		frame.visible     = tex != null
 
 func _process(delta: float) -> void:
 	if not _typing:

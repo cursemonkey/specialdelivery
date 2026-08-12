@@ -32,8 +32,19 @@ func setup(player: CharacterBody2D, doors_root: Node) -> void:
 	_doors  = doors_root
 
 func spawn_all() -> void:
+	_collect_door_positions()
 	_spawn_background_npcs()
 	_spawn_regular_npcs()
+
+## Share every door position with RegularNPC so idle NPCs can be kept clear of
+## all doorways, not just the ones their own schedule references.
+func _collect_door_positions() -> void:
+	var doors : Array[Vector2] = []
+	if _doors != null:
+		for d in _doors.get_children():
+			if d is Node2D:
+				doors.append(d.global_position)
+	RegularNPC.all_door_positions = doors
 
 # ── Regular cast (from NPCRegistry) ────────────────────────
 func _spawn_regular_npcs() -> void:

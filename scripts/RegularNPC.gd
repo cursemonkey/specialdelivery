@@ -215,25 +215,46 @@ func _set_group(g: String, on: bool) -> void:
 	elif not on and is_in_group(g):
 		remove_from_group(g)
 
-## Minimum distance an idling NPC must keep from a doorway, so nobody loiters in
-## a door the player needs to use. Only applies to resting spots — NPCs actually
-## entering or leaving a building still walk right up to the door.
-const DOOR_CLEARANCE : float = 20.0
+## Minimum distance an idling NPC must keep from ANY doorway, so nobody loiters
+## where the player needs to walk in. Only applies to resting spots — NPCs
+## actually entering or leaving a building still walk right up to the door.
+const DOOR_CLEARANCE : float = 80.0
+
+## Every door position in town, shared by NPCManager so clearance can be checked
+## against all of them rather than just this NPC's own anchors.
+static var all_door_positions : Array[Vector2] = []
 
 func _resolve(anchor: String, offset: Vector2) -> Vector2:
 	var base : Vector2 = anchor_positions.get(anchor, home_position)
 	return base + offset
 
-## Push a standing spot away from its doorway if it's too close. The direction
-## is kept (so an NPC meant to wait south of a door still waits south of it),
-## just extended out to DOOR_CLEARANCE.
-func _clear_of_door(door_pos: Vector2, spot: Vector2) -> Vector2:
-	var away : Vector2 = spot - door_pos
-	if away.length() >= DOOR_CLEARANCE:
-		return spot
-	if away.length() < 0.01:
-		away = Vector2.DOWN   # spot sits exactly on the door: step south of it
-	return door_pos + away.normalized() * DOOR_CLEARANCE
+## Push a standing spot clear of every nearby doorway. `preferred_door` is the
+## NPC's own anchor, used to pick a sensible direction when the spot has to move.
+func _clear_of_door(preferred_door: Vector2, spot: Vector2) -> Vector2:
+	var result : Vector2 = spot
+	# Repeatedly push out of whichever door is currently too close. A handful of
+	# passes settles the common cases (doors clustered along a street).
+	for _pass in 6:
+		var worst      : Vector2 = Vector2.ZERO
+		var worst_dist : float   = DOOR_CLEARANCE
+		var found      : bool    = false
+		for d in all_door_positions:
+			var dist : float = result.distance_to(d)
+			if dist < worst_dist:
+				worst_dist = dist
+				worst      = d
+				found      = true
+		if not found:
+			return result
+		var away : Vector2 = result - worst
+		if away.length() < 0.01:
+			# Sitting exactly on a door: head away from the NPC's own anchor, or
+			# south if that's the same door.
+			away = result - preferred_door
+			if away.length() < 0.01:
+				away = Vector2.DOWN
+		result = worst + away.normalized() * DOOR_CLEARANCE
+	return result
 
 ## Called by Player just before opening the dialogue box. The tree pauses
 ## while dialogue is open; the short halt keeps the NPC standing politely

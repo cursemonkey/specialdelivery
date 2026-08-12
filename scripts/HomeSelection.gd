@@ -53,7 +53,8 @@ func show_selection() -> void:
 	if dialogue_box_ref != null:
 		var mayor : NPCDefinition = NPCRegistry.get_definition("mayor_henderson")
 		var portrait : Texture2D = mayor.portrait_texture(DialogueLine.HAPPY) if mayor != null else null
-		dialogue_box_ref.open(MAYOR_TEXT, _show_choices, portrait)
+		var who : String = mayor.display_name if mayor != null else ""
+		dialogue_box_ref.open(MAYOR_TEXT, _show_choices, portrait, who)
 	else:
 		_show_choices()
 
