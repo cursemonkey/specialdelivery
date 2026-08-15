@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://bkmtelsev87pm" path="res://scripts/Main.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://worldgen" path="res://scenes/WorldGenerator.tscn" id="2"]
+[ext_resource type="Texture2D" uid="uid://dqin24igq1gmm" path="res://assets/Backgrounds/Building_Rooftop_TownHouses.png" id="2_3p2gp"]
 [ext_resource type="PackedScene" uid="uid://player" path="res://scenes/Player.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://hud" path="res://scenes/HUD.tscn" id="4"]
 [ext_resource type="Texture2D" uid="uid://kcqviynp85l4" path="res://assets/Backgrounds/Building_Rooftop_House.png" id="4_bjd11"]
-[ext_resource type="Texture2D" uid="uid://rh80l63nuiwh" path="res://assets/Backgrounds/Rooftop_Building_Mechanic.png" id="4_wp0k4"]
 [ext_resource type="PackedScene" uid="uid://titlescreen" path="res://scenes/TitleScreen.tscn" id="5"]
 [ext_resource type="Texture2D" uid="uid://3uyimeci5ku" path="res://assets/Backgrounds/Building_Rooftop_Bakery.png" id="5_3p2gp"]
 [ext_resource type="Script" uid="uid://cawj4uxomwgya" path="res://scripts/ArtBuilding.gd" id="6"]
@@ -20,6 +20,9 @@
 load_path = "res://.godot/imported/CityMap1.1.png-457fada442c53509f0537c047d030626.ctex"
 
 [sub_resource type="TileSet" id="TileSet_bjd11"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_cvmbd"]
+load_path = "res://.godot/imported/Rooftop_Building_Mechanic.png-f5f9260727209b86f270ce90dc4ad239.ctex"
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_qmy6f"]
 vertices = PackedVector2Array(126.421875, 0.703125, 132.53906, 137.1875, -8.296875, 139.8125, -12.671875, -3.65625)
@@ -176,6 +179,10 @@ metadata/_edit_lock_ = true
 [node name="TileMapLayer" type="TileMapLayer" parent="Background" unique_id=609535863]
 tile_set = SubResource("TileSet_bjd11")
 
+[node name="TownhouseRoof" type="Sprite2D" parent="Background" unique_id=1371311946]
+position = Vector2(2629, 338)
+texture = ExtResource("2_3p2gp")
+
 [node name="Buildings" type="StaticBody2D" parent="Background" unique_id=319498116]
 editor_description = "Array of Building Shapes"
 
@@ -207,11 +214,11 @@ polygon = PackedVector2Array(10231, -2687, 10237, -2809, 10322, -2880, 10405, -2
 position = Vector2(555, 91)
 polygon = PackedVector2Array(3632, 320, 3635, 162, 3809, 173, 3900, 176, 3897, 314)
 
-[node name="MechanicRoof" type="Sprite2D" parent="Background/Buildings" unique_id=1669481343]
+[node name="MechanicRoof2" type="Sprite2D" parent="Background/Buildings" unique_id=1818967758]
 z_index = 1
 position = Vector2(1326, 834)
 scale = Vector2(1.0316206, 1.2045451)
-texture = ExtResource("4_wp0k4")
+texture = SubResource("CompressedTexture2D_cvmbd")
 region_enabled = true
 region_rect = Rect2(0, 0, 253, 88.09999)
 
@@ -523,44 +530,47 @@ navigation_polygon = SubResource("NavigationPolygon_g6wdg")
 position = Vector2(1354, 4029)
 navigation_polygon = SubResource("NavigationPolygon_g6wdg")
 
-[node name="Grass2" type="Node2D" parent="Background" unique_id=913162803]
+[node name="Grass" type="Node2D" parent="Background" unique_id=913162803]
 position = Vector2(1209, -1169)
 
-[node name="Grass5" type="NavigationRegion2D" parent="Background/Grass2" unique_id=354549419 groups=["grass_zone"]]
+[node name="Grass5" type="NavigationRegion2D" parent="Background/Grass" unique_id=354549419 groups=["grass_zone"]]
 position = Vector2(2530, 1164)
 navigation_polygon = SubResource("NavigationPolygon_ft6cd")
 
-[node name="Grass6" type="NavigationRegion2D" parent="Background/Grass2" unique_id=403542013 groups=["grass_zone"]]
+[node name="Grass6" type="NavigationRegion2D" parent="Background/Grass" unique_id=403542013 groups=["grass_zone"]]
 position = Vector2(3142, 940)
 navigation_polygon = SubResource("NavigationPolygon_cvmbd")
 
-[node name="Grass" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1752064760 groups=["grass_zone"]]
+[node name="Grass1" type="NavigationRegion2D" parent="Background/Grass" unique_id=1752064760 groups=["grass_zone"]]
 position = Vector2(1266, -316)
 navigation_polygon = SubResource("NavigationPolygon_3p2gp")
 
-[node name="Grass3" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1557030316 groups=["grass_zone"]]
+[node name="Grass3" type="NavigationRegion2D" parent="Background/Grass" unique_id=1557030316 groups=["grass_zone"]]
 position = Vector2(35, 1160)
 navigation_polygon = SubResource("NavigationPolygon_nfivy")
 
-[node name="Grass4" type="NavigationRegion2D" parent="Background/Grass2" unique_id=892123954 groups=["grass_zone"]]
+[node name="Grass4" type="NavigationRegion2D" parent="Background/Grass" unique_id=892123954 groups=["grass_zone"]]
 position = Vector2(608, 1217)
 navigation_polygon = SubResource("NavigationPolygon_bjd11")
 
-[node name="Grass7" type="NavigationRegion2D" parent="Background/Grass2" unique_id=818527042 groups=["grass_zone"]]
+[node name="Grass7" type="NavigationRegion2D" parent="Background/Grass" unique_id=818527042 groups=["grass_zone"]]
 position = Vector2(-686, 1915)
 navigation_polygon = SubResource("NavigationPolygon_hq6as")
 
-[node name="Grass8" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1822111587 groups=["grass_zone"]]
+[node name="Grass8" type="NavigationRegion2D" parent="Background/Grass" unique_id=1822111587 groups=["grass_zone"]]
 position = Vector2(902, 1924)
 navigation_polygon = SubResource("NavigationPolygon_kxyth")
 
-[node name="Grass9" type="NavigationRegion2D" parent="Background/Grass2" unique_id=37440687 groups=["grass_zone"]]
+[node name="Grass9" type="NavigationRegion2D" parent="Background/Grass" unique_id=37440687 groups=["grass_zone"]]
 position = Vector2(1494, 1924)
 navigation_polygon = SubResource("NavigationPolygon_cobve")
 
-[node name="Grass10" type="NavigationRegion2D" parent="Background/Grass2" unique_id=1360693256 groups=["grass_zone"]]
+[node name="Grass10" type="NavigationRegion2D" parent="Background/Grass" unique_id=1360693256 groups=["grass_zone"]]
 position = Vector2(2979, 1920)
 navigation_polygon = SubResource("NavigationPolygon_cobve")
+
+[node name="Sprite2D2" type="Sprite2D" parent="Background" unique_id=171038860]
+position = Vector2(0, -1)
 
 [node name="Doors" type="Node" parent="." unique_id=871836246]
 

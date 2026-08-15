@@ -2,6 +2,7 @@ extends Node
 
 const DAY_NAMES := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
+
 func day_name() -> String:
 	return DAY_NAMES[(day - 1) % DAY_NAMES.size()]
 
@@ -47,6 +48,11 @@ var hp     : int = 20   # full each day; spinouts cost 1; 0 ends the day
 var energy : int = 20   # full each day; moving drains it; 0 = half speed
 var rizz   : int = 0    # starts at 0; each point adds 1% delivery tip
 
+## Sub-point damage carried between hits (see damage_hp). Kept separate so `hp`
+## stays an int: the HP bar draws one segment per whole point, so a segment only
+## vanishes once accumulated fractions add up to a full point.
+var _hp_debt : float = 0.0
+
 signal hp_changed(v: int)
 signal energy_changed(v: int)
 signal rizz_changed(v: int)
@@ -59,6 +65,19 @@ func add_hp(delta: int) -> void:
 	if was > 0 and hp == 0:
 		out_of_health.emit()
 
+## Fractional damage, e.g. 0.5 for a pothole or 0.25 for a puddle. Fractions
+## accumulate in `_hp_debt` and only bite into `hp` once they total a whole
+## point — so four puddle hits cost one HP segment, not four.
+func damage_hp(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	_hp_debt += amount
+	var whole : int = int(floor(_hp_debt))
+	if whole <= 0:
+		return
+	_hp_debt -= float(whole)
+	add_hp(-whole)
+
 func add_energy(delta: int) -> void:
 	energy = clampi(energy + delta, 0, max_energy)
 	energy_changed.emit(energy)
@@ -67,37 +86,216 @@ func add_rizz(delta: int) -> void:
 	rizz = clampi(rizz + delta, 0, max_rizz)
 	rizz_changed.emit(rizz)
 
-## Reset the per-day stats: full health & energy, zero rizz. Also clears the
-## day's delivery ledger.
+## Reset the per-day stats: full health & energy, zero rizz. The ledger is NOT
+## cleared here — it spans a calendar day and is cleared by clear_ledger() on
+## the date rollover, so a same-day nap keeps the morning's deliveries.
 func reset_day_stats() -> void:
-	hp     = max_hp
-	energy = max_energy
-	rizz   = 0
-	_ledger.clear()
+	hp       = max_hp
+	energy   = max_energy
+	rizz     = 0
+	_hp_debt = 0.0
 	hp_changed.emit(hp)
 	energy_changed.emit(energy)
 	rizz_changed.emit(rizz)
+
+## Partial rest: restore a fraction of max HP and energy (0.0–1.0+). Rizz is a
+## reputation built during the day, so sleeping does not touch it. Rounds up so
+## a single hour always returns something visible on the segmented bars.
+func recover_by_fraction(fraction: float) -> void:
+	if fraction <= 0.0:
+		return
+	var hp_gain : int = int(ceil(float(max_hp)     * fraction))
+	var en_gain : int = int(ceil(float(max_energy) * fraction))
+	hp       = clampi(hp + hp_gain,         0, max_hp)
+	energy   = clampi(energy + en_gain,     0, max_energy)
+	_hp_debt = 0.0   # a rest clears any part-point of pending damage
+	hp_changed.emit(hp)
+	energy_changed.emit(energy)
 
 func rizz_over_half() -> bool:
 	return float(rizz) / float(max_rizz) > 0.5
 
 # ── Delivery ledger ────────────────────────────────────────
-# One entry per delivery: {name, value, tip}. value = speed-scaled base pay,
-# tip = the Rizz bonus on top. Read at day-end, cleared at day start.
+# One entry per delivery: {name, value, rizz_tip, speed_tip, tip}.
+#   value     = flat base pay for the drop
+#   rizz_tip  = the customer's tip for style (+1% of base per Rizz point)
+#   speed_tip = the customer's tip for promptness (up to +100% of base)
+#   tip       = rizz_tip + speed_tip (kept for convenience / older readers)
+# The ledger now covers a calendar day (0:00–23:59:59), so it survives naps and
+# is only cleared when the date actually rolls over — see clear_ledger().
 var _ledger : Array = []
 
 func get_ledger() -> Array:
 	return _ledger
 
-## Record a delivery, splitting the speed-scaled value from the Rizz tip, add
-## the total to cash, and return that total.
+## Clear the day's ledger. Called only on a true calendar-day rollover, NOT on
+## every sleep — a same-day nap must keep the morning's deliveries visible.
+func clear_ledger() -> void:
+	_ledger.clear()
+
+## A tip has two independent halves, so each can be zero on its own:
+##   • Rizz  — style, +1% of base per Rizz point (0 at zero Rizz)
+##   • Speed — promptness, scaled from the delivery time (0 at/after SLOW_TIME)
+## A very slow delivery by a player with no Rizz therefore tips exactly $0.
+func rizz_tip_for(base_earned: int) -> int:
+	return int(round(float(base_earned) * float(rizz) * 0.01))
+
+func speed_tip_for(base_earned: int, landing_time: float) -> int:
+	return int(round(float(base_earned) * speed_tip_frac(landing_time)))
+
+## 0.0 … (DELIVERY_MAX_MULT - 1.0): the speed half of the tip as a fraction of
+## base. Full value up to FAST_TIME, decaying to nothing by SLOW_TIME.
+func speed_tip_frac(landing_time: float) -> float:
+	return _delivery_mult(landing_time) - DELIVERY_MIN_MULT
+
+## Record a delivery, splitting base pay from the two tip halves, add the total
+## to cash, and return that total.
 func register_delivery(base_earned: int, landing_time: float, target_name: String) -> int:
-	var value : int = int(round(float(base_earned) * _delivery_mult(landing_time)))
-	var tip   : int = int(round(float(value) * float(rizz) * 0.01))
-	var total : int = value + tip
-	_ledger.append({"name": target_name, "value": value, "tip": tip})
+	var value     : int = base_earned
+	var rizz_tip  : int = rizz_tip_for(base_earned)
+	var speed_tip : int = speed_tip_for(base_earned, landing_time)
+	var total     : int = value + rizz_tip + speed_tip
+	_ledger.append({
+		"name":      target_name,
+		"value":     value,
+		"rizz_tip":  rizz_tip,
+		"speed_tip": speed_tip,
+		"tip":       rizz_tip + speed_tip,
+	})
 	on_delivery_complete(total)
 	return total
+
+# ── Inventory ──────────────────────────────────────────────
+## A fixed row of slots, each either empty (null) or holding one item type with
+## a remaining-portion count: {"id": String, "portions": int}. One purchase
+## fills one slot, so carrying capacity — not raw quantity — is the limit.
+const INVENTORY_SLOTS : int = 6
+
+var inventory : Array = []
+
+signal inventory_changed()
+
+func _init() -> void:
+	_clear_inventory()
+
+func _clear_inventory() -> void:
+	inventory = []
+	for i in INVENTORY_SLOTS:
+		inventory.append(null)
+
+## First slot index holding `id` with portions left, or -1.
+func find_item_slot(id: String) -> int:
+	for i in inventory.size():
+		var s : Variant = inventory[i]
+		if s is Dictionary and str(s.get("id", "")) == id and int(s.get("portions", 0)) > 0:
+			return i
+	return -1
+
+func first_empty_slot() -> int:
+	for i in inventory.size():
+		if inventory[i] == null:
+			return i
+	return -1
+
+func has_free_slot() -> bool:
+	return first_empty_slot() != -1
+
+## Put one purchase of `id` into a free slot. Returns false when full. Each
+## purchase takes its own slot rather than topping up a partial one, so a
+## half-eaten loaf and a fresh loaf stay distinct.
+func add_item(id: String) -> bool:
+	if not ItemRegistry.has(id):
+		return false
+	var slot : int = first_empty_slot()
+	if slot == -1:
+		return false
+	inventory[slot] = {"id": id, "portions": ItemRegistry.portions(id)}
+	inventory_changed.emit()
+	return true
+
+## Eat one portion from `slot`, restoring that item's energy. The slot empties
+## when its last portion is gone. Returns false if the slot has nothing to eat.
+func consume_slot(slot: int) -> bool:
+	if slot < 0 or slot >= inventory.size():
+		return false
+	var s : Variant = inventory[slot]
+	if not (s is Dictionary):
+		return false
+	var id    : String = str(s.get("id", ""))
+	var left  : int    = int(s.get("portions", 0))
+	if left <= 0 or not ItemRegistry.has(id):
+		return false
+	# Refuse when it would be wasted: energy is already full, so the portion
+	# would be spent for nothing.
+	if energy >= max_energy:
+		return false
+	add_energy(ItemRegistry.energy(id))
+	left -= 1
+	if left <= 0:
+		inventory[slot] = null
+	else:
+		s["portions"] = left
+		inventory[slot] = s
+	inventory_changed.emit()
+	return true
+
+## Slots as save-friendly plain data (and back). Nulls are preserved so slot
+## positions survive a round-trip.
+func _inventory_to_save() -> Array:
+	var out : Array = []
+	for s in inventory:
+		if s is Dictionary:
+			out.append({"id": str(s.get("id", "")), "portions": int(s.get("portions", 0))})
+		else:
+			out.append(null)
+	return out
+
+func _inventory_from_save(data: Variant) -> void:
+	_clear_inventory()
+	if not (data is Array):
+		return
+	for i in mini(data.size(), INVENTORY_SLOTS):
+		var s : Variant = data[i]
+		if not (s is Dictionary):
+			continue
+		var id : String = str(s.get("id", ""))
+		var n  : int    = int(s.get("portions", 0))
+		# Drop anything the catalogue no longer knows about, so removing an item
+		# from ITEMS can't corrupt an existing save.
+		if ItemRegistry.has(id) and n > 0:
+			inventory[i] = {"id": id, "portions": n}
+	inventory_changed.emit()
+
+# ── Lifetime statistics ────────────────────────────────────
+## Records built from each closed-out calendar day. Saves written before this
+## existed simply start empty, so an in-progress game begins accumulating from
+## the next day-end onward rather than back-filling history it never recorded.
+var stats : Dictionary = {
+	"days_recorded":     0,
+	"total_earnings":    0,
+	"total_tips":        0,
+	"total_deliveries":  0,
+	"best_earnings":     0,   "best_earnings_day":     0,
+	"best_tips":         0,   "best_tips_day":         0,
+	"best_deliveries":   0,   "best_deliveries_day":   0,
+}
+
+## Fold one finished calendar day into the lifetime records. `net` is what the
+## player actually banked (gross minus any dock).
+func record_day_stats(day_number: int, net: int, tips: int, deliveries: int) -> void:
+	stats.days_recorded    = int(stats.days_recorded)    + 1
+	stats.total_earnings   = int(stats.total_earnings)   + net
+	stats.total_tips       = int(stats.total_tips)       + tips
+	stats.total_deliveries = int(stats.total_deliveries) + deliveries
+	if net > int(stats.best_earnings):
+		stats.best_earnings     = net
+		stats.best_earnings_day = day_number
+	if tips > int(stats.best_tips):
+		stats.best_tips     = tips
+		stats.best_tips_day = day_number
+	if deliveries > int(stats.best_deliveries):
+		stats.best_deliveries     = deliveries
+		stats.best_deliveries_day = day_number
 
 const SAVE_SLOT_COUNT : int = 5
 var current_slot      : int = -1   # which slot autosaves write to; -1 = none chosen yet
@@ -115,12 +313,11 @@ const DELIVERY_SLOW_TIME : float = 120.0
 const DELIVERY_MAX_MULT  : float = 2.0
 const DELIVERY_MIN_MULT  : float = 1.0
 
-## Scale a base payout by how fast the package got delivered after landing, then
-## add the Rizz tip (+1% per Rizz point).
+## Base pay plus both halves of the tip (speed and Rizz).
 func delivery_payout(base_earned: int, landing_time: float) -> int:
-	var pay : float = float(base_earned) * _delivery_mult(landing_time)
-	pay *= 1.0 + float(rizz) * 0.01
-	return int(round(pay))
+	return base_earned \
+		+ speed_tip_for(base_earned, landing_time) \
+		+ rizz_tip_for(base_earned)
 
 ## Short flavour tag for the delivery message, based on speed.
 func delivery_speed_tag(landing_time: float) -> String:
@@ -151,6 +348,24 @@ func show_message(text: String, duration: float = 2.5) -> void:
 func add_cash(amount: int) -> void:
 	cash += amount
 	day_cash += amount
+	cash_changed.emit(cash)
+
+## Spending (shop purchases). Deliberately does NOT touch `day_cash`, which
+## tracks the day's *earnings* — it drives the all-delivered bonus, so buying
+## groceries must not shrink that.
+func spend_cash(amount: int) -> bool:
+	if amount <= 0 or cash < amount:
+		return false
+	cash -= amount
+	cash_changed.emit(cash)
+	return true
+
+## Undo a spend_cash (e.g. a purchase that couldn't be completed). Mirrors
+## spend_cash so `day_cash` stays untouched in both directions.
+func refund_cash(amount: int) -> void:
+	if amount <= 0:
+		return
+	cash += amount
 	cash_changed.emit(cash)
 
 func use_package() -> bool:
@@ -242,6 +457,8 @@ func save_game(slot: int = -1) -> void:
 		"home_id":   home_id,
 		"mortgage":  mortgage,
 		"hour":      TimeManager.hour,   # resume the in-game clock where we left off
+		"stats":     stats,
+		"inventory": _inventory_to_save(),
 	}
 	var file : FileAccess = FileAccess.open(_slot_path(slot), FileAccess.WRITE)
 	if file == null:
@@ -267,6 +484,17 @@ func load_game(slot: int) -> bool:
 	mortgage = int(parsed.get("mortgage", 0))
 	# Older saves have no clock — fall back to the normal 6am start.
 	loaded_hour = float(parsed.get("hour", TimeManager.DAY_START_HOUR))
+	# Saves written before lifetime stats existed just keep the zeroed defaults,
+	# so those games start recording from their next day-end. Merge key-by-key
+	# (rather than assigning wholesale) because JSON returns every number as a
+	# float and may omit keys added in later versions.
+	var loaded_stats : Variant = parsed.get("stats", null)
+	if loaded_stats is Dictionary:
+		for k in stats.keys():
+			if loaded_stats.has(k):
+				stats[k] = int(loaded_stats[k])
+	# Saves predating the inventory simply load an empty one.
+	_inventory_from_save(parsed.get("inventory", null))
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	return true
@@ -311,3 +539,7 @@ func reset() -> void:
 	home_id  = ""
 	mortgage = 0
 	current_slot = -1
+	_ledger.clear()
+	_clear_inventory()
+	for k in stats.keys():
+		stats[k] = 0

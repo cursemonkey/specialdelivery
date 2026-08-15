@@ -15,6 +15,8 @@ const PoliceManagerScript    := preload("res://scripts/PoliceManager.gd")
 const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
 const LedgerScreenScene      := preload("res://scenes/LedgerScreen.tscn")
 const CutsceneScene          := preload("res://scenes/Cutscene.tscn")
+const SleepPromptScript      := preload("res://scripts/SleepPrompt.gd")
+const ShopPanelScript        := preload("res://scripts/ShopPanel.gd")
 const BIRD_COUNT             := 6
 
 @onready var world          : Node2D          = $WorldGenerator
@@ -41,6 +43,9 @@ var _interior_manager  : Node2D = null
 var _police_manager    : Node2D = null
 var _day_transition    : CanvasLayer = null
 var _ledger_screen     : CanvasLayer = null
+var _sleep_prompt      : CanvasLayer = null
+var _shop_panel        : CanvasLayer = null
+var _pending_sleep_hours : int = TimeManager.SLEEP_MAX_HOURS   # length of the sleep in progress
 var _cutscene          : CanvasLayer = null
 var _day_ending        : bool = false
 
@@ -142,6 +147,16 @@ func _ready() -> void:
 	_ledger_screen = LedgerScreenScene.instantiate()
 	add_child(_ledger_screen)
 
+	_sleep_prompt = SleepPromptScript.new()
+	_sleep_prompt.name = "SleepPrompt"
+	add_child(_sleep_prompt)
+	_sleep_prompt.chosen.connect(_on_sleep_hours_chosen)
+
+	_shop_panel = ShopPanelScript.new()
+	_shop_panel.name = "ShopPanel"
+	add_child(_shop_panel)
+	player.shop_panel = _shop_panel
+
 	_cutscene = CutsceneScene.instantiate()
 	add_child(_cutscene)
 
@@ -230,10 +245,14 @@ func _process(delta: float) -> void:
 func _on_midnight() -> void:
 	if not _day_running or _day_ending:
 		return
-	GameManager.day += 1               # the calendar day rolls at midnight
-	GameManager.day_changed.emit(GameManager.day)
-	TimeManager.advance_calendar_day(GameManager.day)
-	_end_day(_resume_after_midnight)
+	# Close out the day that just finished BEFORE rolling the counter, so its
+	# ledger is recorded against the day that actually earned it.
+	_end_day(func() -> void:
+		GameManager.day += 1           # the calendar day rolls at midnight
+		GameManager.day_changed.emit(GameManager.day)
+		TimeManager.advance_calendar_day(GameManager.day)
+		_resume_after_midnight()
+	)
 
 # After the midnight ledger the same session continues — no respawn, no reset of
 # the clock; the player carries on until they choose to sleep.
@@ -516,10 +535,22 @@ func _end_day(after: Callable) -> void:
 	var rizz_saved  : bool = GameManager.rizz_over_half()
 	var dock        : int  = 0 if rizz_saved else undelivered * 5
 
-	_ledger_screen.present(GameManager.get_ledger(), undelivered, dock, rizz_saved,
+	# Fold this calendar day into the lifetime records before the ledger is
+	# cleared for the next one.
+	var entries : Array = GameManager.get_ledger()
+	var gross   : int   = 0
+	var tips    : int   = 0
+	for e in entries:
+		gross += int(e.value) + int(e.tip)
+		tips  += int(e.tip)
+	GameManager.record_day_stats(GameManager.day, gross - dock, tips, entries.size())
+
+	_ledger_screen.present(entries, undelivered, dock, rizz_saved,
 		func() -> void:
 			if dock > 0:
 				GameManager.add_cash(-dock)
+			# The calendar day is over: start the next one with a clean ledger.
+			GameManager.clear_ledger()
 			player.input_locked = false
 			_day_ending = false
 			after.call()
@@ -529,27 +560,52 @@ func _next_day() -> void:
 	world._scatter_pickups()
 	_begin_day()
 
-## Sleeping: advance the clock 7 hours and wake up there. If that sleep carries
-## the player past midnight, the day's ledger is shown as they go to bed (the
-## calendar day rolls while they're asleep).
+## Sleeping: ask how long (1–8 hours), then rest that long. Recovery is 12.5%
+## of HP and energy per hour, so 8 hours is a full restore and 1 hour is a
+## top-up. The ledger spans the calendar day, so it only closes out when the
+## chosen sleep actually carries the clock past midnight.
 func _on_home_door_activated() -> void:
 	if not _day_running:
 		return
-	if TimeManager.sleep_crosses_midnight():
+	_sleep_prompt.open()
+
+func _on_sleep_hours_chosen(hours: int) -> void:
+	_pending_sleep_hours = hours
+	if TimeManager.sleep_crosses_midnight(float(hours)):
 		_end_day(_sleep_into_new_day)
 	else:
-		# Early nap — no ledger, just lose the hours and carry on the same day.
-		TimeManager.skip_hours(TimeManager.SLEEP_HOURS)
-		GameManager.reset_day_stats()
-		world._scatter_pickups()   # street features redistribute on every sleep
-		GameManager.show_message("😴 You slept until %s." % TimeManager.clock_label())
+		# Same-day rest: time passes and the player recovers, but the day's
+		# ledger keeps accruing so the morning's work stays on it.
+		_apply_sleep(hours)
+		GameManager.show_message("😴 You slept %d hour%s until %s." \
+				% [hours, "" if hours == 1 else "s", TimeManager.clock_label()])
+
+## Advance the clock and restore the fraction of HP/energy the rest earned.
+## Street features redistribute on every sleep.
+func _apply_sleep(hours: int) -> void:
+	TimeManager.skip_hours(float(hours))
+	GameManager.recover_by_fraction(float(hours) * TimeManager.SLEEP_RECOVERY_PER_HR)
+	world._scatter_pickups()
 
 func _sleep_into_new_day() -> void:
+	var hours : int = _pending_sleep_hours
+	# Carry the pre-sleep HP/energy across the day boundary: a short night should
+	# top the player up from where they were, not reset them to a full bar.
+	var hp_before : int = GameManager.hp
+	var en_before : int = GameManager.energy
 	GameManager.day += 1
 	GameManager.day_changed.emit(GameManager.day)
-	var wake : float = fposmod(TimeManager.hour + TimeManager.SLEEP_HOURS, 24.0)
+	var wake : float = TimeManager.wake_hour(float(hours))
 	world._scatter_pickups()
 	_begin_day(wake)
+	# _begin_day restores full HP/energy for the new day, which is only correct
+	# for a full night. For anything shorter, restore what the player actually
+	# had and then add the fraction those hours earned.
+	var frac : float = clampf(float(hours) * TimeManager.SLEEP_RECOVERY_PER_HR, 0.0, 1.0)
+	if frac < 1.0:
+		GameManager.hp     = hp_before
+		GameManager.energy = en_before
+		GameManager.recover_by_fraction(frac)
 	GameManager.show_message("☀️ You wake at %s — %s." % [TimeManager.clock_label(), GameManager.date_label()])
 
 func _on_next_day() -> void:

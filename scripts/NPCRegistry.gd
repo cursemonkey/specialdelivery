@@ -50,6 +50,37 @@ func _register_all() -> void:
 	_register_flower_campbell()
 	_register_kali()
 	_register_darin()
+	_register_nayra()
+
+## Nayra — the grocer. Works the shop 7am–1am every day of the week, and only
+## goes back to her flat in the Apartments for the small hours between shifts.
+## Polite and shy: she apologises for things that aren't her fault and tends to
+## trail off mid-sentence.
+func _register_nayra() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "nayra"
+	def.display_name = "Nayra"
+	def.home_anchor  = "Apartments"
+	def.shirt_color  = Color("#8fbf8a")   # grocer's green apron
+	def.pants_color  = Color("#57506b")
+	def.hair_color   = Color("#2b1f1a")
+	def.skin_color   = Color("#c98f63")
+	# Empty weekday list = every day. The shift wraps past midnight (7 → 1), and
+	# the flat covers the gap; both are interior, so she's found by going inside.
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours([], 7.0, 1.0, "Grocery",    Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([], 1.0, 7.0, "Apartments", Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Oh — hello. Sorry, I didn't hear you come in…", DialogueLine.SURPRISED),
+		DialogueLine.make("Everything's fresh today. I checked twice. Um… just in case.", DialogueLine.CALM),
+		DialogueLine.make("Take your time. I don't mind waiting, really.", DialogueLine.CALM),
+		DialogueLine.make("You must get so tired, all that cycling. You should eat something.", DialogueLine.HAPPY),
+		DialogueLine.make("Sorry — was I in your way?", DialogueLine.SAD),
+	]
+	_add(def)
 
 ## Kali — police officer, 7am–7pm, off Tuesdays and Saturdays.
 func _register_kali() -> void:

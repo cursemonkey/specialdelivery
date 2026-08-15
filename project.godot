@@ -21,6 +21,7 @@ config/features=PackedStringArray("4.6", "GL Compatibility")
 
 [autoload]
 
+ItemRegistry="*res://scripts/ItemRegistry.gd"
 GameManager="*res://scripts/GameManager.gd"
 TimeManager="*res://scripts/TimeManager.gd"
 NPCRegistry="*res://scripts/NPCRegistry.gd"

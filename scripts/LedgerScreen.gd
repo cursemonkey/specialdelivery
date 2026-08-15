@@ -21,19 +21,27 @@ func _ready() -> void:
 	panel.modulate.a = 0.0
 	continue_btn.pressed.connect(_confirm)
 
-## entries: Array of {name, value, tip}. undelivered: count of picked-up-but-
-## -undelivered packages. dock: dollars to be docked (0 if waived). rizz_saved:
-## whether Rizz ≥ 50% waived the dock.
+## entries: Array of {name, value, rizz_tip, speed_tip, tip}. undelivered: count
+## of picked-up-but-undelivered packages. dock: dollars to be docked (0 if
+## waived). rizz_saved: whether Rizz ≥ 50% waived the dock.
 func present(entries: Array, undelivered: int, dock: int, rizz_saved: bool, on_continue: Callable) -> void:
 	_on_continue = on_continue
 
 	for c in rows.get_children():
 		c.queue_free()
 
-	var gross : int = 0
+	_add_header()
+
+	var gross      : int = 0
+	var rizz_total : int = 0
+	var spd_total  : int = 0
 	for e in entries:
-		gross += int(e.value) + int(e.tip)
-		_add_row(str(e.name), int(e.value), int(e.tip))
+		var rizz_tip  : int = int(e.get("rizz_tip",  0))
+		var speed_tip : int = int(e.get("speed_tip", 0))
+		gross      += int(e.value) + rizz_tip + speed_tip
+		rizz_total += rizz_tip
+		spd_total  += speed_tip
+		_add_row(str(e.name), int(e.value), rizz_tip, speed_tip)
 	if entries.is_empty():
 		var none : Label = Label.new()
 		none.text = "No deliveries today."
@@ -42,12 +50,48 @@ func present(entries: Array, undelivered: int, dock: int, rizz_saved: bool, on_c
 
 	var lines : Array = []
 	lines.append("Deliveries: %d      Earned: $%d" % [entries.size(), gross])
+	lines.append("Tips — Rizz $%d  +  Speed $%d  =  $%d" \
+			% [rizz_total, spd_total, rizz_total + spd_total])
 	if undelivered > 0:
 		if rizz_saved:
 			lines.append("Undelivered: %d — dock waived (Rizz ≥ 50%%) ✨" % undelivered)
 		else:
 			lines.append("Undelivered: %d × $5 = -$%d" % [undelivered, dock])
-	summary.text = "\n".join(lines) + "\n" + "Net: $%d" % (gross - dock)
+	lines.append("Net: $%d" % (gross - dock))
+	lines.append(_records_line())
+	summary.text = "\n".join(lines)
+
+## Lifetime bests, so the player can see today against their record day.
+func _records_line() -> String:
+	var s : Dictionary = GameManager.stats
+	if int(s.days_recorded) <= 0:
+		return ""
+	return "\nRecords — Earnings $%d (Day %d)   ·   Tips $%d (Day %d)   ·   Deliveries %d (Day %d)" % [
+		int(s.best_earnings),   int(s.best_earnings_day),
+		int(s.best_tips),       int(s.best_tips_day),
+		int(s.best_deliveries), int(s.best_deliveries_day),
+	]
+
+## Column captions, so the two tip halves are readable at a glance.
+func _add_header() -> void:
+	var row : HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var dim : Color = Color(0.62, 0.62, 0.68)
+	for spec in [["Delivery", 0.0, HORIZONTAL_ALIGNMENT_LEFT],
+				 ["Pay", 64.0, HORIZONTAL_ALIGNMENT_RIGHT],
+				 ["Rizz", 56.0, HORIZONTAL_ALIGNMENT_RIGHT],
+				 ["Speed", 56.0, HORIZONTAL_ALIGNMENT_RIGHT]]:
+		var l : Label = Label.new()
+		l.text = str(spec[0])
+		l.horizontal_alignment = int(spec[2])
+		if float(spec[1]) > 0.0:
+			l.custom_minimum_size = Vector2(float(spec[1]), 0)
+		else:
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.add_theme_font_size_override("font_size", 11)
+		l.add_theme_color_override("font_color", dim)
+		row.add_child(l)
+	rows.add_child(row)
 
 	visible   = true
 	_awaiting = true
@@ -56,7 +100,10 @@ func present(entries: Array, undelivered: int, dock: int, rizz_saved: bool, on_c
 	tw.tween_property(panel, "modulate:a", 1.0, FADE_TIME)
 	continue_btn.grab_focus()
 
-func _add_row(row_name: String, value: int, tip: int) -> void:
+## One delivery: base pay, then the Rizz and Speed halves of the tip in their
+## own columns. Either half shows "—" when it earned nothing, so a slow drop
+## with no Rizz reads as a plain $0.00 tip.
+func _add_row(row_name: String, value: int, rizz_tip: int, speed_tip: int) -> void:
 	var row : HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 
@@ -71,15 +118,18 @@ func _add_row(row_name: String, value: int, tip: int) -> void:
 	val_lbl.custom_minimum_size = Vector2(64, 0)
 	row.add_child(val_lbl)
 
-	var tip_lbl : Label = Label.new()
-	tip_lbl.text = ("+$%d" % tip) if tip > 0 else "—"
-	tip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	tip_lbl.custom_minimum_size = Vector2(56, 0)
-	tip_lbl.add_theme_color_override("font_color",
-			Color(0.95, 0.85, 0.2) if tip > 0 else Color(0.5, 0.5, 0.5))
-	row.add_child(tip_lbl)
+	row.add_child(_tip_label(rizz_tip,  Color(0.95, 0.85, 0.2)))   # Rizz — gold
+	row.add_child(_tip_label(speed_tip, Color(0.45, 0.80, 1.0)))   # Speed — blue
 
 	rows.add_child(row)
+
+func _tip_label(amount: int, color: Color) -> Label:
+	var l : Label = Label.new()
+	l.text = ("+$%d" % amount) if amount > 0 else "—"
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	l.custom_minimum_size  = Vector2(56, 0)
+	l.add_theme_color_override("font_color", color if amount > 0 else Color(0.5, 0.5, 0.5))
+	return l
 
 func _confirm() -> void:
 	if not _awaiting:

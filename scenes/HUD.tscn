@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c8ikiiq0vltgp" path="res://scripts/HUD.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/StatBars.gd" id="2_stats"]
+[ext_resource type="Script" path="res://scripts/InventoryBar.gd" id="3_inv"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1353618837]
 script = ExtResource("1")
@@ -56,6 +57,17 @@ offset_top = 8.0
 offset_right = 40.0
 offset_bottom = 150.0
 script = ExtResource("2_stats")
+
+[node name="InventoryBar" type="Control" parent="."]
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -48.0
+offset_right = 250.0
+offset_bottom = -10.0
+script = ExtResource("3_inv")
 
 [node name="StatusPanel" type="PanelContainer" parent="." unique_id=1522901081]
 anchors_preset = 1

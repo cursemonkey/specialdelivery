@@ -23,6 +23,9 @@ const SPIN_DURATION     := 0.8            # seconds of lost control after hittin
 const SPIN_VISUAL_SPEED := 2.0 * TAU / 0.8   # two full sprite rotations per spin-out
 const EASY_TURN_SPEED    := 6.0           # rad/sec the easy-mode bike can re-aim itself
 const RAMP_HOP_HEIGHT    := 14.0          # px of air gained off a speed ramp
+const POTHOLE_HP_COST    := 0.5           # fractional HP lost to a pothole
+const PUDDLE_HP_COST     := 0.25          # fractional HP lost to a puddle
+const SHOPKEEPER_ID      := "nayra"       # talking to them opens the grocery counter
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -75,6 +78,7 @@ var delivery_targets : Array = []
 var world_bike       : Node2D = null
 var pause_menu       : Node   = null
 var dialogue_box     : Node   = null
+var shop_panel       : Node   = null
 var doors            : Array  = []
 var road_regions      : Array[NavigationRegion2D] = []
 var dirt_road_regions : Array[NavigationRegion2D] = []
@@ -136,6 +140,12 @@ func _input(event: InputEvent) -> void:
 		if dialogue_box != null and dialogue_box.visible:
 			dialogue_box.advance()
 			return
+	# Number keys eat one portion from the matching inventory slot.
+	if event is InputEventKey and event.pressed \
+			and event.keycode >= KEY_1 and event.keycode < KEY_1 + GameManager.INVENTORY_SLOTS:
+		if not (dialogue_box != null and dialogue_box.visible) and not get_tree().paused:
+			_eat_slot(event.keycode - KEY_1)
+			return
 	if dialogue_box != null and dialogue_box.visible:
 		if event.is_action_pressed("mount_bike") or event.is_action_pressed("throw_package"):
 			dialogue_box.close()
@@ -180,7 +190,11 @@ func _try_dialogue() -> void:
 			nearest_npc = npc
 	if nearest_npc != null:
 		nearest_npc.begin_interaction(self)
-		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks())
+		# Shopkeepers open their counter once the greeting finishes.
+		var after : Callable = Callable()
+		if shop_panel != null and nearest_npc.id == SHOPKEEPER_ID:
+			after = func() -> void: shop_panel.open()
+		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks(), after)
 		return
 	# Otherwise, enter the building whose door we're standing at — but only on
 	# foot. On the bike, prompt the player to dismount first.
@@ -191,6 +205,19 @@ func _try_dialogue() -> void:
 				return
 		elif interior_manager.try_enter_nearest(global_position):
 			return
+
+## Eat one portion from an inventory slot, if it holds anything.
+func _eat_slot(slot: int) -> void:
+	var s : Variant = GameManager.inventory[slot] if slot < GameManager.inventory.size() else null
+	if not (s is Dictionary):
+		return
+	var id : String = str(s.get("id", ""))
+	if GameManager.energy >= GameManager.max_energy:
+		GameManager.show_message("😋 You're too full to eat that right now.")
+		return
+	if GameManager.consume_slot(slot):
+		GameManager.show_message("%s Ate %s. +%d energy" \
+				% [ItemRegistry.icon(id), ItemRegistry.display_name(id), ItemRegistry.energy(id)])
 
 func _hop() -> void:
 	if on_bike or _hopping:
@@ -465,18 +492,20 @@ func apply_ramp() -> void:
 	_air_hop()
 
 ## Hitting a puddle: lose control and spin out. Cheaper than an NPC crash —
-## it costs rizz and the lost momentum, but no health.
+## a quarter point of health rather than a full one.
 func apply_puddle() -> void:
 	if _spin_timer > 0.0:
 		return
 	_spin_timer = SPIN_DURATION
 	GameManager.add_rizz(-1)
+	GameManager.damage_hp(PUDDLE_HP_COST)
 	GameManager.show_message("💦 Splash! You hydroplaned!")
 
 func apply_slow() -> void:
 	slow_timer = SLOW_DURATION
 	slow_aura.visible = true
 	GameManager.add_rizz(-1)    # a slowdown is a bad look: -1 rizz
+	GameManager.damage_hp(POTHOLE_HP_COST)
 	GameManager.show_message("🕳️ Pothole! Slowed down!")
 
 ## Small jump arc on whichever sprite is currently showing. Purely visual —

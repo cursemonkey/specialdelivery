@@ -11,7 +11,13 @@ enum Phase { DAY, SUNSET, NIGHT }
 const HOURS_PER_REAL_MINUTE : float = 2.0
 const HOURS_PER_SECOND      : float = HOURS_PER_REAL_MINUTE / 60.0
 const DAY_START_HOUR        : float = 6.0    # days begin at 6am
-const SLEEP_HOURS           : float = 7.0    # a night's sleep advances the clock this much
+const SLEEP_HOURS           : float = 7.0    # default night's sleep (kept for older callers)
+
+# Player-chosen sleep length, and the recovery it buys. 8 hours at 12.5% per
+# hour restores exactly 100% of both HP and energy; 1 hour restores an eighth.
+const SLEEP_MIN_HOURS       : int   = 1
+const SLEEP_MAX_HOURS       : int   = 8
+const SLEEP_RECOVERY_PER_HR : float = 0.125
 
 # Light curve (hours, 24h clock).
 const SUNRISE_START : float = 6.0    # dawn begins
@@ -76,9 +82,23 @@ func skip_hours(hours: float) -> bool:
 	_update_phase()
 	return rolled
 
-## True if sleeping now would carry the player past midnight.
-func sleep_crosses_midnight() -> bool:
-	return hour + SLEEP_HOURS >= 24.0
+## True if sleeping `hours` from now would carry the player past midnight.
+func sleep_crosses_midnight(hours: float = SLEEP_HOURS) -> bool:
+	return hour + hours >= 24.0
+
+## The clock time the player would wake at after sleeping `hours`.
+func wake_hour(hours: float) -> float:
+	return fposmod(hour + hours, 24.0)
+
+## "10:00 PM" for an arbitrary hour value (clock_label() is for `hour` itself).
+func label_for_hour(h: float) -> String:
+	var hh : int = int(fposmod(h, 24.0))
+	var mm : int = int((fposmod(h, 24.0) - float(hh)) * 60.0)
+	var suffix : String = "AM" if hh < 12 else "PM"
+	var h12 : int = hh % 12
+	if h12 == 0:
+		h12 = 12
+	return "%d:%02d %s" % [h12, mm, suffix]
 
 func advance_calendar_day(day_number: int) -> void:
 	_set_calendar(day_number)
