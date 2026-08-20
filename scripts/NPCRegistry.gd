@@ -184,6 +184,16 @@ func _register_spider() -> void:
 	def.pants_color  = Color("#43301f")   # dark brown pants
 	def.skin_color   = Color("#e8c8a0")   # caucasian
 	def.bald         = true
+	# spider.png is a single 736x92 strip: 8 frames of 92x92, one row (down).
+	# Scaled down to sit alongside the ~30px-tall procedural villagers.
+	def.frame_size    = Vector2i(92, 92)
+	def.frame_count   = 8
+	def.sprite_scale  = 0.42
+	def.sprite_offset = Vector2(0, -6)
+	# Placeholder: no separate idle art yet, so idle replays the walk frames at a
+	# slower pace. Drop in assets/NPCs/spider_idle.png later to use real idle art.
+	def.idle_reuses_walk = true
+	def.idle_frame_time  = 0.30
 	# On tour: away from town Spring 10 → Fall 20 (wraps past the year end).
 	def.set_away(Calendar.Season.SPRING, 10, Calendar.Season.FALL, 20)
 	var sched : Array[NPCScheduleEntry] = [

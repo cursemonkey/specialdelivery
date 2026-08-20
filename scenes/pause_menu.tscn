@@ -181,6 +181,28 @@ max_value = 5.0
 value = 3.0
 rounded = true
 
+[node name="ScaleRow" type="HBoxContainer" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="ScaleLabel" type="Label" parent="SettingsView/SettingsPanel/VBox/ScaleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sprite Scale"
+
+[node name="ScaleValue" type="Label" parent="SettingsView/SettingsPanel/VBox/ScaleRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(38, 0)
+horizontal_alignment = 2
+text = "1.00"
+
+[node name="ScaleSlider" type="HSlider" parent="SettingsView/SettingsPanel/VBox/ScaleRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+min_value = 0.5
+max_value = 1.0
+step = 0.05
+value = 1.0
+
 [node name="CloseSettings" type="Button" parent="SettingsView/SettingsPanel/VBox"]
 layout_mode = 2
 text = "Close"

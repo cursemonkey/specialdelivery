@@ -72,6 +72,16 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	sprite.hair_color  = def.hair_color
 	sprite.skin_color  = def.skin_color
 	sprite.bald        = def.bald
+	# Real art if this NPC has a sheet; otherwise the procedural villager.
+	sprite.sheet        = def.sprite_sheet()
+	sprite.frame_size   = def.frame_size
+	sprite.frame_count  = def.frame_count
+	sprite.sheet_offset = def.sprite_offset
+	sprite.sheet_scale  = def.sprite_scale
+	sprite.idle_sheet       = def.idle_sheet()
+	sprite.idle_frame_count = def.idle_frame_count
+	sprite.idle_frame_time  = def.idle_frame_time
+	sprite.idle_reuses_walk = def.idle_reuses_walk
 	npc._retarget(true)
 
 ## Resolve every door anchor a definition references into world positions.

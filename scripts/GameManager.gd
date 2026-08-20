@@ -37,6 +37,14 @@ var home_id: String = ""
 var mortgage: int = 0
 var easy_bike             : bool = false
 var snap_to_direction     : bool = true
+## Global multiplier applied to the player and every NPC sprite, so the whole
+## cast can be tuned to one size while art is still being swapped in.
+var sprite_scale          : float = 1.0
+signal sprite_scale_changed(value: float)
+
+func set_sprite_scale(value: float) -> void:
+	sprite_scale = clampf(value, 0.5, 1.0)
+	sprite_scale_changed.emit(sprite_scale)
 var max_drops_per_day     : int  = 4
 var max_packages_per_drop : int  = 3
 
@@ -507,6 +515,7 @@ func save_settings() -> void:
 		"snap_to_direction":     snap_to_direction,
 		"max_drops_per_day":     max_drops_per_day,
 		"max_packages_per_drop": max_packages_per_drop,
+		"sprite_scale":          sprite_scale,
 	}
 	var file : FileAccess = FileAccess.open("user://settings.json", FileAccess.WRITE)
 	if file == null:
@@ -528,6 +537,7 @@ func load_settings() -> void:
 	snap_to_direction     = bool(parsed.get("snap_to_direction",    true))
 	max_drops_per_day     = int(parsed.get("max_drops_per_day",     4))
 	max_packages_per_drop = int(parsed.get("max_packages_per_drop", 3))
+	sprite_scale          = clampf(float(parsed.get("sprite_scale", 1.0)), 0.5, 1.0)
 
 func reset() -> void:
 	cash = 0

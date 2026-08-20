@@ -181,15 +181,17 @@ func _update_stuck(delta: float) -> void:
 		_stuck_timer = 0.0
 
 func _animate(walking: bool, delta: float) -> void:
+	# The sprite decides how many frames each state has (sheet-driven NPCs may
+	# have more than the 4 the procedural drawing uses) and how fast idle plays.
+	var frames : int   = _sprite.frames_for_state(walking)
+	var rate   : float = WALK_FRAME_TIME if walking else _sprite.idle_frame_time
 	if walking:
 		facing = _dominant_axis(velocity)
-		_walk_timer += delta
-		if _walk_timer >= WALK_FRAME_TIME:
-			_walk_timer = 0.0
-			_walk_frame = (_walk_frame + 1) % 4
-	else:
+	_walk_timer += delta
+	if _walk_timer >= rate:
 		_walk_timer = 0.0
-		_walk_frame = 0
+		_walk_frame = (_walk_frame + 1) % maxi(1, frames)
+	_sprite.set_state(walking)
 	_sprite.set_facing(facing, _walk_frame)
 
 func _dominant_axis(v: Vector2) -> Vector2:

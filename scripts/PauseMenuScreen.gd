@@ -8,6 +8,8 @@ extends Control
 @onready var easy_bike_toggle : CheckButton = $SettingsView/SettingsPanel/VBox/EasyBikeToggle
 @onready var drops_spin    : SpinBox     = $SettingsView/SettingsPanel/VBox/DropsRow/DropsSpinBox
 @onready var pkg_spin      : SpinBox     = $SettingsView/SettingsPanel/VBox/PkgRow/PkgSpinBox
+@onready var scale_slider  : HSlider     = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleSlider
+@onready var scale_value   : Label       = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleValue
 @onready var calendar_button : Button        = $PanelContainer/HBoxContainer/Calendar
 @onready var calendar_view   : Control       = $CalendarView
 @onready var calendar_month  : Label         = $CalendarView/CalendarPanel/VBox/MonthLabel
@@ -41,6 +43,7 @@ func _ready() -> void:
 	easy_bike_toggle.toggled.connect(_on_easy_bike_toggled)
 	drops_spin.value_changed.connect(_on_drops_changed)
 	pkg_spin.value_changed.connect(_on_pkg_changed)
+	scale_slider.value_changed.connect(_on_sprite_scale_changed)
 	calendar_button.pressed.connect(_on_calendar_button_pressed)
 	$CalendarView/CalendarPanel/VBox/CloseCalendar.pressed.connect(_on_close_calendar_pressed)
 
@@ -83,6 +86,8 @@ func _on_settings_button_pressed() -> void:
 	easy_bike_toggle.set_pressed_no_signal(GameManager.easy_bike)
 	drops_spin.value = GameManager.max_drops_per_day
 	pkg_spin.value   = GameManager.max_packages_per_drop
+	scale_slider.set_value_no_signal(GameManager.sprite_scale)
+	scale_value.text = "%.2f" % GameManager.sprite_scale
 	settings_view.visible = true
 
 func _on_close_settings_pressed() -> void:
@@ -168,6 +173,12 @@ func _on_drops_changed(value: float) -> void:
 	if drop_pad_manager != null:
 		drop_pad_manager.max_drops_per_day = int(value)
 	GameManager.max_drops_per_day = int(value)
+	GameManager.save_settings()
+
+## One dial for the whole cast: the player and every NPC re-scale live.
+func _on_sprite_scale_changed(value: float) -> void:
+	GameManager.set_sprite_scale(value)
+	scale_value.text = "%.2f" % GameManager.sprite_scale
 	GameManager.save_settings()
 
 func _on_pkg_changed(value: float) -> void:

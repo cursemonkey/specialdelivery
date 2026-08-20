@@ -13,7 +13,7 @@ const BOOST_MULT      := 1.8
 const SLOW_MULT       := 0.4
 const BOOST_DURATION  := 1.5
 const SLOW_DURATION   := 1.0
-const THROW_RANGE      := 5 * TILE_SIZE   # pixel range for toss
+const THROW_RANGE      := 6 * TILE_SIZE   # pixel range for toss (5 tiles + 20%)
 const BIKE_MOUNT_RANGE := 3 * TILE_SIZE   # how close player must be to mount
 const DOOR_INTERACT_RANGE := 4 * TILE_SIZE   # how close player must be to talk at a door
 const NPC_INTERACT_RANGE  := 2.25 * TILE_SIZE # how close player must be to talk to an NPC
@@ -99,11 +99,21 @@ signal dismounted_bike()
 signal home_door_activated()
 
 # ───────────────────────────────────────────────────────────
+## Scene-authored sprite scale; the settings slider multiplies this.
+const BASE_SPRITE_SCALE : Vector2 = Vector2(0.7, 0.7)
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_set_mode(false)
 	boost_aura.visible = false
 	slow_aura.visible  = false
+	GameManager.sprite_scale_changed.connect(_on_sprite_scale_changed)
+	_on_sprite_scale_changed(GameManager.sprite_scale)
+
+func _on_sprite_scale_changed(value: float) -> void:
+	var s : Vector2 = BASE_SPRITE_SCALE * value
+	foot_sprite.scale = s
+	bike_sprite.scale = s
 
 func _physics_process(delta: float) -> void:
 	if get_tree().paused:
@@ -474,7 +484,12 @@ func _try_throw() -> void:
 		return
 
 	if GameManager.use_package():
-		best_target.receive_package(global_position)
+		# Toss the parcel in an arc; it delivers itself when it lands.
+		var world : Node = get_parent().get_node_or_null("WorldGenerator")
+		if world != null and world.has_method("spawn_package"):
+			world.spawn_package(global_position, best_target.door_position, best_target)
+		else:
+			best_target.receive_package(global_position)
 
 # ── Effects ────────────────────────────────────────────────
 func apply_boost() -> void:

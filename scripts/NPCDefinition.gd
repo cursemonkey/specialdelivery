@@ -19,6 +19,48 @@ extends Resource
 @export var skin_color     : Color = Color("#e8c8a0")
 @export var bald           : bool  = false
 
+# Optional walk-cycle sprite sheet. Leave `sprite_path` empty to use the
+# id-based convention res://assets/NPCs/<id>.png; when neither exists the NPC
+# falls back to the procedural drawing.
+const SPRITE_DIR : String = "res://assets/NPCs/"
+@export var sprite_path  : String  = ""
+@export var frame_size   : Vector2i = Vector2i(32, 32)
+@export var frame_count  : int      = 4
+@export var sprite_offset : Vector2 = Vector2(0, -8)
+## Draw scale for the sheet. Large source art (e.g. 92px frames) needs scaling
+## down to match the ~30px-tall villagers.
+@export var sprite_scale : float    = 1.0
+
+# Idle animation. Provide separate art at res://assets/NPCs/<id>_idle.png (or set
+# idle_sprite_path), or set idle_reuses_walk to animate idle from the walk
+# frames. With neither, idle holds on frame 0.
+@export var idle_sprite_path : String = ""
+@export var idle_frame_count : int    = 0      # 0 = same as frame_count
+@export var idle_frame_time  : float  = 0.28
+@export var idle_reuses_walk : bool   = false
+
+## Separate idle sheet if one exists, else null.
+func idle_sheet() -> Texture2D:
+	var path : String = idle_sprite_path
+	if path.is_empty():
+		if id.is_empty():
+			return null
+		path = SPRITE_DIR + "%s_idle.png" % id
+	if ResourceLoader.exists(path):
+		return load(path)
+	return null
+
+## The walk-cycle sheet for this NPC, or null to draw procedurally.
+func sprite_sheet() -> Texture2D:
+	var path : String = sprite_path
+	if path.is_empty():
+		if id.is_empty():
+			return null
+		path = SPRITE_DIR + "%s.png" % id
+	if ResourceLoader.exists(path):
+		return load(path)
+	return null
+
 # Daily routine.
 @export var schedule       : Array[NPCScheduleEntry] = []
 
