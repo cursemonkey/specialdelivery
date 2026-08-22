@@ -103,8 +103,12 @@ signal dismounted_bike()
 signal home_door_activated()
 
 # ───────────────────────────────────────────────────────────
-## Scene-authored sprite scale; the settings slider multiplies this.
-const BASE_SPRITE_SCALE : Vector2 = Vector2(0.7, 0.7)
+## The player's art is normalised the same way NPC sheets are: its frame height
+## is scaled to NPCDefinition.TARGET_FRAME_HEIGHT so everyone matches on screen,
+## and the Sprite Scale setting then multiplies that. FOOT_FRAME_H is the height
+## of the slice taken in _process_foot().
+const FOOT_FRAME_H : float = 60.0
+const BIKE_FRAME_H : float = 68.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -115,9 +119,11 @@ func _ready() -> void:
 	_on_sprite_scale_changed(GameManager.sprite_scale)
 
 func _on_sprite_scale_changed(value: float) -> void:
-	var s : Vector2 = BASE_SPRITE_SCALE * value
-	foot_sprite.scale = s
-	bike_sprite.scale = s
+	var target : float = NPCDefinition.TARGET_FRAME_HEIGHT
+	var foot   : float = (target / FOOT_FRAME_H) * value
+	var bike   : float = (target / BIKE_FRAME_H) * value
+	foot_sprite.scale = Vector2(foot, foot)
+	bike_sprite.scale = Vector2(bike, bike)
 
 func _physics_process(delta: float) -> void:
 	if get_tree().paused:

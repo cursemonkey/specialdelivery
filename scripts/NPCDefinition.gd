@@ -27,9 +27,23 @@ const SPRITE_DIR : String = "res://assets/NPCs/"
 @export var frame_size   : Vector2i = Vector2i(32, 32)
 @export var frame_count  : int      = 4
 @export var sprite_offset : Vector2 = Vector2(0, -8)
-## Draw scale for the sheet. Large source art (e.g. 92px frames) needs scaling
-## down to match the ~30px-tall villagers.
+## Extra per-NPC size tweak, applied ON TOP of the automatic normalisation
+## below. Leave at 1.0 unless a character should genuinely be taller or shorter
+## than everyone else.
 @export var sprite_scale : float    = 1.0
+
+## Height (px) every character's ART is normalised to before the global Sprite
+## Scale setting is applied. Sheets are scaled by TARGET / frame_height, so art
+## drawn at any resolution ends up the same size on screen as the player.
+const TARGET_FRAME_HEIGHT : float = 68.0
+
+## The scale to draw this NPC's sheet at: normalise its frame height to the
+## common target, then apply any per-NPC tweak.
+func effective_sprite_scale() -> float:
+	var fh : float = float(frame_size.y)
+	if fh <= 0.0:
+		return sprite_scale
+	return (TARGET_FRAME_HEIGHT / fh) * sprite_scale
 
 # Idle animation. Provide separate art at res://assets/NPCs/<id>_idle.png (or set
 # idle_sprite_path), or set idle_reuses_walk to animate idle from the walk

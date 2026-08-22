@@ -219,10 +219,11 @@ func _register_spider() -> void:
 	def.bald         = true
 	# spider.png is a single 736x92 strip: 8 frames of 92x92, one row (down).
 	# Scaled down to sit alongside the ~30px-tall procedural villagers.
-	def.frame_size    = Vector2i(92, 92)
+	# spider.png is 736x68: 8 frames of 92x68, one row (facing down). Height is
+	# normalised automatically, so no manual scale is needed here.
+	def.frame_size    = Vector2i(92, 68)
 	def.frame_count   = 8
-	def.sprite_scale  = 0.42
-	def.sprite_offset = Vector2(0, -6)
+	def.sprite_offset = Vector2(0, -2)
 	# Placeholder: no separate idle art yet, so idle replays the walk frames at a
 	# slower pace. Drop in assets/NPCs/spider_idle.png later to use real idle art.
 	def.idle_reuses_walk = true

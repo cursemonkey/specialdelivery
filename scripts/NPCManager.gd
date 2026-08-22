@@ -77,7 +77,7 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	sprite.frame_size   = def.frame_size
 	sprite.frame_count  = def.frame_count
 	sprite.sheet_offset = def.sprite_offset
-	sprite.sheet_scale  = def.sprite_scale
+	sprite.sheet_scale  = def.effective_sprite_scale()
 	sprite.idle_sheet       = def.idle_sheet()
 	sprite.idle_frame_count = def.idle_frame_count
 	sprite.idle_frame_time  = def.idle_frame_time
