@@ -27,6 +27,8 @@ var _npc_markers  : Array        = []   # [{npc: RegularNPC, dot: Control}]
 var _home_marker  : Control      = null
 var home_position : Vector2      = Vector2.ZERO   # set by Main once a home is chosen
 var has_home      : bool         = false
+var _selected     : int          = -1     # index into _npc_markers, -1 = none
+var _name_label   : Label        = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -80,6 +82,7 @@ func _on_map_button_pressed() -> void:
 
 func _on_close_map_pressed() -> void:
 	map_view.visible = false
+	_select_marker(-1)
 
 func _on_settings_button_pressed() -> void:
 	snap_toggle.set_pressed_no_signal(GameManager.snap_to_direction)
@@ -187,12 +190,99 @@ func _on_pkg_changed(value: float) -> void:
 	GameManager.max_packages_per_drop = int(value)
 	GameManager.save_settings()
 
+## Floating caption that names the selected marker. Sits above the dot.
+func _ensure_name_label() -> void:
+	if _name_label != null:
+		return
+	_name_label = Label.new()
+	_name_label.visible = false
+	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_name_label.add_theme_color_override("font_color", Color(1, 0.95, 0.75))
+	_name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	_name_label.add_theme_constant_override("shadow_offset_x", 1)
+	_name_label.add_theme_constant_override("shadow_offset_y", 1)
+	_name_label.add_theme_font_size_override("font_size", 13)
+	map_texture.add_child(_name_label)
+
+func _selected_dot() -> Control:
+	if _selected < 0 or _selected >= _npc_markers.size():
+		return null
+	return _npc_markers[_selected].dot
+
+## Clicking a marker selects it (and clicking it again clears the selection).
+func _on_marker_input(event: InputEvent, index: int) -> void:
+	if event is InputEventMouseButton and event.pressed 			and event.button_index == MOUSE_BUTTON_LEFT:
+		_select_marker(index if _selected != index else -1)
+
+func _select_marker(index: int) -> void:
+	var old : Control = _selected_dot()
+	_selected = index
+	if old != null:
+		old.queue_redraw()
+	var cur : Control = _selected_dot()
+	if cur != null:
+		cur.queue_redraw()
+	_update_name_label()
+
+## Step to the next/previous marker that's actually on the map, wrapping around.
+func _cycle_marker(step: int) -> void:
+	var visible_idx : Array = []
+	for i in _npc_markers.size():
+		if _npc_markers[i].dot.visible:
+			visible_idx.append(i)
+	if visible_idx.is_empty():
+		return
+	var pos : int = visible_idx.find(_selected)
+	if pos == -1:
+		pos = 0 if step > 0 else visible_idx.size() - 1
+	else:
+		pos = wrapi(pos + step, 0, visible_idx.size())
+	_select_marker(visible_idx[pos])
+
+func _update_name_label() -> void:
+	if _name_label == null:
+		return
+	var dot : Control = _selected_dot()
+	if dot == null or not dot.visible:
+		_name_label.visible = false
+		return
+	var npc : Node = _npc_markers[_selected].npc
+	if not is_instance_valid(npc):
+		_name_label.visible = false
+		return
+	_name_label.text    = npc.display_label()
+	_name_label.visible = true
+	_name_label.reset_size()
+	# Centre the caption over the dot, just above it.
+	_name_label.position = dot.position 			+ Vector2(dot.size.x * 0.5 - _name_label.size.x * 0.5, -_name_label.size.y - 2.0)
+
+## While the map is open, arrow keys / WASD step through the NPC markers.
+func _input(event: InputEvent) -> void:
+	if not (visible and map_view.visible):
+		return
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	var step : int = 0
+	match event.keycode:
+		KEY_RIGHT, KEY_D, KEY_DOWN, KEY_S: step = 1
+		KEY_LEFT,  KEY_A, KEY_UP,   KEY_W: step = -1
+		KEY_ESCAPE:
+			get_viewport().set_input_as_handled()
+			_select_marker(-1)
+			_on_close_map_pressed()
+			return
+		_: return
+	get_viewport().set_input_as_handled()
+	_cycle_marker(step)
+
 func _process(_delta: float) -> void:
 	if map_view.visible:
 		_update_player_marker()
 		_update_pad_markers()
 		_update_home_marker()
 		_update_npc_markers()
+		_update_name_label()
 
 # ── Home marker ────────────────────────────────────────────
 # Drawn with primitives rather than an emoji glyph: the default font has no
@@ -273,13 +363,16 @@ func _ensure_npc_markers() -> void:
 		var dot : Control = Control.new()
 		dot.custom_minimum_size = Vector2(NPC_DOT_SIZE, NPC_DOT_SIZE)
 		dot.size = Vector2(NPC_DOT_SIZE, NPC_DOT_SIZE)
-		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dot.mouse_filter = Control.MOUSE_FILTER_STOP   # clickable
 		var tint : Color = Color(0.9, 0.9, 0.9)
 		if npc.definition != null:
 			tint = npc.definition.shirt_color
 		dot.draw.connect(_draw_npc_dot.bind(dot, tint))
+		var index : int = _npc_markers.size()
+		dot.gui_input.connect(_on_marker_input.bind(index))
 		map_texture.add_child(dot)
 		_npc_markers.append({"npc": npc, "dot": dot})
+	_ensure_name_label()
 
 func _draw_npc_dot(dot: Control, tint: Color) -> void:
 	var c : Vector2 = dot.size * 0.5
@@ -287,6 +380,9 @@ func _draw_npc_dot(dot: Control, tint: Color) -> void:
 	dot.draw_circle(c, r, Color(0, 0, 0, 0.55))          # outline/shadow
 	dot.draw_circle(c, r - 1.5, tint)                     # body
 	dot.draw_circle(c - Vector2(0, r * 0.3), r * 0.28, Color(1, 1, 1, 0.5))   # highlight
+	# Selected marker gets a bright ring so it stands out from the cluster.
+	if _selected_dot() == dot:
+		dot.draw_arc(c, r + 2.5, 0.0, TAU, 20, Color(1.0, 0.95, 0.5), 2.0)
 
 func _update_npc_markers() -> void:
 	if background_ref == null or map_texture.texture == null:

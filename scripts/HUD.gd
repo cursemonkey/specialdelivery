@@ -25,6 +25,7 @@ func _ready() -> void:
 	GameManager.packages_changed.connect(_on_packages_changed)
 	GameManager.day_changed.connect(_on_day_changed)
 	GameManager.message_requested.connect(show_message)
+	GameManager.mortgage_changed.connect(update_mortgage)
 	msg_box.visible          = false
 	day_complete_panel.visible = false
 	_refresh()

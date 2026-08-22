@@ -44,6 +44,7 @@ func fallback_name_for(id: String) -> String:
 # Add a villager by writing a _register_* function and calling it here.
 func _register_all() -> void:
 	_register_mayor_henderson()
+	_register_jimmy_henderson()
 	_register_doctor_carrington()
 	_register_elsie_carrington()
 	_register_spider()
@@ -51,6 +52,38 @@ func _register_all() -> void:
 	_register_kali()
 	_register_darin()
 	_register_nayra()
+	_register_marco()
+
+## Marco — the baker. Opens the cafe Tuesday to Saturday, starting his day at
+## 4am to get the ovens on and heading home when he closes up at 5pm. Warm and
+## chatty; greets everyone like an old friend.
+func _register_marco() -> void:
+	# Tue(2) Wed(3) Thu(4) Fri(5) Sat(6)
+	var work_days : Array[int] = [2, 3, 4, 5, 6]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "marco"
+	def.display_name = "Marco"
+	def.home_anchor  = "House98"          # just up the road from the cafe
+	def.shirt_color  = Color("#f2e4cf")   # flour-dusted baker's whites
+	def.pants_color  = Color("#8a5a3c")
+	def.hair_color   = Color("#241a12")
+	def.skin_color   = Color("#c98f63")
+	var sched : Array[NPCScheduleEntry] = [
+		# Working days: at the cafe from 4am until he closes at 5pm.
+		NPCScheduleEntry.make_hours(work_days, 4.0, 17.0, "Cafe", Vector2(0, 40), -1, true),
+		# Everything else (evenings, and all day Sunday and Monday): home.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, "House98", Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Heyyy, there they are! Good to see you, friend.", DialogueLine.HAPPY),
+		DialogueLine.make("Fresh out of the oven — you can smell it, yes? Come in, come in!", DialogueLine.HAPPY),
+		DialogueLine.make("You work too hard. Sit, eat something. On me!", DialogueLine.HAPPY),
+		DialogueLine.make("Up since four, and still smiling. That is the secret!", DialogueLine.CALM),
+		DialogueLine.make("Any friend on a bicycle is a friend of mine.", DialogueLine.HAPPY),
+	]
+	_add(def)
 
 ## Nayra — the grocer. Works the shop 7am–1am every day of the week, and only
 ## goes back to her flat in the Apartments for the small hours between shifts.
@@ -229,9 +262,9 @@ func _register_elsie_carrington() -> void:
 		# Saturdays off — pub from 6pm to 2am.
 		NPCScheduleEntry.make_hours([SAT], 18.0, 2.0, "Pub", Vector2(0, 40), -1, true),
 		NPCScheduleEntry.make_hours([SAT], 2.0, 18.0, "House60", Vector2(0, 20), -1, true),
-		# Mondays off — grocery at 10am, bakery/cafe at 1pm, home from 4pm.
+		# Mondays off — grocery at 10am, the cafe at 1pm, home from 4pm.
 		NPCScheduleEntry.make_hours([MON], 10.0, 13.0, "Grocery", Vector2(0, 40), -1, true),
-		NPCScheduleEntry.make_hours([MON], 13.0, 16.0, "Bakery",  Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([MON], 13.0, 16.0, "Cafe",    Vector2(0, 40), -1, true),
 		NPCScheduleEntry.make_hours([MON], 16.0, 10.0, "House60", Vector2(0, 20), -1, true),
 		# Day-shift weeks: hospital 8am–6pm, otherwise home.
 		NPCScheduleEntry.make_hours([], 8.0, 18.0, "Hospital", Vector2(0, 40), 0, true),
@@ -293,6 +326,31 @@ func _register_doctor_carrington() -> void:
 	]
 	_add(def)
 
+## Jimmy Henderson — the Mayor's husband. Same routine as her for now (they
+## travel together); at City Hall he also handles mortgage payments.
+func _register_jimmy_henderson() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "jimmy_henderson"
+	def.display_name = "Jimmy Henderson"
+	def.home_anchor  = "House96"          # shares the Mayor's home
+	def.shirt_color  = Color("#4a7a5a")
+	def.pants_color  = Color("#333f36")
+	def.hair_color   = Color("#6a5a4a")
+	# Identical to Mayor Henderson's schedule; both are interior, so the pair are
+	# found inside City Hall by day and inside their home at night.
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make([], Phase.NIGHT, "House96",           Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Lovely day for it, isn't it?", DialogueLine.HAPPY),
+		DialogueLine.make("The wife's busy running the town. I keep the books.", DialogueLine.CALM),
+		DialogueLine.make("Mind how you go on that bicycle!", DialogueLine.CALM),
+	]
+	_add(def)
+
 func _register_mayor_henderson() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "mayor_henderson"
@@ -303,10 +361,11 @@ func _register_mayor_henderson() -> void:
 	def.hair_color   = Color("#9a9aa0")
 	# Every day: at City Hall through the daytime, home again by sunset/night
 	# (the home_anchor fallback covers any phase with no matching entry).
+	# Inside City Hall through the day (that's where Jimmy handles mortgages),
+	# home again at night. Both are interior, so you meet them by going in.
 	var sched : Array[NPCScheduleEntry] = [
-		# Beside the City Hall entrance (not on the door) so the player can enter.
-		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(84, 42)),
-		NPCScheduleEntry.make([], Phase.NIGHT, "House96",           Vector2(0, 20)),
+		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make([], Phase.NIGHT, "House96",           Vector2(0, 20), -1, true),
 	]
 	def.schedule = sched
 	def.dialogue_lines = [

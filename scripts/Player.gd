@@ -26,6 +26,8 @@ const RAMP_HOP_HEIGHT    := 14.0          # px of air gained off a speed ramp
 const POTHOLE_HP_COST    := 0.5           # fractional HP lost to a pothole
 const PUDDLE_HP_COST     := 0.25          # fractional HP lost to a puddle
 const SHOPKEEPER_ID      := "nayra"       # talking to them opens the grocery counter
+const BANKER_ID          := "jimmy_henderson"   # handles mortgage payments at City Hall
+const CITY_HALL_ID       := "Building_TownHall"
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -79,6 +81,8 @@ var world_bike       : Node2D = null
 var pause_menu       : Node   = null
 var dialogue_box     : Node   = null
 var shop_panel       : Node   = null
+var mortgage_panel   : Node   = null
+var choice_panel     : Node   = null
 var doors            : Array  = []
 var road_regions      : Array[NavigationRegion2D] = []
 var dirt_road_regions : Array[NavigationRegion2D] = []
@@ -200,6 +204,11 @@ func _try_dialogue() -> void:
 			nearest_npc = npc
 	if nearest_npc != null:
 		nearest_npc.begin_interaction(self)
+		# Jimmy at City Hall offers a choice of business or small talk; elsewhere
+		# he just chats like anyone else.
+		if nearest_npc.id == BANKER_ID and _at_city_hall() and choice_panel != null and mortgage_panel != null:
+			_open_banker_choice(nearest_npc)
+			return
 		# Shopkeepers open their counter once the greeting finishes.
 		var after : Callable = Callable()
 		if shop_panel != null and nearest_npc.id == SHOPKEEPER_ID:
@@ -228,6 +237,28 @@ func _eat_slot(slot: int) -> void:
 	if GameManager.consume_slot(slot):
 		GameManager.show_message("%s Ate %s. +%d energy" \
 				% [ItemRegistry.icon(id), ItemRegistry.display_name(id), ItemRegistry.energy(id)])
+
+## True when the player is inside City Hall.
+func _at_city_hall() -> bool:
+	return in_interior and interior_manager != null and interior_manager.current_building_id == CITY_HALL_ID
+
+## Jimmy's City Hall greeting, then a menu: pay the mortgage, or just chat.
+func _open_banker_choice(npc: RegularNPC) -> void:
+	var portrait : Texture2D = npc.portrait_for_mood(DialogueLine.HAPPY)
+	dialogue_box.open("Hiya neighbour! How can I help you today?", func() -> void:
+		var opts : Array = []
+		if GameManager.mortgage > 0:
+			opts.append({"text": "Make a payment on my mortgage", "id": "pay"})
+		opts.append({"text": "Just chat", "id": "chat"})
+		choice_panel.open("Jimmy Henderson", opts)
+	, portrait, npc.display_label())
+
+## Routed here by Main when a choice comes back from the panel.
+func on_banker_choice(id: String, npc: RegularNPC) -> void:
+	if id == "pay":
+		mortgage_panel.open()
+	elif id == "chat" and npc != null:
+		dialogue_box.open_blocks(npc.get_dialogue_blocks())
 
 func _hop() -> void:
 	if on_bike or _hopping:

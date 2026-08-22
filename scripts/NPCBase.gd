@@ -118,11 +118,23 @@ func _nav_direction() -> Vector2:
 		return to_target.normalized()
 	if _agent == null or _agent.is_navigation_finished():
 		return to_target.normalized()
+	# Posts and doors often sit just off the walkable mesh, so the agent reports
+	# the target as unreachable and freezes its waypoint. Following a frozen
+	# waypoint walks the NPC off into open country — head straight there instead.
+	if not _agent.is_target_reachable():
+		return to_target.normalized()
 	var next : Vector2 = _agent.get_next_path_position()
 	var d    : Vector2 = next - global_position
 	if d.length() < 0.5:
 		return to_target.normalized()
-	return d.normalized()
+	var straight : Vector2 = to_target.normalized()
+	var nav      : Vector2 = d.normalized()
+	# Guard against a stale or unreachable path: if following it would send us
+	# away from the destination, walk straight instead. Without this an NPC whose
+	# post sits off the navmesh can be led right off the map.
+	if nav.dot(straight) < -0.1:
+		return straight
+	return nav
 
 # ── Public API ─────────────────────────────────────────────
 func set_move_target(pos: Vector2) -> void:
@@ -169,8 +181,14 @@ func _update_stuck(delta: float) -> void:
 		_stuck_timer += delta
 		if _stuck_timer >= STUCK_TIME:
 			_stuck_timer = 0.0
-			# Wedged against geometry: ask for a fresh path first, and only fall
-			# back to a blind sidestep if we have no navigation to lean on.
+			# Wedged against geometry. Step onto the nearest navigable ground and
+			# re-path from there; a stale path can otherwise point back through
+			# the wall we're stuck on and walk us off into open country.
+			var map : RID = get_world_2d().navigation_map
+			if map.is_valid():
+				var near : Vector2 = NavigationServer2D.map_get_closest_point(map, global_position)
+				if near != Vector2.ZERO and global_position.distance_to(near) < 400.0:
+					global_position = near
 			if _agent != null:
 				_agent.target_position = _move_target
 			else:

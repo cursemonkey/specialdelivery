@@ -35,6 +35,23 @@ var total_targets: int = 0
 var delivered_count: int = 0
 var home_id: String = ""
 var mortgage: int = 0
+signal mortgage_changed(amount: int)
+
+## Pay `amount` off the mortgage, capped at what's owed and what's affordable.
+## Returns the amount actually paid (0 if nothing could be paid).
+func pay_mortgage(amount: int) -> int:
+	var paid : int = mini(mini(amount, mortgage), cash)
+	if paid <= 0:
+		return 0
+	cash     -= paid
+	mortgage -= paid
+	cash_changed.emit(cash)
+	mortgage_changed.emit(mortgage)
+	return paid
+
+## The most the player could put down right now.
+func max_mortgage_payment() -> int:
+	return mini(cash, mortgage)
 var easy_bike             : bool = false
 var snap_to_direction     : bool = true
 ## Global multiplier applied to the player and every NPC sprite, so the whole

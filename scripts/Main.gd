@@ -17,6 +17,8 @@ const LedgerScreenScene      := preload("res://scenes/LedgerScreen.tscn")
 const CutsceneScene          := preload("res://scenes/Cutscene.tscn")
 const SleepPromptScript      := preload("res://scripts/SleepPrompt.gd")
 const ShopPanelScript        := preload("res://scripts/ShopPanel.gd")
+const MortgagePanelScript    := preload("res://scripts/MortgagePanel.gd")
+const ChoicePanelScript      := preload("res://scripts/ChoicePanel.gd")
 const BIRD_COUNT             := 6
 
 @onready var world          : Node2D          = $WorldGenerator
@@ -45,6 +47,9 @@ var _day_transition    : CanvasLayer = null
 var _ledger_screen     : CanvasLayer = null
 var _sleep_prompt      : CanvasLayer = null
 var _shop_panel        : CanvasLayer = null
+var _mortgage_panel    : CanvasLayer = null
+var _choice_panel      : CanvasLayer = null
+var _choice_npc        : RegularNPC  = null
 var _pending_sleep_hours : int = TimeManager.SLEEP_MAX_HOURS   # length of the sleep in progress
 var _cutscene          : CanvasLayer = null
 var _day_ending        : bool = false
@@ -157,6 +162,17 @@ func _ready() -> void:
 	add_child(_shop_panel)
 	player.shop_panel = _shop_panel
 
+	_mortgage_panel = MortgagePanelScript.new()
+	_mortgage_panel.name = "MortgagePanel"
+	add_child(_mortgage_panel)
+	player.mortgage_panel = _mortgage_panel
+
+	_choice_panel = ChoicePanelScript.new()
+	_choice_panel.name = "ChoicePanel"
+	add_child(_choice_panel)
+	_choice_panel.chosen.connect(_on_choice_made)
+	player.choice_panel = _choice_panel
+
 	_cutscene = CutsceneScene.instantiate()
 	add_child(_cutscene)
 
@@ -164,6 +180,15 @@ func _ready() -> void:
 	TimeManager.midnight_passed.connect(_on_midnight)
 
 	title.show_title()
+
+## Dialogue choices come back here; the Player owns what each one means.
+func _on_choice_made(id: String) -> void:
+	var npc : RegularNPC = null
+	for n in get_tree().get_nodes_in_group("regular_npc"):
+		if n.id == player.BANKER_ID:
+			npc = n
+			break
+	player.on_banker_choice(id, npc)
 
 func _safe_spawn_near(target: Vector2) -> Vector2:
 	if not _in_building(target):

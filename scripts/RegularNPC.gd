@@ -82,12 +82,21 @@ func _retarget(immediate: bool = false) -> void:
 				else:
 					_wander_centre = Vector2.ZERO
 					set_move_target(spot)
+				# Spawn / start of day: stand at the spot rather than walking to
+				# it, so an outdoor post is reached even when the navmesh doesn't
+				# quite reach it (doors sit off the walkable area).
+				if immediate:
+					global_position = _move_target
+					velocity = Vector2.ZERO
 			return
 	_pending_interior = ""
 	_come_outside()
 	_wander_centre = Vector2.ZERO
 	_wander_radius = 0.0
 	set_move_target(_clear_of_door(_home_door_pos(), home_position))
+	if immediate:
+		global_position = _move_target
+		velocity = Vector2.ZERO
 
 ## A random point within the current wander area, kept clear of the doorway.
 func _pick_wander_point() -> Vector2:
