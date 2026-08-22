@@ -339,8 +339,11 @@ func _register_jimmy_henderson() -> void:
 	# Identical to Mayor Henderson's schedule; both are interior, so the pair are
 	# found inside City Hall by day and inside their home at night.
 	var sched : Array[NPCScheduleEntry] = [
-		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(0, 40), -1, true),
-		NPCScheduleEntry.make([], Phase.NIGHT, "House96",           Vector2(0, 20), -1, true),
+		NPCScheduleEntry.make([], Phase.DAY,    "Building_TownHall", Vector2(0, 40), -1, true),
+		# Sunset counts as home time too — without this the phase falls through to
+		# the plain home fallback, which parks them OUTSIDE the house for 7–9pm.
+		NPCScheduleEntry.make([], Phase.SUNSET, "House96",           Vector2(0, 20), -1, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  "House96",           Vector2(0, 20), -1, true),
 	]
 	def.schedule = sched
 	def.random_dialogue = true
@@ -359,13 +362,13 @@ func _register_mayor_henderson() -> void:
 	def.shirt_color  = Color("#6a4a8a")   # mayoral purple
 	def.pants_color  = Color("#33333f")
 	def.hair_color   = Color("#9a9aa0")
-	# Every day: at City Hall through the daytime, home again by sunset/night
-	# (the home_anchor fallback covers any phase with no matching entry).
-	# Inside City Hall through the day (that's where Jimmy handles mortgages),
-	# home again at night. Both are interior, so you meet them by going in.
+	# The public face of the town: out front of City Hall greeting people through
+	# the morning, then inside at her desk for the afternoon, home in the evening.
+	# The last entry covers the whole day so no hour can fall through.
 	var sched : Array[NPCScheduleEntry] = [
-		NPCScheduleEntry.make([], Phase.DAY,   "Building_TownHall", Vector2(0, 40), -1, true),
-		NPCScheduleEntry.make([], Phase.NIGHT, "House96",           Vector2(0, 20), -1, true),
+		NPCScheduleEntry.make_hours([],  8.0, 11.0, "Building_TownHall", Vector2(84, 42), -1, false),
+		NPCScheduleEntry.make_hours([], 11.0, 17.0, "Building_TownHall", Vector2(0, 40),  -1, true),
+		NPCScheduleEntry.make_hours([],  0.0, 24.0, "House96",           Vector2(0, 20),  -1, true),
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
