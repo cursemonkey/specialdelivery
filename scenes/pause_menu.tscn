@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://pausemenuscreen1" path="res://scripts/PauseMenuScreen.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://dxljmknnyrt6g" path="res://assets/Backgrounds/CityMap1.1.png" id="2_mapbg"]
+[ext_resource type="Script" path="res://scripts/StatusScreen.gd" id="3_status"]
 
 [node name="PauseMenu" type="Control" unique_id=1230005790]
 script = ExtResource("1")
@@ -33,6 +34,10 @@ text = "Resume"
 [node name="Map" type="Button" parent="PanelContainer/HBoxContainer"]
 layout_mode = 2
 text = "Map"
+
+[node name="Status" type="Button" parent="PanelContainer/HBoxContainer"]
+layout_mode = 2
+text = "🧍 Status"
 
 [node name="Calendar" type="Button" parent="PanelContainer/HBoxContainer"]
 layout_mode = 2
@@ -254,5 +259,90 @@ layout_mode = 2
 columns = 6
 
 [node name="CloseCalendar" type="Button" parent="CalendarView/CalendarPanel/VBox"]
+layout_mode = 2
+text = "Close"
+
+[node name="StatusView" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_status")
+
+[node name="Dim" type="ColorRect" parent="StatusView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+mouse_filter = 2
+
+[node name="StatusPanel" type="PanelContainer" parent="StatusView/Dim"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -215.0
+offset_right = 250.0
+offset_bottom = 215.0
+
+[node name="VBox" type="VBoxContainer" parent="StatusView/Dim/StatusPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="StatusView/Dim/StatusPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Status"
+
+[node name="Columns" type="HBoxContainer" parent="StatusView/Dim/StatusPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="PlayerCol" type="VBoxContainer" parent="StatusView/Dim/StatusPanel/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Heading" type="Label" parent="StatusView/Dim/StatusPanel/VBox/Columns/PlayerCol"]
+layout_mode = 2
+text = "Player"
+
+[node name="Meters" type="Control" parent="StatusView/Dim/StatusPanel/VBox/Columns/PlayerCol"]
+custom_minimum_size = Vector2(150, 102)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Rows" type="VBoxContainer" parent="StatusView/Dim/StatusPanel/VBox/Columns/PlayerCol"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BikeCol" type="VBoxContainer" parent="StatusView/Dim/StatusPanel/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Heading" type="Label" parent="StatusView/Dim/StatusPanel/VBox/Columns/BikeCol"]
+layout_mode = 2
+text = "Bike"
+
+[node name="Meters" type="Control" parent="StatusView/Dim/StatusPanel/VBox/Columns/BikeCol"]
+custom_minimum_size = Vector2(150, 166)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Rows" type="VBoxContainer" parent="StatusView/Dim/StatusPanel/VBox/Columns/BikeCol"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CloseStatus" type="Button" parent="StatusView/Dim/StatusPanel/VBox"]
 layout_mode = 2
 text = "Close"

@@ -18,6 +18,7 @@ const WALK_FRAME_TIME     := 0.18
 const STUCK_TIME          := 1.2    # secs of no progress before detouring
 const DETOUR_TIME         := 0.7
 const FINAL_APPROACH      := 170.0  # px: walk straight once this close (doors sit off-navmesh)
+const WALL_ARRIVE_TIME    := 0.45   # secs wedged near the target before counting as arrived
 
 var id            : String  = ""   # stable identifier; see NPCRegistry
 var facing        : Vector2 = Vector2.DOWN
@@ -34,6 +35,8 @@ var _detour_timer : float   = 0.0
 var _detour_dir   : Vector2 = Vector2.ZERO
 var _last_pos     : Vector2 = Vector2.ZERO
 var _arrived      : bool    = true   # true once the current move target is reached
+var _arrive_radius: float   = ARRIVE_THRESHOLD  # per-target; doors use a wider one
+var _wall_timer   : float   = 0.0    # secs pressed against geometry with no progress
 
 @onready var _sprite : NPCSprite = $NPCSprite
 
@@ -74,7 +77,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var to_target : Vector2 = _move_target - global_position
-	if not _has_target or to_target.length() <= ARRIVE_THRESHOLD:
+	if not _has_target or to_target.length() <= _arrive_radius:
 		# Idle, but still shovable so the player can nudge a stopped NPC.
 		velocity = _push_vel
 		if pushed:
@@ -137,17 +140,30 @@ func _nav_direction() -> Vector2:
 	return nav
 
 # ── Public API ─────────────────────────────────────────────
-func set_move_target(pos: Vector2) -> void:
-	if pos.distance_to(_move_target) > 1.0:
+## `arrive_radius` is how close counts as "there". Defaults to ARRIVE_THRESHOLD;
+## door targets pass a wider radius because door markers sit inside the
+## building's collision polygon, so the NPC's body can never physically reach
+## them — without this it walks into the wall forever and never arrives.
+func set_move_target(pos: Vector2, arrive_radius: float = ARRIVE_THRESHOLD) -> void:
+	if pos.distance_to(_move_target) > 1.0 or not is_equal_approx(arrive_radius, _arrive_radius):
 		_arrived = false
-	_move_target = pos
+	_move_target   = pos
+	_arrive_radius = arrive_radius
+	_wall_timer    = 0.0
 	if _agent != null:
-		_agent.target_position = pos
+		_agent.target_position         = pos
+		_agent.target_desired_distance = arrive_radius
 	_has_target  = true
 
 ## Overridable: called once when the NPC reaches its move target.
 func _on_arrived() -> void:
 	pass
+
+## Overridable: may a blocked NPC count as arrived when it is wedged against
+## geometry near its target? True only for targets that legitimately sit inside
+## a wall (doors). Plain walking targets keep the old detour behaviour.
+func _blocked_arrival_ok() -> bool:
+	return false
 
 ## Player walked into us on foot: a gentle shove in `dir` (slower than walking
 ## pace) so they can slowly herd the NPC forward. Re-applied each frame of
@@ -179,6 +195,17 @@ func _update_stuck(delta: float) -> void:
 	_last_pos = global_position
 	if moved < WALK_SPEED * delta * 0.3:
 		_stuck_timer += delta
+		_wall_timer  += delta
+		# Wedged right outside the destination: the target sits inside a wall we
+		# can't walk through (door markers do). Treat that as having arrived
+		# rather than snapping back to the navmesh and charging the door again.
+		if _wall_timer >= WALL_ARRIVE_TIME and _blocked_arrival_ok():
+			_wall_timer  = 0.0
+			_stuck_timer = 0.0
+			_arrived     = true
+			velocity     = Vector2.ZERO
+			_on_arrived()
+			return
 		if _stuck_timer >= STUCK_TIME:
 			_stuck_timer = 0.0
 			# Wedged against geometry. Step onto the nearest navigable ground and
@@ -197,6 +224,7 @@ func _update_stuck(delta: float) -> void:
 				_detour_dir = (_move_target - global_position).normalized().orthogonal() * side
 	else:
 		_stuck_timer = 0.0
+		_wall_timer  = 0.0
 
 func _animate(walking: bool, delta: float) -> void:
 	# The sprite decides how many frames each state has (sheet-driven NPCs may

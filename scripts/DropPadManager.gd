@@ -1,5 +1,8 @@
 extends StaticBody2D
 
+## Seconds between "bike is full" reminders while parked on a loaded pad.
+const FULL_WARN_INTERVAL : float = 6.0
+
 signal drop_arrived(pad_idx: int, count: int)
 signal pad_picked_up(pad_idx: int, count: int, landing_times: Array)
 
@@ -111,10 +114,15 @@ func _check_pickup() -> void:
 	for i in _pads.size():
 		if _packages[i] > 0:
 			if player_ref.global_position.distance_to(_centroids[i]) <= pickup_range:
-				var count         := _packages[i]
-				var landing_times : Array = _landing[i]
-				_packages[i]  = 0
-				_landing[i]   = []
+				# Only take what fits on the bike's rack; the rest stays on the
+				# pad to be collected after some deliveries free up space.
+				var count : int = mini(_packages[i], GameManager.package_space())
+				if count <= 0:
+					_warn_full()
+					continue
+				var landing_times : Array = _landing[i].slice(0, count)
+				_packages[i] -= count
+				_landing[i]   = _landing[i].slice(count)
 				pad_picked_up.emit(i, count, landing_times)
 
 func get_packages() -> Array[int]:
@@ -122,3 +130,15 @@ func get_packages() -> Array[int]:
 
 func get_centroids() -> Array[Vector2]:
 	return _centroids
+
+## Standing on a pad with a full rack: say so, but only occasionally —
+## pickup is checked every frame, so an unthrottled message would spam.
+var _full_warned_at : float = -100.0
+
+func _warn_full() -> void:
+	if GameManager.play_clock - _full_warned_at < FULL_WARN_INTERVAL:
+		return
+	_full_warned_at = GameManager.play_clock
+	GameManager.show_message(
+			"🚲 Bike is full (%d/%d) — deliver some before picking these up."
+			% [GameManager.packages, GameManager.bike_max_packages])

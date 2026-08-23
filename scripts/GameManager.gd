@@ -65,6 +65,51 @@ func set_sprite_scale(value: float) -> void:
 var max_drops_per_day     : int  = 4
 var max_packages_per_drop : int  = 3
 
+# ── Vehicle stats ─────────────────────────────────
+## The bicycle's characteristics, shown on the status screen and read by
+## Player for movement. These are progression (upgradeable), so they live in
+## the save rather than in settings.
+##
+## Baselines match the values Player used as constants before these existed, so
+## a fresh bike rides exactly as it always did.
+const BIKE_BASE_MAX_PACKAGES : int   = 4      # packages on the rack at once
+const BIKE_BASE_MAX_SPEED    : float = 148.0  # px/sec flat-out
+const BIKE_BASE_ACCEL        : float = 5.0    # px/sec² build-up
+const BIKE_BASE_HANDLING     : float = 2.8    # rad/sec turn rate
+const BIKE_BASE_OFF_ROAD     : float = 0.8    # speed kept on grass (1.0 = no penalty)
+
+var bike_max_packages : int   = BIKE_BASE_MAX_PACKAGES
+var bike_max_speed    : float = BIKE_BASE_MAX_SPEED
+var bike_accel        : float = BIKE_BASE_ACCEL
+var bike_handling     : float = BIKE_BASE_HANDLING
+## Fraction of top speed retained off-road. Higher is better: 1.0 would mean
+## grass costs nothing, the 0.8 baseline means a 20% penalty.
+var bike_off_road     : float = BIKE_BASE_OFF_ROAD
+
+signal bike_stats_changed()
+
+## Room left on the rack right now.
+func package_space() -> int:
+	return maxi(bike_max_packages - packages, 0)
+
+## True when the rack is full, so drop pads know to leave the rest behind.
+func bike_is_full() -> bool:
+	return package_space() <= 0
+
+func set_bike_max_packages(value: int) -> void:
+	bike_max_packages = maxi(value, 1)
+	# Shedding capacity can't leave us over-loaded.
+	if packages > bike_max_packages:
+		set_packages(bike_max_packages)
+	bike_stats_changed.emit()
+
+## Percentage a stat sits at against its baseline, for the status screen's bars
+## (100% = stock bike). Upgrades push these past 100.
+func bike_stat_percent(value: float, baseline: float) -> float:
+	if baseline <= 0.0:
+		return 0.0
+	return (value / baseline) * 100.0
+
 # ── Player day-stats (0..max, reset each day) ──────────────
 var max_hp     : int = 20
 var max_energy : int = 20
@@ -401,7 +446,7 @@ func use_package() -> bool:
 	return true
 
 func set_packages(count: int) -> void:
-	packages = count
+	packages = clampi(count, 0, bike_max_packages)
 	packages_changed.emit(packages)
 
 func on_delivery_complete(earned: int) -> void:
@@ -419,9 +464,15 @@ func start_new_day(target_count: int) -> void:
 	set_packages(target_count)
 	day_changed.emit(day)
 
-func add_packages(count: int) -> void:
-	packages += count
+## Load packages onto the bike, up to its rack capacity. Returns how many were
+## actually taken, so the caller can tell the player what was left behind.
+func add_packages(count: int) -> int:
+	var taken : int = mini(count, package_space())
+	if taken <= 0:
+		return 0
+	packages += taken
 	packages_changed.emit(packages)
+	return taken
 
 func add_targets(count: int) -> void:
 	total_targets += count
@@ -481,6 +532,11 @@ func save_game(slot: int = -1) -> void:
 		"day":       day,
 		"home_id":   home_id,
 		"mortgage":  mortgage,
+		"bike_max_packages": bike_max_packages,
+		"bike_max_speed":    bike_max_speed,
+		"bike_accel":        bike_accel,
+		"bike_handling":     bike_handling,
+		"bike_off_road":     bike_off_road,
 		"hour":      TimeManager.hour,   # resume the in-game clock where we left off
 		"stats":     stats,
 		"inventory": _inventory_to_save(),
@@ -507,6 +563,12 @@ func load_game(slot: int) -> bool:
 	day      = int(parsed.get("day",      1))
 	home_id  = migrate_home_id(str(parsed.get("home_id",  "")))
 	mortgage = int(parsed.get("mortgage", 0))
+	# Saves predating vehicle stats get a stock bike.
+	bike_max_packages = maxi(int(parsed.get("bike_max_packages", BIKE_BASE_MAX_PACKAGES)), 1)
+	bike_max_speed    = float(parsed.get("bike_max_speed", BIKE_BASE_MAX_SPEED))
+	bike_accel        = float(parsed.get("bike_accel",     BIKE_BASE_ACCEL))
+	bike_handling     = float(parsed.get("bike_handling",  BIKE_BASE_HANDLING))
+	bike_off_road     = float(parsed.get("bike_off_road",  BIKE_BASE_OFF_ROAD))
 	# Older saves have no clock — fall back to the normal 6am start.
 	loaded_hour = float(parsed.get("hour", TimeManager.DAY_START_HOUR))
 	# Saves written before lifetime stats existed just keep the zeroed defaults,
@@ -565,6 +627,11 @@ func reset() -> void:
 	delivered_count = 0
 	home_id  = ""
 	mortgage = 0
+	bike_max_packages = BIKE_BASE_MAX_PACKAGES
+	bike_max_speed    = BIKE_BASE_MAX_SPEED
+	bike_accel        = BIKE_BASE_ACCEL
+	bike_handling     = BIKE_BASE_HANDLING
+	bike_off_road     = BIKE_BASE_OFF_ROAD
 	current_slot = -1
 	_ledger.clear()
 	_clear_inventory()

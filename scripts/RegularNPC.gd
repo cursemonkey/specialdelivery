@@ -108,22 +108,37 @@ func _pick_wander_point() -> Vector2:
 func _home_door_pos() -> Vector2:
 	return anchor_positions.get(home_anchor, home_position)
 
+## How close to a door counts as reaching it. Door markers sit well inside the
+## building's collision polygon (median ~35px, up to ~65px), so an NPC walking
+## to one can never physically touch it — it would grind against the wall and
+## never trigger entry. Anything within this radius steps inside.
+const DOOR_ARRIVE_RADIUS : float = 26.0
+
 func _target_interior(building_id: String, door_pos: Vector2, immediate: bool) -> void:
 	if _inside and current_interior == building_id:
 		return   # already inside this building
 	if immediate:
 		_go_inside(building_id, door_pos)
 	else:
-		# Walk to the door (visible); _on_arrived() takes it inside.
+		# Walk to the door (visible); _on_arrived() takes it inside. The door
+		# marker sits inside the building's collision polygon, so accept a wide
+		# arrival radius — the NPC can't physically stand on it.
 		_come_outside()
 		_pending_interior = building_id
-		set_move_target(door_pos)
+		set_move_target(door_pos, DOOR_ARRIVE_RADIUS)
+
+## Only entering a building may complete while wedged against geometry — that
+## is the case where the target is deliberately inside a wall.
+func _blocked_arrival_ok() -> bool:
+	return _pending_interior != ""
 
 func _on_arrived() -> void:
 	if _pending_interior != "":
 		var b : String = _pending_interior
 		_pending_interior = ""
-		_go_inside(b, global_position)
+		# Park on the door itself, not wherever we stopped short of it, so
+		# stepping back out later puts us at the doorway.
+		_go_inside(b, anchor_positions.get(b, global_position))
 		return
 	# Wandering: pause a beat, then drift to another nearby spot.
 	if _wander_radius > 0.0:

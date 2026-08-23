@@ -662,10 +662,12 @@ func _on_pad_picked_up(_pad_idx: int, count: int, landing_times: Array) -> void:
 		player.delivery_targets.append(t)
 	GameManager.add_packages(new_targets.size())
 	GameManager.add_targets(new_targets.size())
-	GameManager.show_message(
-		"📬 Picked up %d package%s! New deliveries added." \
-		% [new_targets.size(), "s" if new_targets.size() > 1 else ""]
-	)
+	var msg : String = "📬 Picked up %d package%s! New deliveries added." \
+			% [new_targets.size(), "s" if new_targets.size() > 1 else ""]
+	# The pad only hands over what the rack can hold; say so if it is now full.
+	if GameManager.package_space() <= 0:
+		msg += "  Bike is full (%d/%d)." % [GameManager.packages, GameManager.bike_max_packages]
+	GameManager.show_message(msg)
 
 # The day no longer ends on a timer — it ends when the player sleeps, collapses
 # (0 HP), or the midnight ledger rolls the calendar over.

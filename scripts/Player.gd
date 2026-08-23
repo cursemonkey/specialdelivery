@@ -3,10 +3,10 @@ extends CharacterBody2D
 # ── Constants ──────────────────────────────────────────────
 const TILE_SIZE       := 16
 const FOOT_SPEED      := 80.0
-const BIKE_MAX_SPEED  := 148.0
-const BIKE_ACCEL      := 5.0
 const BIKE_FRICTION   := 0.90
-const BIKE_TURN_SPEED := 2.8   # radians/sec (speed-scaled)
+## Bike performance now lives on GameManager (see its Vehicle stats block)
+## so it can be upgraded and shown on the status screen. These read it per
+## use; the baselines there match the constants this replaced.
 const STRAIGHTEN_DELAY     := 0.1         # seconds without steering before easing starts
 const STRAIGHTEN_SPEED     := 4.0         # lerp_angle weight/sec once easing starts
 const BOOST_MULT      := 1.8
@@ -361,20 +361,20 @@ func _process_bike(delta: float) -> void:
 	var mult   := _speed_mult()
 
 	if accel:
-		bike_speed = move_toward(bike_speed, BIKE_MAX_SPEED * mult, BIKE_ACCEL * mult)
+		bike_speed = move_toward(bike_speed, _bike_max_speed() * mult, _bike_accel() * mult)
 	elif braking:
 		if bike_speed > 1.0:
-			bike_speed = move_toward(bike_speed, 0.0, BIKE_ACCEL * 2.0)
+			bike_speed = move_toward(bike_speed, 0.0, _bike_accel() * 2.0)
 		else:
-			bike_speed = move_toward(bike_speed, -BIKE_MAX_SPEED * 0.35, BIKE_ACCEL)
+			bike_speed = move_toward(bike_speed, -_bike_max_speed() * 0.35, _bike_accel())
 	else:
 		bike_speed *= BIKE_FRICTION
 		if abs(bike_speed) < 0.5:
 			bike_speed = 0.0
 			
 	if bike_speed > 2.0:
-		var turn_factor: float = clamp(bike_speed / BIKE_MAX_SPEED, 0.3, 1.0)
-		bike_angle += turn_input * BIKE_TURN_SPEED * turn_factor * delta
+		var turn_factor: float = clamp(bike_speed / _bike_max_speed(), 0.3, 1.0)
+		bike_angle += turn_input * _bike_turn_speed() * turn_factor * delta
 
 	# Auto-straighten: when riding without steering input, hold briefly then
 	# ease the heading onto the nearest of the 8 directions. No tolerance gate:
@@ -389,12 +389,12 @@ func _process_bike(delta: float) -> void:
 
 	velocity = Vector2(cos(bike_angle), sin(bike_angle)) * bike_speed
 
-	# Visual angle turns at full BIKE_TURN_SPEED on input so the sprite reacts immediately,
+	# Visual angle turns at full _bike_turn_speed() on input so the sprite reacts immediately,
 	# independent of the physics turn_factor. Snaps back to bike_angle when not turning.
 	if spinning:
 		_visual_bike_angle += SPIN_VISUAL_SPEED * delta
 	elif turn_input != 0.0 and bike_speed > 0.0:
-		_visual_bike_angle += turn_input * BIKE_TURN_SPEED * delta
+		_visual_bike_angle += turn_input * _bike_turn_speed() * delta
 	else:
 		_visual_bike_angle = bike_angle
 
@@ -483,7 +483,7 @@ func _process_bike_easy(delta: float) -> void:
 		# to come about as a 90° turn.
 		var target_angle : float = dir.angle()
 		_easy_bike_angle = rotate_toward(_easy_bike_angle, target_angle, EASY_TURN_SPEED * delta)
-		velocity = Vector2(cos(_easy_bike_angle), sin(_easy_bike_angle)) * BIKE_MAX_SPEED * mult
+		velocity = Vector2(cos(_easy_bike_angle), sin(_easy_bike_angle)) * _bike_max_speed() * mult
 
 		var dir_index := int(fposmod(rad_to_deg(_easy_bike_angle) + 22.5, 360.0) / 45.0)
 		if dir_index != _bike_dir_index:
@@ -618,11 +618,25 @@ func _speed_mult(apply_surface: bool = true) -> float:
 	elif apply_surface:
 		if _is_in_any_region(road_regions):        m = 1.2
 		elif _is_in_any_region(dirt_road_regions): m = 1.0
-		elif _is_in_any_region(grass_regions):     m = 0.8
+		# Grass is the off-road case: the bike's off_road stat is the fraction
+		# of speed it keeps there, so a better bike loses less. On foot the
+		# bike's tyres are irrelevant, so the stock penalty applies.
+		elif _is_in_any_region(grass_regions):
+			m = GameManager.bike_off_road if on_bike else GameManager.BIKE_BASE_OFF_ROAD
 	# Out of energy: move at 70% speed.
 	if GameManager.energy <= 0:
 		m *= 0.7
 	return m
+
+# ── Bike performance ───────────────────────────────
+func _bike_max_speed() -> float:
+	return GameManager.bike_max_speed
+
+func _bike_accel() -> float:
+	return GameManager.bike_accel
+
+func _bike_turn_speed() -> float:
+	return GameManager.bike_handling
 
 # ── Helpers ────────────────────────────────────────────────
 func _get_dir() -> Vector2:
