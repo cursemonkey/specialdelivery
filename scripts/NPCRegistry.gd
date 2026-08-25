@@ -53,6 +53,41 @@ func _register_all() -> void:
 	_register_darin()
 	_register_nayra()
 	_register_marco()
+	_register_aidan()
+
+## Aidan — the mechanic. Works the shop Monday to Saturday, 8am to 6pm, and
+## lives in a small house on the west side, a short walk up the road. Grew up
+## around his father's junk yard, which is where he picked up the trade — he
+## mentions the old man often. Plain-spoken and unbothered.
+## TODO: his father is referenced in dialogue but not yet in the cast; when the
+## junk yard NPC is added, link them (shared surname / schedule visits).
+func _register_aidan() -> void:
+	# Mon(1) Tue(2) Wed(3) Thu(4) Fri(5) Sat(6) — closed Sunday.
+	var work_days : Array[int] = [1, 2, 3, 4, 5, 6]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "aidan"
+	def.display_name = "Aidan"
+	def.home_anchor  = "House4"           # west side, up the road from the shop
+	def.shirt_color  = Color("#4a6b8a")   # oil-stained blue coveralls
+	def.pants_color  = Color("#3b4450")
+	def.hair_color   = Color("#4a3527")
+	def.skin_color   = Color("#d9a077")
+	var sched : Array[NPCScheduleEntry] = [
+		# Working days: in the mechanic shop from 8am until he shuts at 6pm.
+		NPCScheduleEntry.make_hours(work_days, 8.0, 18.0, "Mechanic", Vector2(0, 40), -1, true),
+		# Evenings, and all day Sunday: home on the west side.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, "House4", Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("My old man works the junk yard, that's where I learned how to fix crap up.", DialogueLine.CALM),
+		DialogueLine.make("Bring it in if it's rattling. Rattles turn into walks home.", DialogueLine.CALM),
+		DialogueLine.make("That chain could use oiling. No charge — takes me a second.", DialogueLine.HAPPY),
+		DialogueLine.make("Nothing's really broke. Just parts that haven't been put right yet.", DialogueLine.CALM),
+		DialogueLine.make("Whole shop smells like grease and I stopped noticing years ago.", DialogueLine.HAPPY),
+	]
+	_add(def)
 
 ## Marco — the baker. Opens the cafe Tuesday to Saturday, starting his day at
 ## 4am to get the ovens on and heading home when he closes up at 5pm. Warm and

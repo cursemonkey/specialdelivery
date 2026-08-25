@@ -28,6 +28,9 @@ const PUDDLE_HP_COST     := 0.25          # fractional HP lost to a puddle
 const SHOPKEEPER_ID      := "nayra"       # talking to them opens the grocery counter
 const BANKER_ID          := "jimmy_henderson"   # handles mortgage payments at City Hall
 const CITY_HALL_ID       := "Building_TownHall"
+const GROCERY_ID         := "Grocery"      # Nayra only sells from behind this counter
+const MECHANIC_ID        := "Mechanic"     # Aidan only sells from behind this one
+const MECHANIC_ID_NPC    := "aidan"        # runs the garage counter
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -215,10 +218,15 @@ func _try_dialogue() -> void:
 		if nearest_npc.id == BANKER_ID and _at_city_hall() and choice_panel != null and mortgage_panel != null:
 			_open_banker_choice(nearest_npc)
 			return
-		# Shopkeepers open their counter once the greeting finishes.
+		# Shopkeepers open their counter once the greeting finishes — but only
+		# behind it. Nayra's schedule is all interior, so catching her outside
+		# means she's walking to or from work: she chats, she doesn't sell.
 		var after : Callable = Callable()
-		if shop_panel != null and nearest_npc.id == SHOPKEEPER_ID:
-			after = func() -> void: shop_panel.open()
+		if shop_panel != null and nearest_npc.id == SHOPKEEPER_ID and _at_grocery():
+			after = func() -> void: shop_panel.open(shop_panel.GROCERY)
+		# Aidan sells parts and vehicle upgrades, but only at the garage.
+		elif shop_panel != null and nearest_npc.id == MECHANIC_ID_NPC and _at_mechanic():
+			after = func() -> void: shop_panel.open(shop_panel.GARAGE)
 		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks(), after)
 		return
 	# Otherwise, enter the building whose door we're standing at — but only on
@@ -237,6 +245,10 @@ func _eat_slot(slot: int) -> void:
 	if not (s is Dictionary):
 		return
 	var id : String = str(s.get("id", ""))
+	# Workshop materials live in the bag but aren't food.
+	if ItemRegistry.is_material(id):
+		GameManager.show_message("🔧 %s isn't edible — it's for repairs." % ItemRegistry.display_name(id))
+		return
 	if GameManager.energy >= GameManager.max_energy:
 		GameManager.show_message("😋 You're too full to eat that right now.")
 		return
@@ -247,6 +259,16 @@ func _eat_slot(slot: int) -> void:
 ## True when the player is inside City Hall.
 func _at_city_hall() -> bool:
 	return in_interior and interior_manager != null and interior_manager.current_building_id == CITY_HALL_ID
+
+## True while the player is standing inside the grocery store, where the
+## shop counter is open for business.
+func _at_grocery() -> bool:
+	return in_interior and interior_manager != null and interior_manager.current_building_id == GROCERY_ID
+
+## True while the player is standing inside the mechanic shop, where
+## Aidan's counter is open for business.
+func _at_mechanic() -> bool:
+	return in_interior and interior_manager != null and interior_manager.current_building_id == MECHANIC_ID
 
 ## Jimmy's City Hall greeting, then a menu: pay the mortgage, or just chat.
 func _open_banker_choice(npc: RegularNPC) -> void:

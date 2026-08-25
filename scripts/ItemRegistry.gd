@@ -40,10 +40,37 @@ const ITEMS : Dictionary = {
 		"energy":   12,
 		"portions": 3,
 	},
+	# Workshop materials. Not food: `material` marks them inedible, so eating
+	# keys skip them and the shop describes them by the piece.
+	"scrap": {
+		"id":       "scrap",
+		"name":     "Scrap Metal",
+		"icon":     "🪛",
+		"price":    10,
+		"energy":   0,
+		"portions": 1,
+		"material": true,
+	},
+	"bolts": {
+		"id":       "bolts",
+		"name":     "Bag of Bolts",
+		"icon":     "🔩",
+		"price":    2,
+		"energy":   0,
+		"portions": 1,
+		"material": true,
+	},
 }
 
 ## Ids in the order Nayra offers them.
 const SHOP_STOCK : Array = ["butter", "bread", "milk"]
+
+## Ids in the order Aidan offers them at the garage.
+const GARAGE_STOCK : Array = ["scrap", "bolts"]
+
+## True for workshop materials, which sit in the bag but can't be eaten.
+func is_material(id: String) -> bool:
+	return bool(get_item(id).get("material", false))
 
 func get_item(id: String) -> Dictionary:
 	return ITEMS.get(id, {})
@@ -66,8 +93,11 @@ func energy(id: String) -> int:
 func portions(id: String) -> int:
 	return int(get_item(id).get("portions", 1))
 
-## "Loaf of Bread — $75  (+10 energy × 5)"
+## "Loaf of Bread — $75  (+10 energy × 5)", or for materials that have no
+## energy value, just "🪛 Scrap Metal — $10".
 func shop_label(id: String) -> String:
+	if is_material(id):
+		return "%s %s — $%d" % [icon(id), display_name(id), price(id)]
 	var p : int = portions(id)
 	var suffix : String = "" if p <= 1 else " × %d" % p
 	return "%s %s — $%d  (+%d energy%s)" % [icon(id), display_name(id), price(id), energy(id), suffix]

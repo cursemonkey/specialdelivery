@@ -446,11 +446,13 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 		# drop_pads.start_day() is called by _on_home_selected after selection
 	elif _continue_flow:
 		_continue_flow = false
-		# Resume the loaded day (don't advance it), but start with a clean slate:
-		# packages/targets reset alongside the HP/energy/rizz reset above.
-		GameManager.day_cash        = 0
-		GameManager.delivered_count = 0
-		GameManager.total_targets   = 0
+		# Resume the loaded day without advancing it. The day's takings
+		# (ledger, day_cash, delivered_count) were restored by load_game and
+		# are deliberately kept, so tonight's midnight ledger still reports the
+		# whole calendar day rather than only what happened after loading.
+		# Only the in-flight packages are dropped: their delivery targets no
+		# longer exist in the reloaded world, so they could never be completed.
+		GameManager.total_targets = GameManager.delivered_count
 		GameManager.set_packages(0)
 		drop_pads.start_day(DAY_DURATION)
 	else:
@@ -602,7 +604,10 @@ func _on_sleep_hours_chosen(hours: int) -> void:
 		# Same-day rest: time passes and the player recovers, but the day's
 		# ledger keeps accruing so the morning's work stays on it.
 		_apply_sleep(hours)
-		GameManager.show_message("😴 You slept %d hour%s until %s." \
+		# Bed is a save point, however short the rest — a nap that isn't saved
+		# is a session the player can lose.
+		GameManager.save_game()
+		GameManager.show_message("😴 You slept %d hour%s until %s. (Saved)" \
 				% [hours, "" if hours == 1 else "s", TimeManager.clock_label()])
 
 ## Advance the clock and restore the fraction of HP/energy the rest earned.

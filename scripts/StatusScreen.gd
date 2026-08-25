@@ -18,6 +18,7 @@ const FULL_BAR_RATIO : float = 1.5
 @onready var bike_meters   : Control        = $Dim/StatusPanel/VBox/Columns/BikeCol/Meters
 @onready var bike_rows     : VBoxContainer  = $Dim/StatusPanel/VBox/Columns/BikeCol/Rows
 @onready var close_button  : Button         = $Dim/StatusPanel/VBox/CloseStatus
+@onready var bike_heading  : Label          = $Dim/StatusPanel/VBox/Columns/BikeCol/Heading
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -50,6 +51,8 @@ func refresh() -> void:
 	bike_meters.queue_redraw()
 	_fill(player_rows, _player_stat_rows())
 	_fill(bike_rows,   _bike_stat_rows())
+	# The heading follows whichever vehicle the player currently rides.
+	bike_heading.text = GameManager.vehicle_name()
 
 # ── Row data ───────────────────────────────────────────────
 func _player_stat_rows() -> Array:

@@ -36,7 +36,7 @@ func _draw() -> void:
 		draw_string(font, Vector2(x + 9.0, 25.0), ItemRegistry.icon(id),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1))
 
-		# Portions remaining, bottom-right — only when more than one is left.
+		# Stack size, bottom-right — only when more than one is held.
 		var left : int = int(slot.get("portions", 0))
 		if left > 1:
 			draw_string(font, Vector2(x + SLOT_W - 12.0, SLOT_H - 3.0), str(left),

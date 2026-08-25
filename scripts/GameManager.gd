@@ -86,7 +86,54 @@ var bike_handling     : float = BIKE_BASE_HANDLING
 ## grass costs nothing, the 0.8 baseline means a 20% penalty.
 var bike_off_road     : float = BIKE_BASE_OFF_ROAD
 
+## The scooter, bought from Aidan. Carries one more package than the bike and is
+## quicker on the road, but its small wheels cope worse with grass. Riding it
+## still uses the bike sprite for now.
+const SCOOTER_MAX_PACKAGES : int   = BIKE_BASE_MAX_PACKAGES + 1
+const SCOOTER_MAX_SPEED    : float = 205.0   # noticeably quicker than the bike's 148
+const SCOOTER_ACCEL        : float = 7.0
+const SCOOTER_HANDLING     : float = 2.5     # a touch heavier to turn
+const SCOOTER_OFF_ROAD     : float = 0.7     # worse on grass than the bike's 0.8
+
+## Which vehicle the player rides. The scooter replaces the bike once bought.
+enum Vehicle { BIKE, SCOOTER }
+var vehicle : int = Vehicle.BIKE
+
+## Rack slots added by storage upgrades, applied to whichever vehicle is ridden.
+var storage_upgrades : int = 0
+const STORAGE_UPGRADE_SLOTS : int = 2   # packages gained per upgrade bought
+
 signal bike_stats_changed()
+
+func has_scooter() -> bool:
+	return vehicle == Vehicle.SCOOTER
+
+func vehicle_name() -> String:
+	return "Scooter" if has_scooter() else "Bicycle"
+
+## Swap to the scooter. Capacity/speed come from its profile from here on.
+func grant_scooter() -> void:
+	if has_scooter():
+		return
+	vehicle        = Vehicle.SCOOTER
+	bike_max_speed = SCOOTER_MAX_SPEED
+	bike_accel     = SCOOTER_ACCEL
+	bike_handling  = SCOOTER_HANDLING
+	bike_off_road  = SCOOTER_OFF_ROAD
+	_apply_capacity()
+
+## Buy one more crate for the rack.
+func add_storage_upgrade() -> void:
+	storage_upgrades += 1
+	_apply_capacity()
+
+## Base capacity for the current vehicle, before upgrades.
+func base_capacity() -> int:
+	return SCOOTER_MAX_PACKAGES if has_scooter() else BIKE_BASE_MAX_PACKAGES
+
+## Recompute the rack from the vehicle plus everything bolted to it.
+func _apply_capacity() -> void:
+	set_bike_max_packages(base_capacity() + storage_upgrades * STORAGE_UPGRADE_SLOTS)
 
 ## Room left on the rack right now.
 func package_space() -> int:
@@ -203,6 +250,26 @@ func get_ledger() -> Array:
 func clear_ledger() -> void:
 	_ledger.clear()
 
+## Rebuild the ledger from a save. JSON has no ints, so every number comes
+## back as a float and is coerced; a save written before the ledger was
+## persisted simply starts empty.
+func _ledger_from_save(raw: Variant) -> void:
+	_ledger.clear()
+	if not raw is Array:
+		return
+	for e in raw:
+		if not e is Dictionary:
+			continue
+		var rizz_tip  : int = int(e.get("rizz_tip",  0))
+		var speed_tip : int = int(e.get("speed_tip", 0))
+		_ledger.append({
+			"name":      str(e.get("name", "Delivery")),
+			"value":     int(e.get("value", 0)),
+			"rizz_tip":  rizz_tip,
+			"speed_tip": speed_tip,
+			"tip":       rizz_tip + speed_tip,
+		})
+
 ## A tip has two independent halves, so each can be zero on its own:
 ##   • Rizz  — style, +1% of base per Rizz point (0 at zero Rizz)
 ##   • Speed — promptness, scaled from the delivery time (0 at/after SLOW_TIME)
@@ -237,9 +304,13 @@ func register_delivery(base_earned: int, landing_time: float, target_name: Strin
 
 # ── Inventory ──────────────────────────────────────────────
 ## A fixed row of slots, each either empty (null) or holding one item type with
-## a remaining-portion count: {"id": String, "portions": int}. One purchase
-## fills one slot, so carrying capacity — not raw quantity — is the limit.
+## a remaining-portion count: {"id": String, "portions": int}. Items of the same
+## kind stack: a purchase tops up an existing stack of that item before taking a
+## fresh slot, up to STACK_LIMIT portions per slot.
 const INVENTORY_SLOTS : int = 6
+
+## Most portions one slot can hold, whatever the item.
+const STACK_LIMIT : int = 99
 
 var inventory : Array = []
 
@@ -261,6 +332,31 @@ func find_item_slot(id: String) -> int:
 			return i
 	return -1
 
+## Portions of `id` this slot could still take (0 if it holds something else).
+func _slot_headroom(slot: int, id: String) -> int:
+	var s : Variant = inventory[slot]
+	if s == null:
+		return STACK_LIMIT
+	if not (s is Dictionary) or str(s.get("id", "")) != id:
+		return 0
+	return maxi(STACK_LIMIT - int(s.get("portions", 0)), 0)
+
+## Total portions of `id` the bag could still take across every slot — partial
+## stacks of that item first, then empty slots.
+func room_for(id: String) -> int:
+	var room : int = 0
+	for i in inventory.size():
+		room += _slot_headroom(i, id)
+	return room
+
+## How many portions of `id` the bag is holding right now.
+func count_of(id: String) -> int:
+	var n : int = 0
+	for s in inventory:
+		if s is Dictionary and str(s.get("id", "")) == id:
+			n += int(s.get("portions", 0))
+	return n
+
 func first_empty_slot() -> int:
 	for i in inventory.size():
 		if inventory[i] == null:
@@ -270,16 +366,46 @@ func first_empty_slot() -> int:
 func has_free_slot() -> bool:
 	return first_empty_slot() != -1
 
-## Put one purchase of `id` into a free slot. Returns false when full. Each
-## purchase takes its own slot rather than topping up a partial one, so a
-## half-eaten loaf and a fresh loaf stay distinct.
+## Put one purchase of `id` into the bag, topping up existing stacks of that
+## item before opening a fresh slot. A purchase is all-or-nothing: if the whole
+## amount won't fit, nothing is added and this returns false, so the shop never
+## charges for a partial delivery.
 func add_item(id: String) -> bool:
 	if not ItemRegistry.has(id):
 		return false
-	var slot : int = first_empty_slot()
-	if slot == -1:
+	return add_portions(id, ItemRegistry.portions(id))
+
+## Add `amount` portions of `id`, spilling across slots as needed. All-or-
+## nothing: returns false and changes nothing when there isn't room for all of
+## it. Partial stacks of the same item fill first so the bag stays tidy.
+func add_portions(id: String, amount: int) -> bool:
+	if not ItemRegistry.has(id) or amount <= 0:
 		return false
-	inventory[slot] = {"id": id, "portions": ItemRegistry.portions(id)}
+	if room_for(id) < amount:
+		return false
+	var left : int = amount
+	# Top up existing stacks of this item first …
+	for i in inventory.size():
+		if left <= 0:
+			break
+		var s : Variant = inventory[i]
+		if not (s is Dictionary) or str(s.get("id", "")) != id:
+			continue
+		var take : int = mini(_slot_headroom(i, id), left)
+		if take <= 0:
+			continue
+		s["portions"] = int(s.get("portions", 0)) + take
+		inventory[i]  = s
+		left -= take
+	# … then open fresh slots for whatever is still left.
+	for i in inventory.size():
+		if left <= 0:
+			break
+		if inventory[i] != null:
+			continue
+		var take2 : int = mini(STACK_LIMIT, left)
+		inventory[i] = {"id": id, "portions": take2}
+		left -= take2
 	inventory_changed.emit()
 	return true
 
@@ -333,7 +459,8 @@ func _inventory_from_save(data: Variant) -> void:
 		# Drop anything the catalogue no longer knows about, so removing an item
 		# from ITEMS can't corrupt an existing save.
 		if ItemRegistry.has(id) and n > 0:
-			inventory[i] = {"id": id, "portions": n}
+			# Clamp to the stack limit in case it was lowered since the save.
+			inventory[i] = {"id": id, "portions": mini(n, STACK_LIMIT)}
 	inventory_changed.emit()
 
 # ── Lifetime statistics ────────────────────────────────────
@@ -537,7 +664,16 @@ func save_game(slot: int = -1) -> void:
 		"bike_accel":        bike_accel,
 		"bike_handling":     bike_handling,
 		"bike_off_road":     bike_off_road,
+		"vehicle":          vehicle,
+		"storage_upgrades": storage_upgrades,
 		"hour":      TimeManager.hour,   # resume the in-game clock where we left off
+		# The day in progress. Saved so a mid-day save/reload keeps the
+		# calendar day's takings intact and the midnight ledger still reports
+		# the whole 24 hours, not just what happened after loading.
+		"ledger":          _ledger,
+		"day_cash":        day_cash,
+		"delivered_count": delivered_count,
+		"total_targets":   total_targets,
 		"stats":     stats,
 		"inventory": _inventory_to_save(),
 	}
@@ -569,8 +705,16 @@ func load_game(slot: int) -> bool:
 	bike_accel        = float(parsed.get("bike_accel",     BIKE_BASE_ACCEL))
 	bike_handling     = float(parsed.get("bike_handling",  BIKE_BASE_HANDLING))
 	bike_off_road     = float(parsed.get("bike_off_road",  BIKE_BASE_OFF_ROAD))
+	vehicle          = int(parsed.get("vehicle",          Vehicle.BIKE))
+	storage_upgrades = maxi(int(parsed.get("storage_upgrades", 0)), 0)
 	# Older saves have no clock — fall back to the normal 6am start.
 	loaded_hour = float(parsed.get("hour", TimeManager.DAY_START_HOUR))
+	# Restore the calendar day already in progress, so the midnight ledger
+	# still covers the full 24 hours across a save/reload.
+	_ledger_from_save(parsed.get("ledger", null))
+	day_cash        = int(parsed.get("day_cash",        0))
+	delivered_count = int(parsed.get("delivered_count", 0))
+	total_targets   = int(parsed.get("total_targets",   0))
 	# Saves written before lifetime stats existed just keep the zeroed defaults,
 	# so those games start recording from their next day-end. Merge key-by-key
 	# (rather than assigning wholesale) because JSON returns every number as a
@@ -632,6 +776,8 @@ func reset() -> void:
 	bike_accel        = BIKE_BASE_ACCEL
 	bike_handling     = BIKE_BASE_HANDLING
 	bike_off_road     = BIKE_BASE_OFF_ROAD
+	vehicle           = Vehicle.BIKE
+	storage_upgrades  = 0
 	current_slot = -1
 	_ledger.clear()
 	_clear_inventory()
