@@ -463,6 +463,141 @@ func _inventory_from_save(data: Variant) -> void:
 			inventory[i] = {"id": id, "portions": mini(n, STACK_LIMIT)}
 	inventory_changed.emit()
 
+# ── Held item ────────────────────────────────────
+## One portion taken out of the bag and carried in hand. It has LEFT the
+## inventory while held — putting it away adds it back — so a held portion can
+## never be eaten and gifted, or gifted twice.
+##
+## Empty string = holding nothing.
+var held_item : String = ""
+
+signal held_item_changed(item_id: String)
+
+func is_holding() -> bool:
+	return not held_item.is_empty()
+
+## Take one portion out of `slot` and hold it. Anything already in hand goes
+## back to the bag first, so swapping items never drops one. Returns false when
+## the slot is empty or the bag has no room to stow what's already held.
+func hold_from_slot(slot: int) -> bool:
+	if slot < 0 or slot >= inventory.size():
+		return false
+	var s : Variant = inventory[slot]
+	if not (s is Dictionary):
+		return false
+	var id   : String = str(s.get("id", ""))
+	var left : int    = int(s.get("portions", 0))
+	if left <= 0 or not ItemRegistry.has(id):
+		return false
+	# Already holding this exact item? Treat the keypress as putting it away.
+	if held_item == id:
+		return stow_held()
+	if is_holding() and not stow_held():
+		return false
+	# stow_held() may have refilled this slot; re-read it before taking from it.
+	s = inventory[slot]
+	if not (s is Dictionary) or str(s.get("id", "")) != id:
+		return false
+	left = int(s.get("portions", 0))
+	if left <= 1:
+		inventory[slot] = null
+	else:
+		s["portions"] = left - 1
+		inventory[slot] = s
+	held_item = id
+	inventory_changed.emit()
+	held_item_changed.emit(held_item)
+	return true
+
+## Put the held portion back in the bag. Returns false (and keeps holding it)
+## when there's no room, so the portion is never destroyed.
+func stow_held() -> bool:
+	if not is_holding():
+		return true
+	var id : String = held_item
+	# Clear first: add_portions() checks room across the bag, and the portion in
+	# hand isn't in the bag to begin with.
+	held_item = ""
+	if not add_portions(id, 1):
+		held_item = id
+		return false
+	held_item_changed.emit(held_item)
+	return true
+
+## Give up the held portion without returning it to the bag — it was eaten or
+## handed over. Returns the id that was held, or "".
+func take_held() -> String:
+	var id : String = held_item
+	if id.is_empty():
+		return ""
+	held_item = ""
+	held_item_changed.emit(held_item)
+	return id
+
+# ── Friendship ─────────────────────────────────────
+## How each villager feels about the player, as points out of FRIENDSHIP_MAX,
+## keyed by NPC id. Only ids that have earned (or lost) points are stored, so
+## the table stays small and an NPC added later simply starts at zero.
+##
+## Points come from gifts today: a liked item is worth GIFT_LIKE, a loved one
+## GIFT_LOVE, and a disliked one costs GIFT_DISLIKE. The gift tables live on
+## NPCDefinition; ItemRegistry knows nothing about who likes what.
+const FRIENDSHIP_MAX : int = 100
+
+## Points per heart on the friendship screen. FRIENDSHIP_MAX must divide by
+## this evenly, so a full bar is exactly FRIENDSHIP_HEARTS hearts.
+const FRIENDSHIP_PER_HEART : int = 10
+const FRIENDSHIP_HEARTS    : int = FRIENDSHIP_MAX / FRIENDSHIP_PER_HEART
+
+const GIFT_LOVE    : int =  3
+const GIFT_LIKE    : int =  1
+const GIFT_DISLIKE : int = -1
+
+var friendship : Dictionary = {}   # npc id -> int points
+
+signal friendship_changed(npc_id: String, points: int)
+
+## Points for `npc_id`, 0 for anyone not yet in the table.
+func friendship_with(npc_id: String) -> int:
+	return int(friendship.get(npc_id, 0))
+
+## Whole hearts earned so far — the filled hearts on the friendship screen.
+func friendship_hearts(npc_id: String) -> int:
+	return friendship_with(npc_id) / FRIENDSHIP_PER_HEART
+
+## Move `npc_id`'s friendship by `delta`, clamped to 0..FRIENDSHIP_MAX, and
+## return the change actually applied (0 when already at a limit). Callers use
+## the return value to word the response — a gift that changed nothing because
+## the meter is full shouldn't claim to have won anyone over.
+func add_friendship(npc_id: String, delta: int) -> int:
+	if npc_id.is_empty() or delta == 0:
+		return 0
+	var before : int = friendship_with(npc_id)
+	var after  : int = clampi(before + delta, 0, FRIENDSHIP_MAX)
+	if after == before:
+		return 0
+	friendship[npc_id] = after
+	friendship_changed.emit(npc_id, after)
+	return after - before
+
+## Friendship as save-friendly plain data. Ints only, keyed by id.
+func _friendship_to_save() -> Dictionary:
+	var out : Dictionary = {}
+	for k in friendship.keys():
+		out[str(k)] = int(friendship[k])
+	return out
+
+func _friendship_from_save(data: Variant) -> void:
+	friendship = {}
+	if not (data is Dictionary):
+		return
+	for k in data.keys():
+		var id : String = str(k)
+		# Drop ids the cast no longer has, so removing an NPC can't leave a
+		# ghost entry that the friendship screen would have to filter out.
+		if NPCRegistry.has(id):
+			friendship[id] = clampi(int(data[k]), 0, FRIENDSHIP_MAX)
+
 # ── Lifetime statistics ────────────────────────────────────
 ## Records built from each closed-out calendar day. Saves written before this
 ## existed simply start empty, so an in-progress game begins accumulating from
@@ -676,6 +811,8 @@ func save_game(slot: int = -1) -> void:
 		"total_targets":   total_targets,
 		"stats":     stats,
 		"inventory": _inventory_to_save(),
+		"friendship": _friendship_to_save(),
+		"held_item": held_item,
 	}
 	var file : FileAccess = FileAccess.open(_slot_path(slot), FileAccess.WRITE)
 	if file == null:
@@ -726,6 +863,13 @@ func load_game(slot: int) -> bool:
 				stats[k] = int(loaded_stats[k])
 	# Saves predating the inventory simply load an empty one.
 	_inventory_from_save(parsed.get("inventory", null))
+	# Saves predating friendship start everyone at zero.
+	_friendship_from_save(parsed.get("friendship", null))
+	# A portion left in hand at save time is still in hand on load. Drop it if
+	# the catalogue no longer knows the item.
+	var held : String = str(parsed.get("held_item", ""))
+	held_item = held if ItemRegistry.has(held) else ""
+	held_item_changed.emit(held_item)
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	return true
@@ -781,5 +925,7 @@ func reset() -> void:
 	current_slot = -1
 	_ledger.clear()
 	_clear_inventory()
+	friendship.clear()
+	held_item = ""
 	for k in stats.keys():
 		stats[k] = 0

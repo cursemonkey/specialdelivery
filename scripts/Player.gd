@@ -163,11 +163,17 @@ func _input(event: InputEvent) -> void:
 		if dialogue_box != null and dialogue_box.visible:
 			dialogue_box.advance()
 			return
-	# Number keys eat one portion from the matching inventory slot.
+	# Number keys take one portion out of the matching slot and hold it. What
+	# happens next is up to E: eaten on the spot, or offered to a villager.
 	if event is InputEventKey and event.pressed \
 			and event.keycode >= KEY_1 and event.keycode < KEY_1 + GameManager.INVENTORY_SLOTS:
 		if not (dialogue_box != null and dialogue_box.visible) and not get_tree().paused:
-			_eat_slot(event.keycode - KEY_1)
+			_hold_slot(event.keycode - KEY_1)
+			return
+	# Q puts the held portion back in the bag.
+	if event is InputEventKey and event.pressed and event.keycode == KEY_Q:
+		if not (dialogue_box != null and dialogue_box.visible) and not get_tree().paused:
+			_stow_held()
 			return
 	if dialogue_box != null and dialogue_box.visible:
 		if event.is_action_pressed("mount_bike") or event.is_action_pressed("throw_package"):
@@ -213,6 +219,11 @@ func _try_dialogue() -> void:
 			nearest_npc = npc
 	if nearest_npc != null:
 		nearest_npc.begin_interaction(self)
+		# Holding something? Talking to a villager offers it to them, and that
+		# replaces the usual chat (and any shop counter) for this interaction.
+		if GameManager.is_holding():
+			_offer_gift(nearest_npc)
+			return
 		# Jimmy at City Hall offers a choice of business or small talk; elsewhere
 		# he just chats like anyone else.
 		if nearest_npc.id == BANKER_ID and _at_city_hall() and choice_panel != null and mortgage_panel != null:
@@ -238,23 +249,102 @@ func _try_dialogue() -> void:
 				return
 		elif interior_manager.try_enter_nearest(global_position):
 			return
+	# Nobody to talk to and no door to open: E eats what's in hand.
+	if GameManager.is_holding():
+		_eat_held()
 
-## Eat one portion from an inventory slot, if it holds anything.
-func _eat_slot(slot: int) -> void:
+## Hand the held portion to `npc`. Their reaction comes from the gift tables on
+## their NPCDefinition (see NPCRegistry): loved and liked add friendship,
+## disliked takes some away, and anything unlisted is accepted politely for
+## nothing. Either way the item is gone — giving is final.
+func _offer_gift(npc: RegularNPC) -> void:
+	var item_id : String = GameManager.held_item
+	if item_id.is_empty() or npc == null:
+		return
+	var def : NPCDefinition = npc.definition
+	# An NPC with no definition (or no tables yet) still accepts the gift; it
+	# simply earns nothing, rather than blocking the interaction.
+	var reaction : int = def.gift_reaction(item_id) if def != null else 0
+	var gained   : int = GameManager.add_friendship(npc.id, reaction)
+	GameManager.take_held()
+
+	var item_name : String = ItemRegistry.display_name(item_id)
+	var who       : String = npc.display_label()
+	var mood      : String = DialogueLine.CALM
+	var line      : String = ""
+	if reaction >= GameManager.GIFT_LOVE:
+		mood = DialogueLine.HAPPY
+		line = "%s? Oh, I love these — thank you!" % item_name
+	elif reaction > 0:
+		mood = DialogueLine.HAPPY
+		line = "The %s? That's kind of you, thanks." % item_name
+	elif reaction < 0:
+		mood = DialogueLine.MAD
+		line = "%s… no thank you. Not for me." % item_name
+	else:
+		line = "Oh — the %s? That's thoughtful, thanks." % item_name
+
+	# Only report a friendship change that actually happened: at 0 or 100 the
+	# meter can't move, and claiming otherwise would be a lie.
+	if gained != 0:
+		var arrow : String = "♥ +%d" % gained if gained > 0 else "♡ %d" % gained
+		GameManager.show_message("%s %s — %s" % [arrow, who, _hearts_readout(npc.id)])
+
+	dialogue_box.open(line, Callable(), npc.portrait_for_mood(mood), who)
+
+## "3/10 hearts" for the on-screen gift confirmation.
+func _hearts_readout(npc_id: String) -> String:
+	return "%d/%d ♥" % [GameManager.friendship_hearts(npc_id), GameManager.FRIENDSHIP_HEARTS]
+
+## Take one portion out of an inventory slot and hold it, ready to eat with E
+## or hand to a villager. Pressing the same slot again puts it back.
+func _hold_slot(slot: int) -> void:
 	var s : Variant = GameManager.inventory[slot] if slot < GameManager.inventory.size() else null
 	if not (s is Dictionary):
 		return
-	var id : String = str(s.get("id", ""))
-	# Workshop materials live in the bag but aren't food.
+	var id      : String = str(s.get("id", ""))
+	var was_out : String = GameManager.held_item
+	if not GameManager.hold_from_slot(slot):
+		# The only ordinary failure is a full bag blocking the swap.
+		if GameManager.is_holding():
+			GameManager.show_message("🎒 No room to put away the %s first." \
+					% ItemRegistry.display_name(GameManager.held_item))
+		return
+	if not GameManager.is_holding():
+		# Pressing the held item's own slot stowed it instead.
+		GameManager.show_message("🎒 Put the %s away." % ItemRegistry.display_name(was_out))
+		return
+	GameManager.show_message("%s Holding %s — E to use, talk to someone to give it, Q to put it back." \
+			% [ItemRegistry.icon(id), ItemRegistry.display_name(id)])
+
+## Put the held portion back in the bag.
+func _stow_held() -> void:
+	if not GameManager.is_holding():
+		return
+	var id : String = GameManager.held_item
+	if GameManager.stow_held():
+		GameManager.show_message("🎒 Put the %s away." % ItemRegistry.display_name(id))
+	else:
+		GameManager.show_message("🎒 Your bag is too full to put that back.")
+
+## Eat what's in hand. Refuses (keeping the item in hand) when it isn't food or
+## the energy would be wasted, so a portion is never lost for nothing.
+func _eat_held() -> void:
+	var id : String = GameManager.held_item
+	if id.is_empty():
+		return
+	# Workshop materials can be carried and gifted, but not eaten.
 	if ItemRegistry.is_material(id):
 		GameManager.show_message("🔧 %s isn't edible — it's for repairs." % ItemRegistry.display_name(id))
 		return
 	if GameManager.energy >= GameManager.max_energy:
 		GameManager.show_message("😋 You're too full to eat that right now.")
 		return
-	if GameManager.consume_slot(slot):
-		GameManager.show_message("%s Ate %s. +%d energy" \
-				% [ItemRegistry.icon(id), ItemRegistry.display_name(id), ItemRegistry.energy(id)])
+	GameManager.take_held()
+	GameManager.add_energy(ItemRegistry.energy(id))
+	GameManager.show_message("%s Ate %s. +%d energy" \
+			% [ItemRegistry.icon(id), ItemRegistry.display_name(id), ItemRegistry.energy(id)])
+
 
 ## True when the player is inside City Hall.
 func _at_city_hall() -> bool:

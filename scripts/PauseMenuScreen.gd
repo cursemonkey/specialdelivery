@@ -12,6 +12,8 @@ extends Control
 @onready var scale_value   : Label       = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleValue
 @onready var status_button   : Button        = $PanelContainer/HBoxContainer/Status
 @onready var status_view     : Control       = $StatusView
+@onready var friends_button  : Button        = $PanelContainer/HBoxContainer/Friends
+@onready var friends_view    : Control       = $FriendsView
 @onready var calendar_button : Button        = $PanelContainer/HBoxContainer/Calendar
 @onready var calendar_view   : Control       = $CalendarView
 @onready var calendar_month  : Label         = $CalendarView/CalendarPanel/VBox/MonthLabel
@@ -49,6 +51,7 @@ func _ready() -> void:
 	pkg_spin.value_changed.connect(_on_pkg_changed)
 	scale_slider.value_changed.connect(_on_sprite_scale_changed)
 	status_button.pressed.connect(_on_status_button_pressed)
+	friends_button.pressed.connect(_on_friends_button_pressed)
 	calendar_button.pressed.connect(_on_calendar_button_pressed)
 	$CalendarView/CalendarPanel/VBox/CloseCalendar.pressed.connect(_on_close_calendar_pressed)
 
@@ -103,6 +106,12 @@ func _on_close_settings_pressed() -> void:
 ## Player + bike read-out. The screen refreshes itself from GameManager.
 func _on_status_button_pressed() -> void:
 	status_view.open()
+
+# ── Friends ────────────────────────────────────
+## Friendship read-out, one row of hearts per villager. The screen refreshes
+## itself from GameManager.
+func _on_friends_button_pressed() -> void:
+	friends_view.open()
 
 # ── Calendar ───────────────────────────────────────────────
 func _on_calendar_button_pressed() -> void:

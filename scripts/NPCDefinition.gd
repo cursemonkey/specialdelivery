@@ -86,6 +86,26 @@ func sprite_sheet() -> Texture2D:
 @export var random_dialogue : bool    = false
 var conversation           : Resource = null
 
+# Gift tastes. Item ids (see ItemRegistry) this villager loves or dislikes;
+# anything in neither list is received politely but earns nothing. Every
+# villager should have at least one liked item so gifting is never a dead end.
+@export var loved_gifts    : Array[String] = []
+@export var liked_gifts    : Array[String] = []
+@export var disliked_gifts : Array[String] = []
+
+## How this villager feels about being given `item_id`:
+## GIFT_LOVE / GIFT_LIKE / GIFT_DISLIKE points, or 0 for anything unlisted.
+## Loved wins over liked wins over disliked, so an id listed twice by mistake
+## still resolves to a single, predictable outcome.
+func gift_reaction(item_id: String) -> int:
+	if loved_gifts.has(item_id):
+		return GameManager.GIFT_LOVE
+	if liked_gifts.has(item_id):
+		return GameManager.GIFT_LIKE
+	if disliked_gifts.has(item_id):
+		return GameManager.GIFT_DISLIKE
+	return 0
+
 const PORTRAIT_DIR : String = "res://assets/Portraits/"
 
 # Dialogue portrait. Leave empty to use the id-based convention

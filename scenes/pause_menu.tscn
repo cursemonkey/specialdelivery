@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://pausemenuscreen1" path="res://scripts/PauseMenuScreen.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://dxljmknnyrt6g" path="res://assets/Backgrounds/CityMap1.1.png" id="2_mapbg"]
 [ext_resource type="Script" path="res://scripts/StatusScreen.gd" id="3_status"]
+[ext_resource type="Script" path="res://scripts/FriendshipScreen.gd" id="4_friends"]
 
 [node name="PauseMenu" type="Control" unique_id=1230005790]
 script = ExtResource("1")
@@ -38,6 +39,10 @@ text = "Map"
 [node name="Status" type="Button" parent="PanelContainer/HBoxContainer"]
 layout_mode = 2
 text = "🧍 Status"
+
+[node name="Friends" type="Button" parent="PanelContainer/HBoxContainer"]
+layout_mode = 2
+text = "♥ Friends"
 
 [node name="Calendar" type="Button" parent="PanelContainer/HBoxContainer"]
 layout_mode = 2
@@ -344,5 +349,63 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="CloseStatus" type="Button" parent="StatusView/Dim/StatusPanel/VBox"]
+layout_mode = 2
+text = "Close"
+
+[node name="FriendsView" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_friends")
+
+[node name="Dim" type="ColorRect" parent="FriendsView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+mouse_filter = 2
+
+[node name="FriendsPanel" type="PanelContainer" parent="FriendsView/Dim"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -215.0
+offset_right = 260.0
+offset_bottom = 215.0
+
+[node name="VBox" type="VBoxContainer" parent="FriendsView/Dim/FriendsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="FriendsView/Dim/FriendsPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Friends"
+
+[node name="Subtitle" type="Label" parent="FriendsView/Dim/FriendsPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+
+[node name="Scroll" type="ScrollContainer" parent="FriendsView/Dim/FriendsPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Rows" type="VBoxContainer" parent="FriendsView/Dim/FriendsPanel/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CloseFriends" type="Button" parent="FriendsView/Dim/FriendsPanel/VBox"]
 layout_mode = 2
 text = "Close"

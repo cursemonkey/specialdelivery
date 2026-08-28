@@ -55,15 +55,20 @@ func _register_all() -> void:
 	_register_marco()
 	_register_aidan()
 
-## Aidan — the mechanic. Works the shop Monday to Saturday, 8am to 6pm, and
-## lives in a small house on the west side, a short walk up the road. Grew up
-## around his father's junk yard, which is where he picked up the trade — he
-## mentions the old man often. Plain-spoken and unbothered.
+## Aidan — the mechanic. Works the shop 11am to 8pm on weekdays and a short
+## Saturday shift, drinks at the pub after closing on Friday and Saturday, and
+## is at church on Sunday mornings. Lives in a small house on the west side, a
+## short walk up the road. Grew up around his father's junk yard, which is where
+## he picked up the trade — he mentions the old man often. Plain-spoken and
+## unbothered.
 ## TODO: his father is referenced in dialogue but not yet in the cast; when the
 ## junk yard NPC is added, link them (shared surname / schedule visits).
 func _register_aidan() -> void:
-	# Mon(1) Tue(2) Wed(3) Thu(4) Fri(5) Sat(6) — closed Sunday.
-	var work_days : Array[int] = [1, 2, 3, 4, 5, 6]
+	# Mon(1) Tue(2) Wed(3) Thu(4) Fri(5) — Saturday runs shorter hours, closed Sunday.
+	const SUN : int = 0
+	const FRI : int = 5
+	const SAT : int = 6
+	var work_days : Array[int] = [1, 2, 3, 4, 5]
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "aidan"
 	def.display_name = "Aidan"
@@ -72,10 +77,24 @@ func _register_aidan() -> void:
 	def.pants_color  = Color("#3b4450")
 	def.hair_color   = Color("#4a3527")
 	def.skin_color   = Color("#d9a077")
+	# First match wins, so the pub and church entries come before the shop and
+	# home entries that would otherwise cover those hours.
+	# Entries are matched against the *current* weekday, so a night out that runs
+	# past midnight is written as two entries: the evening on the night itself,
+	# and the small hours on the following day.
 	var sched : Array[NPCScheduleEntry] = [
-		# Working days: in the mechanic shop from 8am until he shuts at 6pm.
-		NPCScheduleEntry.make_hours(work_days, 8.0, 18.0, "Mechanic", Vector2(0, 40), -1, true),
-		# Evenings, and all day Sunday: home on the west side.
+		# Friday: straight from the shop to the pub at 8pm…
+		NPCScheduleEntry.make_hours([FRI], 20.0, 24.0, "Pub", Vector2(0, 40), -1, true),
+		# Saturday: …until 3am, then a short shift 12–4pm, then the pub again.
+		NPCScheduleEntry.make_hours([SAT],  0.0,  3.0, "Pub",      Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([SAT], 12.0, 16.0, "Mechanic", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([SAT], 16.0, 24.0, "Pub",      Vector2(0, 40), -1, true),
+		# Sunday: home from the pub at 3am, then church from 10am to noon.
+		NPCScheduleEntry.make_hours([SUN],  0.0,  3.0, "Pub",    Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([SUN], 10.0, 12.0, "Church", Vector2(0, 40), -1, true),
+		# Weekdays: in the mechanic shop from 11am until he shuts at 8pm.
+		NPCScheduleEntry.make_hours(work_days, 11.0, 20.0, "Mechanic", Vector2(0, 40), -1, true),
+		# Everything else: home on the west side.
 		NPCScheduleEntry.make_hours([], 0.0, 24.0, "House4", Vector2(0, 20), -1, true),
 	]
 	def.schedule = sched
@@ -87,6 +106,10 @@ func _register_aidan() -> void:
 		DialogueLine.make("Nothing's really broke. Just parts that haven't been put right yet.", DialogueLine.CALM),
 		DialogueLine.make("Whole shop smells like grease and I stopped noticing years ago.", DialogueLine.HAPPY),
 	]
+	# Gifts: Junk-yard raised: give him something to work with. Milk he leaves to curdle in the shop fridge.
+	def.loved_gifts = ["scrap"]
+	def.liked_gifts = ["bolts", "bread"]
+	def.disliked_gifts = ["milk"]
 	_add(def)
 
 ## Marco — the baker. Opens the cafe Tuesday to Saturday, starting his day at
@@ -118,6 +141,10 @@ func _register_marco() -> void:
 		DialogueLine.make("Up since four, and still smiling. That is the secret!", DialogueLine.CALM),
 		DialogueLine.make("Any friend on a bicycle is a friend of mine.", DialogueLine.HAPPY),
 	]
+	# Gifts: A baker's holy trinity. Grease and metal near his kitchen, less so.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["bread", "milk"]
+	def.disliked_gifts = ["scrap"]
 	_add(def)
 
 ## Nayra — the grocer. Works the shop 7am–1am every day of the week, and only
@@ -148,6 +175,10 @@ func _register_nayra() -> void:
 		DialogueLine.make("You must get so tired, all that cycling. You should eat something.", DialogueLine.HAPPY),
 		DialogueLine.make("Sorry — was I in your way?", DialogueLine.SAD),
 	]
+	# Gifts: She restocks the dairy case herself and has opinions about it.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread"]
+	def.disliked_gifts = ["scrap"]
 	_add(def)
 
 ## Kali — police officer, 7am–7pm, off Tuesdays and Saturdays.
@@ -165,6 +196,10 @@ func _register_kali() -> void:
 		DialogueLine.make("Keep it slow through town, alright?", DialogueLine.CALM),
 		DialogueLine.make("Nice riding out there. Stay safe!", DialogueLine.HAPPY),
 	]
+	# Gifts: Night shifts run on sandwiches. Scrap metal reads as evidence to her.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["milk", "butter"]
+	def.disliked_gifts = ["scrap"]
 	_add(def)
 
 ## Darin — senior police officer, 7am–7pm, off Sundays and Mondays.
@@ -182,6 +217,10 @@ func _register_darin() -> void:
 		DialogueLine.make("Thirty years on this beat. Seen it all.", DialogueLine.CALM),
 		DialogueLine.make("Slow down, kid. Packages aren't worth a crash.", DialogueLine.MAD),
 	]
+	# Gifts: Old-school: butters everything. A bag of bolts is a bag of trouble.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["bread"]
+	def.disliked_gifts = ["bolts"]
 	_add(def)
 
 ## Shared officer routine: on shift at the station 7am–7pm on working days,
@@ -236,6 +275,10 @@ func _register_flower_campbell() -> void:
 		DialogueLine.make("Mornin'! The fields are lookin' good this year.", DialogueLine.HAPPY),
 		DialogueLine.make("Nothin' beats a quiet morning out here.", DialogueLine.CALM),
 	]
+	# Gifts: Fence posts and gate hinges always need fixing. Her farm makes its own butter.
+	def.loved_gifts = ["bolts"]
+	def.liked_gifts = ["scrap", "milk"]
+	def.disliked_gifts = ["butter"]
 	_add(def)
 
 ## Spider — lives with Elsie Carrington, plays in a band. Out at the pub most
@@ -278,6 +321,10 @@ func _register_spider() -> void:
 		DialogueLine.make("Hey there. Catch us play sometime, yeah?", DialogueLine.HAPPY),
 		DialogueLine.make("Long night. Long tour. Same difference.", DialogueLine.CALM),
 	]
+	# Gifts: Rattling hardware sounds like percussion to him. Milk before a gig, never.
+	def.loved_gifts = ["bolts"]
+	def.liked_gifts = ["bread", "scrap"]
+	def.disliked_gifts = ["milk"]
 	_add(def)
 
 ## Elsie Carrington — Doctor Carrington's mother, a nurse at the hospital.
@@ -317,6 +364,10 @@ func _register_elsie_carrington() -> void:
 		DialogueLine.make("My daughter complains I live too hard.", DialogueLine.MAD),
 		DialogueLine.make("How's it goin', guy?", DialogueLine.CALM),
 	]
+	# Gifts: A nurse's late-shift tea needs milk. Sharp metal she sees enough of at work.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread", "butter"]
+	def.disliked_gifts = ["scrap"]
 	_add(def)
 	_register_mabel()
 	_register_gus()
@@ -360,6 +411,10 @@ func _register_doctor_carrington() -> void:
 		DialogueLine.make("Another crash? Honestly, slow down out there!", DialogueLine.MAD),
 		DialogueLine.make("Rest when you need it — the packages will keep.", DialogueLine.CALM),
 	]
+	# Gifts: Wholesome and sensible; she'll lecture you gently about the butter.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["milk"]
+	def.disliked_gifts = ["butter"]
 	_add(def)
 
 ## Jimmy Henderson — the Mayor's husband. Same routine as her for now (they
@@ -388,6 +443,10 @@ func _register_jimmy_henderson() -> void:
 		DialogueLine.make("The wife's busy running the town. I keep the books.", DialogueLine.CALM),
 		DialogueLine.make("Mind how you go on that bicycle!", DialogueLine.CALM),
 	]
+	# Gifts: Banker's lunch. Scrap metal doesn't fit the City Hall aesthetic.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["butter", "milk"]
+	def.disliked_gifts = ["scrap"]
 	_add(def)
 
 func _register_mayor_henderson() -> void:
@@ -410,6 +469,10 @@ func _register_mayor_henderson() -> void:
 	def.dialogue_lines = [
 		DialogueLine.make("Hi, how's the delivery business?", DialogueLine.SURPRISED),
 	]
+	# Gifts: Fond of the finer spread at civic receptions.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["bread"]
+	def.disliked_gifts = ["bolts"]
 	_add(def)
 
 func _register_mabel() -> void:
@@ -430,6 +493,10 @@ func _register_mabel() -> void:
 		DialogueLine.make("Oh, hello dear! Busy day of deliveries?", DialogueLine.HAPPY),
 		DialogueLine.make("I'm off to the pub later — Wednesdays are trivia night!", DialogueLine.HAPPY),
 	]
+	# Gifts: Tea and trivia night. Bolts she has no earthly use for.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread", "butter"]
+	def.disliked_gifts = ["bolts"]
 	_add(def)
 
 func _register_gus() -> void:
@@ -449,6 +516,10 @@ func _register_gus() -> void:
 		DialogueLine.make("Watch where you're pedaling, kid!", DialogueLine.MAD),
 		DialogueLine.make("...Ah, I'm only teasing. Fine weather for it.", DialogueLine.CALM),
 	]
+	# Gifts: Pub staple; he tinkers, and milk is not what he drinks.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["scrap", "bolts"]
+	def.disliked_gifts = ["milk"]
 	_add(def)
 
 func _register_poppy() -> void:
@@ -468,4 +539,8 @@ func _register_poppy() -> void:
 		DialogueLine.make("Wow, you deliver packages?! That's so cool!", DialogueLine.SURPRISED),
 		DialogueLine.make("When I grow up I want a bike just like yours.", DialogueLine.HAPPY),
 	]
+	# Gifts: A kid's idea of a treat. Sharp scrap is not a toy.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["bread", "milk"]
+	def.disliked_gifts = ["scrap"]
 	_add(def)
