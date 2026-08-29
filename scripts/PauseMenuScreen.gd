@@ -95,6 +95,10 @@ func _on_settings_button_pressed() -> void:
 	easy_bike_toggle.set_pressed_no_signal(GameManager.easy_bike)
 	drops_spin.value = GameManager.max_drops_per_day
 	pkg_spin.value   = GameManager.max_packages_per_drop
+	# Take the slider's bounds from GameManager so the allowed range lives in
+	# one place — the scene can't drift out of sync with the clamp.
+	scale_slider.min_value = GameManager.SPRITE_SCALE_MIN
+	scale_slider.max_value = GameManager.SPRITE_SCALE_MAX
 	scale_slider.set_value_no_signal(GameManager.sprite_scale)
 	scale_value.text = "%.2f" % GameManager.sprite_scale
 	settings_view.visible = true

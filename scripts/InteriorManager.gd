@@ -71,7 +71,10 @@ func enter(building_id: String) -> void:
 	_player.in_interior = true
 
 	var def : InteriorDefinition = InteriorRegistry.get_definition(building_id)
-	_active = InteriorScene.instantiate()
+	# A building may supply its own hand-authored interior (painted background,
+	# collision drawn over it); everything else gets the generic room.
+	var packed : PackedScene = def.scene if def.has_custom_scene() else InteriorScene
+	_active = packed.instantiate()
 	# Match the Player (PROCESS_MODE_ALWAYS) so the interior's input/processing
 	# stays consistent with it while dialogue or menus pause the tree.
 	_active.process_mode = Node.PROCESS_MODE_ALWAYS
