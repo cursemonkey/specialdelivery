@@ -340,11 +340,26 @@ func _tick_stats(delta: float) -> void:
 	# Dogs in the parade count towards the same Rizz bonus as the birds.
 	if _dog_manager != null:
 		following += _dog_manager.following_count()
+	_assign_parade_slots()
 	if following > 0:
 		_rizz_accum += float(following) * game_hours
 		while _rizz_accum >= 1.0:
 			_rizz_accum -= 1.0
 			GameManager.add_rizz(1)
+
+## Number the parade from the player backwards so birds and dogs form one
+## shared queue. Birds take the front slots (they flew in first and cut
+## corners anyway), then dogs in the order they joined.
+func _assign_parade_slots() -> void:
+	var slot : int = 0
+	for b in _birds:
+		# `get` guards against an out-of-date Bird.gd that predates parade_slot:
+		# ordering the line is cosmetic, so skip rather than crash the frame.
+		if is_instance_valid(b) and b.is_following() and b.get("parade_slot") != null:
+			b.parade_slot = slot
+			slot += 1
+	if _dog_manager != null:
+		_dog_manager.assign_parade_slots(slot)
 
 # Out of health: play the collapse cutscene, show the day's ledger, then wake
 # up in your own bed at 6am having lost a day.

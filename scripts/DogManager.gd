@@ -8,6 +8,10 @@ extends Node2D
 
 const DogScene : PackedScene = preload("res://scenes/Dog.tscn")
 
+## Added to every dog's registry radius, so the pack ranges well beyond their
+## own doorstep and is met out in the streets rather than only at home.
+const TERRITORY_BONUS : float = 500.0
+
 var _doors : Node  = null
 var _dogs  : Array = []
 
@@ -23,14 +27,16 @@ func spawn_all() -> void:
 		_spawn(def)
 
 func _spawn(def) -> void:
-	var dog : Area2D = DogScene.instantiate()
+	var dog : CharacterBody2D = DogScene.instantiate()
 	add_child(dog)
 	dog.id               = def.id
 	dog.dog_name         = def.dog_name
 	dog.owner_id         = def.owner_id
 	dog.home_anchor      = def.home_anchor
 	dog.territory_centre = _anchor_pos(def.home_anchor)
-	dog.territory_radius = def.radius
+	# Territories were widened by TERRITORY_BONUS so dogs range further from
+	# home; the per-dog radius in DogRegistry stays the relative difference.
+	dog.territory_radius = def.radius + TERRITORY_BONUS
 	dog.out_start        = def.out_start
 	dog.out_end          = def.out_end
 	var sprite : Node2D = dog.get_node("DogSprite")
@@ -52,6 +58,18 @@ func following_count() -> int:
 		if is_instance_valid(d) and d.is_following():
 			n += 1
 	return n
+
+## Hand each follower its place in the line, counting from the player back, so
+## the parade forms a queue instead of a pile. `start_slot` lets Main reserve
+## the front slots for the birds, keeping one shared line across both species.
+## Order follows join order, so the dog picked up first walks nearest.
+func assign_parade_slots(start_slot: int) -> int:
+	var slot : int = start_slot
+	for d in _dogs:
+		if is_instance_valid(d) and d.is_following():
+			d.parade_slot = slot
+			slot += 1
+	return slot
 
 ## Send every following dog home (the player went indoors). Returns how many
 ## were actually let go, so the caller can word the message.

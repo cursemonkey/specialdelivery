@@ -2,7 +2,9 @@ extends Area2D
 ## Bird NPC — wanders freely (ignores buildings), perches on rooftops,
 ## and follows the player's path when touched.
 
-const BIRD_SPEED          := 160.0   # wander / catch-up speed
+## Wander / catch-up speed. Matched to the fastest the player can ride so a
+## follower is never permanently outrun (see GameManager.bike_max_speed).
+const BIRD_SPEED          := 270.0
 const BIRD_FOLLOW_NORMAL  := 85.0    # relaxed follow speed (~player walking pace)
 const BIRD_ESCAPE_DIST    := 72.0    # px — beyond this the bird boosts to full speed
 const WANDER_MIN          := 0.6
@@ -22,6 +24,10 @@ var _perch_target : Vector2 = Vector2.ZERO
 var _perch_timer  : float   = 0.0
 var _player                 = null
 var _follow_index : int     = 0
+## Place in the parade, assigned by Main: 0 is nearest the player. Followers
+## hold station this many slots back along the trail so birds and dogs form one
+## shared line rather than stacking on the same point.
+var parade_slot   : int     = 0
 
 var perch_positions : Array[Vector2] = []
 
@@ -79,6 +85,10 @@ func _perch_tick(delta: float) -> void:
 		_pick_wander_direction()
 
 # ── Following ──────────────────────────────────────────────
+## Trail points between one animal and the next in the line. Matches Dog's
+## SLOT_SPACING so the two species queue at the same spacing.
+const SLOT_SPACING : int = 2
+
 func _follow(delta: float) -> void:
 	if _player == null:
 		return
@@ -86,12 +96,19 @@ func _follow(delta: float) -> void:
 	if trail.is_empty():
 		return
 
+	# Hold station parade_slot places back down the trail, so followers line up.
+	var back   : int     = (parade_slot + 1) * SLOT_SPACING
+	var wanted : int     = maxi(trail.size() - 1 - back, 0)
+	var here   : Vector2 = trail[clampi(_follow_index, 0, trail.size() - 1)]
+	if _follow_index < wanted:
+		if global_position.distance_to(here) < REACH_THRESHOLD:
+			_follow_index += 1
+	elif _follow_index > wanted:
+		_follow_index = wanted
+
 	var target_idx : int     = clamp(_follow_index, 0, trail.size() - 1)
 	var target     : Vector2 = trail[target_idx]
 	var to_target  : Vector2 = target - global_position
-
-	if to_target.length() < REACH_THRESHOLD and _follow_index < trail.size() - 1:
-		_follow_index += 1
 
 	if to_target.length() > 2.0:
 		var dist_to_player := global_position.distance_to(_player.global_position)
@@ -117,7 +134,10 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if body is NPCBase:
 		return
-	if body is CharacterBody2D:
+	# Only the player leads a parade. Dogs are CharacterBody2D too, so identify
+	# the player by the breadcrumb trail only they keep — by class alone a bird
+	# would latch onto a passing dog and then crash reading its path_trail.
+	if body is CharacterBody2D and body.get("path_trail") != null:
 		_state        = State.FOLLOWING
 		_player       = body
 		_follow_index = max(0, _player.path_trail.size() - 4)

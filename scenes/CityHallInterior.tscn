@@ -28,7 +28,10 @@ polygon = PackedVector2Array(467, 575, 465, 203, 1132, 201, 1123, 598, 1021, 596
 polygon = PackedVector2Array(657, 572, 912, 575, 907, 606, 649, 597)
 
 [node name="SEWall" type="CollisionPolygon2D" parent="Walls" unique_id=1483580974]
-polygon = PackedVector2Array(997, 600, 1008, 668, 1025, 667, 1025, 634, 1189, 641, 1191, 744, 1212, 743, 1212, 648, 1416, 648, 1413, 889, 1225, 897, 1217, 797, 1190, 797, 1198, 906, 1193, 935, 1454, 933, 1449, 623, 1026, 612, 1028, 593)
+polygon = PackedVector2Array(997, 600, 1008, 668, 1025, 667, 1025, 634, 1189, 641, 1191, 744, 1212, 743, 1212, 648, 1416, 648, 1413, 889, 1225, 897, 1217, 797, 1190, 797, 1198, 906, 1193, 935, 1454, 933, 1462, 612, 1133, 603, 1028, 593)
+
+[node name="Infodesk" type="CollisionPolygon2D" parent="Walls" unique_id=41182671]
+polygon = PackedVector2Array(608, 700, 902, 702, 902, 750, 606, 751)
 
 [node name="ExitArea" type="Area2D" parent="." unique_id=714862501]
 position = Vector2(750, 974)

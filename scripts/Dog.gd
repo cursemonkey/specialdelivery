@@ -1,7 +1,12 @@
-extends Area2D
-## Dog NPC — lives with a human villager and pads around a small territory
-## outside during its own hours. Touch one and it joins the parade behind the
-## player, exactly like a bird, adding to the Rizz bonus.
+extends CharacterBody2D
+## Dog NPC — lives with a human villager and pads around a territory outside
+## during its own hours. Touch one and it joins the parade behind the player,
+## exactly like a bird, adding to the Rizz bonus.
+##
+## Unlike the birds (which fly over everything) a dog is a CharacterBody2D and
+## uses move_and_slide, so it walks around buildings instead of through them.
+## Player contact is detected by a child Area2D rather than the body itself,
+## so a dog that happens to bump the player while roaming still gets picked up.
 ##
 ## A dog is either OUT (roaming its territory, catchable) or INSIDE (off-shift,
 ## hidden and inert at its home door). The switch is driven by `out_start` /
@@ -10,9 +15,12 @@ extends Area2D
 ## goes indoors or the dog is released — a dog mid-parade doesn't vanish at 6pm.
 
 const WALK_SPEED       : float = 54.0    # relaxed padding around the territory
-const FOLLOW_SPEED     : float = 92.0    # keeping up with the player
-const FOLLOW_SPRINT    : float = 168.0   # catching up when left behind
-const ESCAPE_DIST      : float = 80.0    # px before it breaks into a sprint
+const FOLLOW_SPEED     : float = 92.0    # relaxed follow, roughly walking pace
+## Top speed while catching up. Matched to the fastest the player can ride so a
+## dog is never permanently outrun — see GameManager.bike_max_speed (the scooter
+## raises it) and Player.BOOST_MULT for the ramp boost.
+const FOLLOW_SPRINT    : float = 270.0
+const ESCAPE_DIST      : float = 60.0    # px behind its slot before it speeds up
 const REACH_THRESHOLD  : float = 8.0
 const PAUSE_MIN        : float = 0.8     # sniffing stops between walks
 const PAUSE_MAX        : float = 3.0
@@ -45,9 +53,15 @@ var _walk_phase  : float   = 0.0
 
 @onready var _sprite : Node2D = $DogSprite
 
+## Index in the parade, assigned by DogManager: 0 is nearest the player. Drives
+## how far back along the trail this dog walks, so followers form a line.
+var parade_slot : int = 0
+
+@onready var _touch : Area2D = $TouchArea
+
 func _ready() -> void:
 	add_to_group("dog")
-	body_entered.connect(_on_body_entered)
+	_touch.body_entered.connect(_on_body_entered)
 	_apply_schedule(true)
 
 func _physics_process(delta: float) -> void:
@@ -86,8 +100,8 @@ func _go_outside() -> void:
 	_state = State.ROAMING
 	# Reappear somewhere in the territory rather than exactly on the door.
 	global_position = _random_point_in_territory()
-	visible    = true
-	monitoring = true
+	visible = true
+	_set_active(true)
 	_pick_target()
 
 func _go_inside() -> void:
@@ -95,8 +109,8 @@ func _go_inside() -> void:
 	_player = null
 	# Parked at the home door, hidden and uncatchable until its hours come round.
 	global_position = territory_centre
-	visible    = false
-	monitoring = false
+	visible = false
+	_set_active(false)
 
 ## True while the dog is indoors for the night (or day).
 func is_inside() -> bool:
@@ -124,18 +138,36 @@ func _roam(delta: float) -> void:
 		_timer = randf_range(PAUSE_MIN, PAUSE_MAX)
 		return
 	var dir : Vector2 = to_target.normalized()
-	global_position += dir * WALK_SPEED * delta
+	velocity = dir * WALK_SPEED
+	move_and_slide()
+	# Wedged against a building: pick somewhere else rather than pushing at it.
+	if velocity.length() > 1.0 and get_real_velocity().length() < WALK_SPEED * 0.25:
+		_state = State.PAUSED
+		_timer = randf_range(PAUSE_MIN, PAUSE_MAX)
 	_animate(dir, delta)
 
 func _pause_tick(delta: float) -> void:
+	velocity = Vector2.ZERO
 	_timer -= delta
 	if _timer <= 0.0:
 		_state = State.ROAMING
 		_pick_target()
 
 # ── Following ──────────────────────────────────────────────
-## Walk the player's breadcrumb trail, same as the birds, so the parade forms a
-## line rather than a clump on top of the player.
+## Walk the player's breadcrumb trail, holding station a fixed distance behind
+## them based on parade_slot, so followers string out into a line rather than
+## clumping. Player.TRAIL_STEP px separate consecutive trail points, so a slot
+## is simply that many points further back.
+##
+## The line is a target, not a constraint: a dog that has fallen behind its slot
+## sprints (up to FOLLOW_SPRINT, matched to the bike) to close the gap, so a
+## fast player stretches the line out and it re-forms once they slow down.
+## Trail points between one animal and the next in the line.
+const SLOT_SPACING : int = 2
+## Mirrors Player.TRAIL_STEP (px between recorded trail points). Player has no
+## class_name, so the value is repeated here rather than reached through it.
+const TRAIL_STEP   : float = 12.0
+
 func _follow(delta: float) -> void:
 	if _player == null:
 		stop_following()
@@ -143,17 +175,38 @@ func _follow(delta: float) -> void:
 	var trail : Array = _player.path_trail
 	if trail.is_empty():
 		return
+	# The slot this dog wants to occupy: further back for later joiners.
+	var back   : int = (parade_slot + 1) * SLOT_SPACING
+	var wanted : int = maxi(trail.size() - 1 - back, 0)
+	# Advance towards the wanted index rather than snapping, so the dog walks
+	# the path the player walked instead of cutting corners.
+	if _follow_index < wanted:
+		var target_pt : Vector2 = trail[clampi(_follow_index, 0, trail.size() - 1)]
+		if global_position.distance_to(target_pt) < REACH_THRESHOLD:
+			_follow_index += 1
+	elif _follow_index > wanted:
+		_follow_index = wanted   # trail was trimmed or the player doubled back
+
 	var idx       : int     = clampi(_follow_index, 0, trail.size() - 1)
 	var target    : Vector2 = trail[idx]
 	var to_target : Vector2 = target - global_position
-	if to_target.length() < REACH_THRESHOLD and _follow_index < trail.size() - 1:
-		_follow_index += 1
-	if to_target.length() > 2.0:
-		var far   : bool  = global_position.distance_to(_player.global_position) > ESCAPE_DIST
-		var speed : float = FOLLOW_SPRINT if far else FOLLOW_SPEED
-		var dir   : Vector2 = to_target.normalized()
-		global_position += dir * speed * delta
-		_animate(dir, delta)
+	if to_target.length() <= 2.0:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+	# How far behind its slot is it? Stretched line = sprint to close up.
+	var lag   : float = float(wanted - _follow_index) * TRAIL_STEP
+	var gap   : float = to_target.length() + maxf(lag, 0.0)
+	var speed : float = FOLLOW_SPEED
+	if gap > ESCAPE_DIST:
+		# Scale up towards the sprint cap the further behind it is, so the line
+		# closes smoothly instead of snapping.
+		var t : float = clampf((gap - ESCAPE_DIST) / 160.0, 0.0, 1.0)
+		speed = lerpf(FOLLOW_SPEED, FOLLOW_SPRINT, t)
+	var dir : Vector2 = to_target.normalized()
+	velocity = dir * speed
+	move_and_slide()
+	_animate(dir, delta)
 
 func is_following() -> bool:
 	return _state == State.FOLLOWING
@@ -175,11 +228,22 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if body is NPCBase:
 		return   # dogs ignore villagers walking past
-	if body is CharacterBody2D:
+	# Only the player leads a parade. Dogs are CharacterBody2D too now, so
+	# identify the player by the breadcrumb trail only they keep, rather than
+	# by class — otherwise dogs latch onto each other.
+	if body is CharacterBody2D and body.get("path_trail") != null:
 		_state        = State.FOLLOWING
 		_player       = body
 		_follow_index = maxi(0, _player.path_trail.size() - 4)
 		GameManager.show_message("\U0001F415 %s is following you!" % dog_name)
+
+## Enable or disable the dog as a physical, touchable presence. Indoors it is
+## neither: it can't be bumped into and doesn't block anyone in the street.
+func _set_active(on: bool) -> void:
+	_touch.monitoring = on
+	set_collision_layer_value(1, on)
+	set_collision_mask_value(1, on)
+	velocity = Vector2.ZERO
 
 func _animate(dir: Vector2, delta: float) -> void:
 	_walk_phase += delta * 9.0
