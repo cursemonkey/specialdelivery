@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://hud" path="res://scenes/HUD.tscn" id="4"]
 [ext_resource type="Texture2D" uid="uid://kcqviynp85l4" path="res://assets/Backgrounds/Building_Rooftop_House.png" id="4_bjd11"]
 [ext_resource type="Texture2D" uid="uid://c4kkppqprfudq" path="res://assets/Backgrounds/House35.png" id="4_cvmbd"]
+[ext_resource type="Texture2D" uid="uid://b152uhrkmgyqr" path="res://assets/Backgrounds/Building_FireHouse.png" id="4_ft6cd"]
 [ext_resource type="PackedScene" uid="uid://titlescreen" path="res://scenes/TitleScreen.tscn" id="5"]
 [ext_resource type="Texture2D" uid="uid://3uyimeci5ku" path="res://assets/Backgrounds/Building_Rooftop_Bakery.png" id="5_3p2gp"]
 [ext_resource type="Script" uid="uid://cawj4uxomwgya" path="res://scripts/ArtBuilding.gd" id="6"]
@@ -251,6 +252,11 @@ polygon = PackedVector2Array(9995, -2103, 9990, -2242, 10221, -2244, 10223, -230
 position = Vector2(-15248, 6424)
 polygon = PackedVector2Array(18343, -5314, 18363, -5670, 18624, -5668, 18611, -5311)
 
+[node name="FirehouseRoof" type="Sprite2D" parent="Background/Buildings/Firehouse" unique_id=2109675647]
+z_index = 10
+position = Vector2(18483, -5626)
+texture = ExtResource("4_ft6cd")
+
 [node name="House3" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=2032701398]
 position = Vector2(-7660, 3193)
 polygon = PackedVector2Array(11917, -2097, 12137, -2100, 12140, -2271, 12015, -2276, 11911, -2260)
@@ -281,7 +287,7 @@ polygon = PackedVector2Array(1210, 1505, 1459, 1553, 1520, 1471, 1536, 1387, 128
 
 [node name="Pub" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=1631656444]
 position = Vector2(0, -52)
-polygon = PackedVector2Array(2360, 1568, 2541, 1571, 2655, 1544, 2673, 1348, 2342, 1346)
+polygon = PackedVector2Array(2360, 1568, 2541, 1571, 2655, 1544, 2673, 1348, 2353, 1363)
 
 [node name="Police" type="CollisionPolygon2D" parent="Background/Buildings" unique_id=791631948]
 position = Vector2(716, 15)
