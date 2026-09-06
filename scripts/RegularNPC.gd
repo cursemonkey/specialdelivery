@@ -288,16 +288,62 @@ func begin_interaction(player: Node2D) -> void:
 	velocity = Vector2.ZERO
 	face_toward(player.global_position)
 
+## How much likelier the newest unlocked tier is than each step below it. A line
+## one tier back is half as likely, two tiers back a quarter, and so on, with
+## STALE_FLOOR as the lower bound so the oldest greetings stay possible.
+const TIER_FALLOFF : float = 0.5
+const STALE_FLOOR  : float = 0.08
+
 func get_dialogue() -> Array:
 	if dialogue_lines.is_empty():
 		# Fallback is a DialogueLine (not a bare String) so it still resolves a
 		# portrait via the neutral/base art.
 		return [DialogueLine.make("%s waves hello!" % npc_name)]
+	# Only lines this friendship level has unlocked are on the table.
+	var hearts    : int   = GameManager.friendship_hearts(id)
+	var available : Array = _unlocked_lines(hearts)
+	if available.is_empty():
+		return [dialogue_lines[0]]
 	# Random-chatter NPCs say one line per conversation; others play the whole
 	# sequence in order.
 	if definition != null and definition.random_dialogue:
-		return [dialogue_lines[randi() % dialogue_lines.size()]]
-	return dialogue_lines
+		return [_weighted_pick(available)]
+	return available
+
+## Lines whose min_hearts this friendship level has reached. Plain Strings (no
+## gate of their own) are always available.
+func _unlocked_lines(hearts: int) -> Array:
+	var out : Array = []
+	for line in dialogue_lines:
+		if line is DialogueLine:
+			if line.unlocked_at(hearts):
+				out.append(line)
+		else:
+			out.append(line)
+	return out
+
+## Pick one line, favouring the most recently unlocked tier. Older tiers stay
+## in the running at a falling weight, so a well-known villager mostly says
+## their newer lines but still occasionally falls back to an old favourite.
+func _weighted_pick(lines: Array) -> Variant:
+	var newest : int = 0
+	for line in lines:
+		if line is DialogueLine:
+			newest = maxi(newest, line.min_hearts)
+	var weights : Array[float] = []
+	var total   : float        = 0.0
+	for line in lines:
+		var tier   : int   = line.min_hearts if line is DialogueLine else 0
+		# Tiers behind the newest decay by TIER_FALLOFF per heart of distance.
+		var w      : float = maxf(pow(TIER_FALLOFF, float(newest - tier)), STALE_FLOOR)
+		weights.append(w)
+		total += w
+	var roll : float = randf() * total
+	for i in lines.size():
+		roll -= weights[i]
+		if roll <= 0.0:
+			return lines[i]
+	return lines[lines.size() - 1]
 
 func get_portrait() -> Texture2D:
 	return portrait

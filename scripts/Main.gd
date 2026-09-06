@@ -10,6 +10,7 @@ const START_PACKAGES   := 0
 const BikeScene             := preload("res://scenes/Bike.tscn")
 const BirdScene             := preload("res://scenes/Bird.tscn")
 const NPCManagerScript       := preload("res://scripts/NPCManager.gd")
+const DogManagerScript       := preload("res://scripts/DogManager.gd")
 const InteriorManagerScript  := preload("res://scripts/InteriorManager.gd")
 const PoliceManagerScript    := preload("res://scripts/PoliceManager.gd")
 const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
@@ -41,6 +42,7 @@ var _first_day        : bool   = true
 var _continue_flow    : bool   = false   # loading a save: start drops now, don't advance the day
 var _home_door_node   : Node2D = null
 var _npc_manager       : Node2D = null
+var _dog_manager       : Node2D = null
 var _interior_manager  : Node2D = null
 var _police_manager    : Node2D = null
 var _day_transition    : CanvasLayer = null
@@ -133,6 +135,14 @@ func _ready() -> void:
 	add_child(_npc_manager)
 	_npc_manager.setup(player, get_node_or_null("Doors"))
 	_npc_manager.spawn_all()
+
+	# The town's dogs. Like villagers they're data-driven (see DogRegistry) and
+	# keep to a territory around their owner's door.
+	_dog_manager = DogManagerScript.new()
+	_dog_manager.name = "DogManager"
+	add_child(_dog_manager)
+	_dog_manager.setup(get_node_or_null("Doors"))
+	_dog_manager.spawn_all()
 
 	_interior_manager = InteriorManagerScript.new()
 	_interior_manager.name = "InteriorManager"
@@ -291,7 +301,8 @@ func _resume_after_midnight() -> void:
 	_day_running = true
 	GameManager.show_message("🌙 A new day begins — %s." % GameManager.date_label())
 
-# Going indoors scatters any birds trailing the player — they wait outside, and
+# Going indoors scatters any birds and dogs trailing the player — they wait
+# outside, and
 # the Rizz bonus they were providing stops with them.
 func _on_entered_building() -> void:
 	var scattered : int = 0
@@ -299,13 +310,20 @@ func _on_entered_building() -> void:
 		if is_instance_valid(b) and b.is_following():
 			b.stop_following()
 			scattered += 1
-	if scattered > 0:
+	var dogs_left : int = 0
+	if _dog_manager != null:
+		dogs_left = _dog_manager.scatter_following()
+	if scattered > 0 or dogs_left > 0:
 		_rizz_accum = 0.0
-		GameManager.show_message("🐦 Your bird%s waited outside." \
-				% ("s" if scattered > 1 else ""))
+		var parts : Array = []
+		if scattered > 0:
+			parts.append("bird%s" % ("s" if scattered > 1 else ""))
+		if dogs_left > 0:
+			parts.append("dog%s" % ("s" if dogs_left > 1 else ""))
+		GameManager.show_message("🐕 Your %s waited outside." % " and ".join(parts))
 
 # Energy drains while moving, priced in game hours (bike 1.5/hr, walking 2/hr);
-# Rizz gains 1 per game hour per bird that's currently following the player.
+# Rizz gains 1 per game hour per bird or dog currently following the player.
 func _tick_stats(delta: float) -> void:
 	var game_hours : float = delta * TimeManager.HOURS_PER_SECOND
 	if player.velocity.length() > 5.0:
@@ -319,6 +337,9 @@ func _tick_stats(delta: float) -> void:
 	for b in _birds:
 		if is_instance_valid(b) and b.is_following():
 			following += 1
+	# Dogs in the parade count towards the same Rizz bonus as the birds.
+	if _dog_manager != null:
+		following += _dog_manager.following_count()
 	if following > 0:
 		_rizz_accum += float(following) * game_hours
 		while _rizz_accum >= 1.0:

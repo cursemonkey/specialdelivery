@@ -26,6 +26,7 @@ GameManager="*res://scripts/GameManager.gd"
 TimeManager="*res://scripts/TimeManager.gd"
 NPCRegistry="*res://scripts/NPCRegistry.gd"
 InteriorRegistry="*res://scripts/InteriorRegistry.gd"
+DogRegistry="*res://scripts/DogRegistry.gd"
 
 [display]
 

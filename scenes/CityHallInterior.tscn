@@ -11,15 +11,24 @@ script = ExtResource("1")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=2120325156]
 texture_filter = 1
-position = Vector2(249, 196)
+position = Vector2(249, 186)
 texture = ExtResource("2_momy6")
 centered = false
 
 [node name="Walls" type="StaticBody2D" parent="." unique_id=983330761]
 
 [node name="SWWall" type="CollisionPolygon2D" parent="Walls" unique_id=2132559832]
-position = Vector2(0, 4)
+position = Vector2(0, -3)
 polygon = PackedVector2Array(644, 961, 592, 967, 549, 935, 500, 935, 490, 843, 464, 844, 464, 908, 347, 903, 346, 639, 472, 634, 475, 659, 497, 659, 498, 604, 611, 604, 611, 582, 300, 582, 301.0072, 713.26624, 305, 831, 305, 831, 302, 977, 605, 995, 639, 998, 658, 995)
+
+[node name="NorthWall" type="CollisionPolygon2D" parent="Walls" unique_id=925549501]
+polygon = PackedVector2Array(467, 575, 465, 203, 1132, 201, 1123, 598, 1021, 596, 944, 598, 938, 569, 1093, 569, 1072, 259, 512, 259, 516, 558, 518, 576)
+
+[node name="NorthWall2" type="CollisionPolygon2D" parent="Walls" unique_id=324280350]
+polygon = PackedVector2Array(657, 572, 912, 575, 907, 606, 649, 597)
+
+[node name="SEWall" type="CollisionPolygon2D" parent="Walls" unique_id=1483580974]
+polygon = PackedVector2Array(997, 600, 1008, 668, 1025, 667, 1025, 634, 1189, 641, 1191, 744, 1212, 743, 1212, 648, 1416, 648, 1413, 889, 1225, 897, 1217, 797, 1190, 797, 1198, 906, 1193, 935, 1454, 933, 1449, 623, 1026, 612, 1028, 593)
 
 [node name="ExitArea" type="Area2D" parent="." unique_id=714862501]
 position = Vector2(750, 974)

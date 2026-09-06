@@ -54,6 +54,9 @@ func _register_all() -> void:
 	_register_nayra()
 	_register_marco()
 	_register_aidan()
+	_register_elias_thorne()
+	_register_silas_thorne()
+	_register_junia_thorne()
 
 ## Aidan — the mechanic. Works the shop 11am to 8pm on weekdays and a short
 ## Saturday shift, drinks at the pub after closing on Friday and Saturday, and
@@ -99,12 +102,27 @@ func _register_aidan() -> void:
 	]
 	def.schedule = sched
 	def.random_dialogue = true
+	# Friendship tiers. He starts brusque and transactional, warms into shop
+	# talk, then into the junk yard and his father — the thing he actually
+	# cares about. Old lines stay in the pool at falling odds (see
+	# RegularNPC.get_dialogue), so early gruffness never fully disappears.
 	def.dialogue_lines = [
-		DialogueLine.make("My old man works the junk yard, that's where I learned how to fix crap up.", DialogueLine.CALM),
-		DialogueLine.make("Bring it in if it's rattling. Rattles turn into walks home.", DialogueLine.CALM),
-		DialogueLine.make("That chain could use oiling. No charge — takes me a second.", DialogueLine.HAPPY),
-		DialogueLine.make("Nothing's really broke. Just parts that haven't been put right yet.", DialogueLine.CALM),
-		DialogueLine.make("Whole shop smells like grease and I stopped noticing years ago.", DialogueLine.HAPPY),
+		# Stranger — polite, brief, all business.
+		DialogueLine.make("Shop's open. Something rattling?", DialogueLine.CALM, 0),
+		DialogueLine.make("Bring it in if it's rattling. Rattles turn into walks home.", DialogueLine.CALM, 0),
+		DialogueLine.make("Nothing's really broke. Just parts that haven't been put right yet.", DialogueLine.CALM, 0),
+		# Acquaintance — starts doing small favours, notices your bike.
+		DialogueLine.make("That chain could use oiling. No charge — takes me a second.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Whole shop smells like grease and I stopped noticing years ago.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("You ride harder than most. I can tell from the brake pads.", DialogueLine.CALM, 2),
+		# Friend — opens up about where the trade came from.
+		DialogueLine.make("My old man works the junk yard, that's where I learned how to fix crap up.", DialogueLine.CALM, 5),
+		DialogueLine.make("Dad could name a part by the sound it made falling off. Still can't do that.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Half this shop came out of that yard. Don't tell anyone I said so.", DialogueLine.CALM, 5),
+		# Close friend — quieter, more honest, says the warm thing outright.
+		DialogueLine.make("Keep your spare key here if you want. Shop's never locked to you.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("Ought to visit the old man more. Keep meaning to. You know how it goes.", DialogueLine.SAD, 8),
+		DialogueLine.make("Fixed a lot of bikes. Yours is the one I actually look forward to.", DialogueLine.HAPPY, 8),
 	]
 	# Gifts: Junk-yard raised: give him something to work with. Milk he leaves to curdle in the shop fridge.
 	def.loved_gifts = ["scrap"]
@@ -317,9 +335,27 @@ func _register_spider() -> void:
 	]
 	def.schedule = sched
 	def.random_dialogue = true
+	# Friendship tiers. Road-worn and laconic: starts on autopilot with the
+	# stock musician patter, then lets the tiredness show, then the doubt, and
+	# finally admits the touring is the part he'd give up. Elsie is his anchor
+	# throughout — see _register_elsie_carrington.
 	def.dialogue_lines = [
-		DialogueLine.make("Hey there. Catch us play sometime, yeah?", DialogueLine.HAPPY),
-		DialogueLine.make("Long night. Long tour. Same difference.", DialogueLine.CALM),
+		# Stranger — stage patter he could say in his sleep.
+		DialogueLine.make("Hey there. Catch us play sometime, yeah?", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Long night. Long tour. Same difference.", DialogueLine.CALM, 0),
+		DialogueLine.make("Load in, play, load out. That's the whole job.", DialogueLine.CALM, 0),
+		# Acquaintance — drops the patter, talks about the actual nights.
+		DialogueLine.make("Pub crowd's small, but they listen. That's rarer than you'd think.", DialogueLine.CALM, 2),
+		DialogueLine.make("Slept in the van again. Elsie pretends not to notice.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("You're up as late as I am. Respect.", DialogueLine.HAPPY, 2),
+		# Friend — the cost of it starts showing.
+		DialogueLine.make("Every town looks the same from a stage. This one doesn't. Don't know why.", DialogueLine.CALM, 5),
+		DialogueLine.make("Wrote something on the road. Haven't played it for anyone yet.", DialogueLine.SAD, 5),
+		DialogueLine.make("Mum worries when I'm away. Says she doesn't. She does.", DialogueLine.SAD, 5),
+		# Close friend — says the quiet thing out loud.
+		DialogueLine.make("Played that new one at soundcheck. Empty room. Thought of you, oddly.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("Tour ends and I'm relieved. Took me years to admit that bit.", DialogueLine.SAD, 8),
+		DialogueLine.make("Come by the pub Saturday. I'll play you the one nobody's heard.", DialogueLine.HAPPY, 8),
 	]
 	# Gifts: Rattling hardware sounds like percussion to him. Milk before a gig, never.
 	def.loved_gifts = ["bolts"]
@@ -542,5 +578,160 @@ func _register_poppy() -> void:
 	# Gifts: A kid's idea of a treat. Sharp scrap is not a toy.
 	def.loved_gifts = ["butter"]
 	def.liked_gifts = ["bread", "milk"]
+	def.disliked_gifts = ["scrap"]
+	_add(def)
+
+# ── The Thorne family ──────────────────────────────
+# Reverend Elias Thorne and his two children share the parsonage (House138),
+# the house beside the church. Elias and his son Silas are not on easy terms:
+# Silas took the grocery job instead of helping at the church, and neither of
+# them says so directly. Junia is caught in the middle and stays out of it.
+const THORNE_HOME : String = "House138"
+
+## Silas's day off rotates through the working week (Mon–Sat) rather than being
+## fixed, so the grocery isn't reliably staffed by him on any one weekday. It's
+## derived from the week number so it feels random but stays stable: the same
+## day all week, and a save/reload can't shuffle it mid-week.
+## Sunday (0) is never returned — he's at church that morning regardless.
+func silas_day_off(week_number: int) -> int:
+	# 1..6, stepping by 5 each week so consecutive weeks aren't adjacent days.
+	return 1 + ((week_number * 5) % 6)
+
+## True when Silas is on shift at the grocery on `weekday` of the given week.
+func silas_works_on(week_number: int, weekday: int) -> bool:
+	if weekday == 0:
+		return false
+	return weekday != silas_day_off(week_number)
+
+## Reverend Elias Thorne — the minister. Long Sunday service (7am–1:30pm) and
+## weekday hours at the church Monday to Thursday (7am–3:30pm). Friday and
+## Saturday are his days off, and he spends a few hours of each visiting either
+## the farm or City Hall, alternating week by week via week_parity.
+func _register_elias_thorne() -> void:
+	const SUN : int = 0
+	const FRI : int = 5
+	const SAT : int = 6
+	var church_days : Array[int] = [1, 2, 3, 4]   # Mon–Thu
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "elias_thorne"
+	def.display_name = "Reverend Elias Thorne"
+	def.home_anchor  = THORNE_HOME
+	def.shirt_color  = Color("#2f3238")   # black clerical shirt
+	def.pants_color  = Color("#26282d")
+	def.hair_color   = Color("#8e8b86")   # grey, thinning
+	def.skin_color   = Color("#e0bd97")
+	# First match wins, so the day-off visits come before the home fallback.
+	var sched : Array[NPCScheduleEntry] = [
+		# Sunday: the service, then out on the church steps to see people off.
+		NPCScheduleEntry.make_hours([SUN], 7.0, 13.5, "Church", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([SUN], 13.5, 15.0, "Church", Vector2(70, 55), -1, false),
+		# Monday–Thursday: at the church through the working day.
+		NPCScheduleEntry.make_hours(church_days, 7.0, 15.5, "Church", Vector2(0, 40), -1, true),
+		# Days off (Fri/Sat): the farm on even weeks, City Hall on odd ones.
+		NPCScheduleEntry.make_hours([FRI, SAT], 10.0, 14.0, "Farm", Vector2(0, 30), 0, true),
+		NPCScheduleEntry.make_hours([FRI, SAT], 10.0, 14.0, "Building_TownHall", Vector2(0, 40), 1, true),
+		# Everything else: home at the parsonage next door.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, THORNE_HOME, Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("The door's open all week, not just Sundays. Worth remembering.", DialogueLine.CALM),
+		DialogueLine.make("You've met my daughter, I'm sure. Junia. She's the bright one.", DialogueLine.HAPPY),
+		DialogueLine.make("My son works the grocery now. It's steady work. Steady is fine.", DialogueLine.SAD),
+		DialogueLine.make("I asked Silas for one morning a week. One. He had his reasons.", DialogueLine.MAD),
+		DialogueLine.make("Mind the hill on that bicycle. I've buried more sensible men.", DialogueLine.CALM),
+	]
+	# Gifts: Communion bread above all; scrap is clutter in a tidy vestry.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["butter", "milk"]
+	def.disliked_gifts = ["scrap"]
+	_add(def)
+
+## Silas Thorne — the minister's son. At church for the Sunday morning service
+## (7am–noon) but leaves before his father is finished, then works the grocery
+## the rest of the week with one rotating day off, which he spends at home.
+func _register_silas_thorne() -> void:
+	const SUN : int = 0
+	var work_days : Array[int] = [1, 2, 3, 4, 5, 6]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "silas_thorne"
+	def.display_name = "Silas Thorne"
+	def.home_anchor  = THORNE_HOME
+	def.shirt_color  = Color("#7c6a9c")   # muted purple
+	def.pants_color  = Color("#3d4457")
+	def.hair_color   = Color("#4a3b2c")
+	def.skin_color   = Color("#e0bd97")
+	# His day off rotates week to week, which a fixed weekday list can't express,
+	# so one stay-home entry is emitted per week parity in front of the grocery
+	# shift. Parity only gives two distinct weeks, so the rotation repeats every
+	# fortnight — widen this if week_parity ever grows more states.
+	var sched : Array[NPCScheduleEntry] = []
+	for w in 2:
+		var off_days : Array[int] = [silas_day_off(w)]
+		sched.append(NPCScheduleEntry.make_hours(off_days, 0.0, 24.0, THORNE_HOME, Vector2(0, 20), w, true))
+	sched.append_array([
+		# Sunday: the service, but only the first half of it.
+		NPCScheduleEntry.make_hours([SUN], 7.0, 12.0, "Church", Vector2(40, 40), -1, true),
+		# Otherwise: behind the counter at the grocery.
+		NPCScheduleEntry.make_hours(work_days, 8.0, 18.0, "Grocery", Vector2(0, 40), -1, true),
+		# Everything else: home.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, THORNE_HOME, Vector2(0, 20), -1, true),
+	])
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Deliveries go round the back. I'll sign for it.", DialogueLine.CALM),
+		DialogueLine.make("I like the shop. Nobody here expects anything of me by noon.", DialogueLine.CALM),
+		DialogueLine.make("Yeah, that's my father. We manage.", DialogueLine.SAD),
+		DialogueLine.make("I go to the service. I just don't stay for the whole thing.", DialogueLine.MAD),
+		DialogueLine.make("Junia says I should talk to him. Junia says a lot of things.", DialogueLine.CALM),
+	]
+	# Gifts: anything that isn't stock he shelves all week; bread is a busman's holiday.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["scrap", "bolts"]
+	def.disliked_gifts = ["bread"]
+	_add(def)
+
+## Junia Thorne — the minister's daughter. Church on Sunday mornings, school
+## Monday to Friday. Saturdays she either goes along with her father on his
+## visits or takes herself off to the field beside the school, alternating week
+## by week in step with whichever visit her father is making.
+func _register_junia_thorne() -> void:
+	const SUN : int = 0
+	const SAT : int = 6
+	var school_days : Array[int] = [1, 2, 3, 4, 5]   # Mon–Fri
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "junia_thorne"
+	def.display_name = "Junia Thorne"
+	def.home_anchor  = THORNE_HOME
+	def.shirt_color  = Color("#e6b8c8")   # pale rose
+	def.pants_color  = Color("#5a6b8c")
+	def.hair_color   = Color("#6b4a2c")
+	def.skin_color   = Color("#e0bd97")
+	var sched : Array[NPCScheduleEntry] = [
+		# Sunday: the full service, sat alongside her father.
+		NPCScheduleEntry.make_hours([SUN], 7.0, 13.5, "Church", Vector2(-40, 40), -1, true),
+		# Saturday: even weeks she tags along to the farm with her father; odd weeks
+		# she's out in the field beside the school instead.
+		NPCScheduleEntry.make_hours([SAT], 10.0, 14.0, "Farm", Vector2(-40, 30), 0, true),
+		NPCScheduleEntry.make_hours([SAT], 10.0, 15.0, "School", Vector2(0, 90), 1, false).wandering(120.0),
+		# Monday–Friday: school.
+		NPCScheduleEntry.make_hours(school_days, 9.0, 15.5, "School", Vector2(0, 40), -1, true),
+		# Everything else: home.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, THORNE_HOME, Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("There's a field past the school where nobody looks for me.", DialogueLine.HAPPY),
+		DialogueLine.make("Papa and Silas are being ridiculous. Both of them. Equally.", DialogueLine.MAD),
+		DialogueLine.make("I get the whole sermon and Silas gets half. He thinks I don't notice.", DialogueLine.CALM),
+		DialogueLine.make("Do you ever deliver anywhere far? Properly far?", DialogueLine.SURPRISED),
+		DialogueLine.make("If you see Silas, tell him I said to come for supper.", DialogueLine.CALM),
+	]
+	# Gifts: a kid's sweet tooth; scrap metal is her brother's kind of present.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["butter", "bread"]
 	def.disliked_gifts = ["scrap"]
 	_add(def)
