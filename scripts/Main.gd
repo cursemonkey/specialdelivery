@@ -9,8 +9,10 @@ const START_PACKAGES   := 0
 
 const BikeScene             := preload("res://scenes/Bike.tscn")
 const BirdScene             := preload("res://scenes/Bird.tscn")
+const BunnyScene            := preload("res://scenes/Bunny.tscn")
 const NPCManagerScript       := preload("res://scripts/NPCManager.gd")
 const DogManagerScript       := preload("res://scripts/DogManager.gd")
+const CatManagerScript       := preload("res://scripts/CatManager.gd")
 const InteriorManagerScript  := preload("res://scripts/InteriorManager.gd")
 const PoliceManagerScript    := preload("res://scripts/PoliceManager.gd")
 const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
@@ -21,6 +23,13 @@ const ShopPanelScript        := preload("res://scripts/ShopPanel.gd")
 const MortgagePanelScript    := preload("res://scripts/MortgagePanel.gd")
 const ChoicePanelScript      := preload("res://scripts/ChoicePanel.gd")
 const BIRD_COUNT             := 6
+const BUNNY_COUNT            := 5
+## Rizz earned per game hour for each animal in the parade. Was 1.0 back when
+## only six birds and ten dogs existed; with thirteen cats and the bunnies on
+## top, a long parade was paying out far too fast, so each animal is now worth
+## a quarter of what it used to be. A big parade is still the best way to earn
+## Rizz — it just no longer maxes the bar in a couple of in-game hours.
+const RIZZ_PER_ANIMAL_HOUR   := 0.25
 
 @onready var world          : Node2D          = $WorldGenerator
 @onready var player         : CharacterBody2D = $Player
@@ -38,11 +47,13 @@ var _day_running      : bool   = false
 var _bonus_paid       : bool   = false
 var _world_bike       : Node2D = null
 var _birds            : Array[Node] = []
+var _bunnies          : Array[Node] = []
 var _first_day        : bool   = true
 var _continue_flow    : bool   = false   # loading a save: start drops now, don't advance the day
 var _home_door_node   : Node2D = null
 var _npc_manager       : Node2D = null
 var _dog_manager       : Node2D = null
+var _cat_manager       : Node2D = null
 var _interior_manager  : Node2D = null
 var _police_manager    : Node2D = null
 var _day_transition    : CanvasLayer = null
@@ -143,6 +154,15 @@ func _ready() -> void:
 	add_child(_dog_manager)
 	_dog_manager.setup(get_node_or_null("Doors"))
 	_dog_manager.spawn_all()
+
+	# The town's cats — the same idea as the dogs (see CatRegistry), but with
+	# territories several times the size, so a cat turns up right across its
+	# quarter of town rather than near the door it sleeps behind.
+	_cat_manager = CatManagerScript.new()
+	_cat_manager.name = "CatManager"
+	add_child(_cat_manager)
+	_cat_manager.setup(get_node_or_null("Doors"))
+	_cat_manager.spawn_all()
 
 	_interior_manager = InteriorManagerScript.new()
 	_interior_manager.name = "InteriorManager"
@@ -301,29 +321,49 @@ func _resume_after_midnight() -> void:
 	_day_running = true
 	GameManager.show_message("🌙 A new day begins — %s." % GameManager.date_label())
 
-# Going indoors scatters any birds and dogs trailing the player — they wait
-# outside, and
-# the Rizz bonus they were providing stops with them.
+# Going indoors scatters any animals trailing the player — they wait outside,
+# and the Rizz bonus they were providing stops with them.
 func _on_entered_building() -> void:
-	var scattered : int = 0
+	var birds_left : int = 0
 	for b in _birds:
 		if is_instance_valid(b) and b.is_following():
 			b.stop_following()
-			scattered += 1
+			birds_left += 1
+	var bunnies_left : int = 0
+	for u in _bunnies:
+		if is_instance_valid(u) and u.is_following():
+			u.stop_following()
+			bunnies_left += 1
 	var dogs_left : int = 0
 	if _dog_manager != null:
 		dogs_left = _dog_manager.scatter_following()
-	if scattered > 0 or dogs_left > 0:
+	var cats_left : int = 0
+	if _cat_manager != null:
+		cats_left = _cat_manager.scatter_following()
+	var total : int = birds_left + bunnies_left + dogs_left + cats_left
+	if total > 0:
 		_rizz_accum = 0.0
 		var parts : Array = []
-		if scattered > 0:
-			parts.append("bird%s" % ("s" if scattered > 1 else ""))
+		if birds_left > 0:
+			parts.append("bird%s" % ("s" if birds_left > 1 else ""))
+		if bunnies_left > 0:
+			parts.append("bunn%s" % ("ies" if bunnies_left > 1 else "y"))
 		if dogs_left > 0:
 			parts.append("dog%s" % ("s" if dogs_left > 1 else ""))
-		GameManager.show_message("🐕 Your %s waited outside." % " and ".join(parts))
+		if cats_left > 0:
+			parts.append("cat%s" % ("s" if cats_left > 1 else ""))
+		GameManager.show_message("🐕 Your %s waited outside." % _join_list(parts))
+
+## "a", "a and b", "a, b and c" — so the scatter message reads naturally now
+## that four species can be in the parade at once.
+func _join_list(parts: Array) -> String:
+	if parts.size() <= 1:
+		return "" if parts.is_empty() else str(parts[0])
+	var head : Array = parts.slice(0, parts.size() - 1)
+	return "%s and %s" % [", ".join(head), parts[parts.size() - 1]]
 
 # Energy drains while moving, priced in game hours (bike 1.5/hr, walking 2/hr);
-# Rizz gains 1 per game hour per bird or dog currently following the player.
+# Rizz gains RIZZ_PER_ANIMAL_HOUR per game hour per animal following the player.
 func _tick_stats(delta: float) -> void:
 	var game_hours : float = delta * TimeManager.HOURS_PER_SECOND
 	if player.velocity.length() > 5.0:
@@ -337,19 +377,34 @@ func _tick_stats(delta: float) -> void:
 	for b in _birds:
 		if is_instance_valid(b) and b.is_following():
 			following += 1
-	# Dogs in the parade count towards the same Rizz bonus as the birds.
+	for u in _bunnies:
+		if is_instance_valid(u) and u.is_following():
+			following += 1
+	# Dogs and cats in the parade count towards the same Rizz bonus as the birds.
 	if _dog_manager != null:
 		following += _dog_manager.following_count()
+	if _cat_manager != null:
+		following += _cat_manager.following_count()
 	_assign_parade_slots()
+	_spook_nearby_bunnies()
 	if following > 0:
-		_rizz_accum += float(following) * game_hours
+		_rizz_accum += float(following) * RIZZ_PER_ANIMAL_HOUR * game_hours
 		while _rizz_accum >= 1.0:
 			_rizz_accum -= 1.0
 			GameManager.add_rizz(1)
 
-## Number the parade from the player backwards so birds and dogs form one
-## shared queue. Birds take the front slots (they flew in first and cut
-## corners anyway), then dogs in the order they joined.
+## Bunnies bolt when the player gets too close, so catching one takes a little
+## chasing. Each bunny decides for itself whether it actually startles (and
+## won't re-roll for a few seconds either way), so this can be called every
+## frame without them becoming impossible to catch.
+func _spook_nearby_bunnies() -> void:
+	for u in _bunnies:
+		if is_instance_valid(u) and u.should_spook_at(player.global_position):
+			u.spook(player.global_position)
+
+## Number the parade from the player backwards so every species forms one
+## shared queue. The fliers and hoppers take the front slots (they cut corners
+## anyway), then dogs, then cats, each in the order they joined.
 func _assign_parade_slots() -> void:
 	var slot : int = 0
 	for b in _birds:
@@ -358,8 +413,14 @@ func _assign_parade_slots() -> void:
 		if is_instance_valid(b) and b.is_following() and b.get("parade_slot") != null:
 			b.parade_slot = slot
 			slot += 1
+	for u in _bunnies:
+		if is_instance_valid(u) and u.is_following() and u.get("parade_slot") != null:
+			u.parade_slot = slot
+			slot += 1
 	if _dog_manager != null:
-		_dog_manager.assign_parade_slots(slot)
+		slot = _dog_manager.assign_parade_slots(slot)
+	if _cat_manager != null:
+		_cat_manager.assign_parade_slots(slot)
 
 # Out of health: play the collapse cutscene, show the day's ledger, then wake
 # up in your own bed at 6am having lost a day.
@@ -507,6 +568,7 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 	_spawn_bike()
 	player.reset_trail()
 	_spawn_birds()
+	_spawn_bunnies()
 
 	if _police_manager != null:
 		_police_manager.plan_for_day(player.global_position)
@@ -558,6 +620,25 @@ func _spawn_birds() -> void:
 		)
 		b.perch_positions = rooftops
 		_birds.append(b)
+
+## Bunnies are wild like the birds — no owner, no home, no territory — so they
+## just get scattered across the map at the start of each day. Unlike the birds
+## they stay on the ground, so they're placed away from the very edges and left
+## to hop where they like.
+func _spawn_bunnies() -> void:
+	for u in _bunnies:
+		if is_instance_valid(u):
+			u.queue_free()
+	_bunnies.clear()
+
+	for i in BUNNY_COUNT:
+		var u : Area2D = BunnyScene.instantiate()
+		add_child(u)
+		u.global_position = _find_safe_position(Vector2(
+			randf_range(TILE * 4, 6560.0),
+			randf_range(TILE * 4, 4940.0)
+		))
+		_bunnies.append(u)
 
 func _first_day_setup() -> void:
 	GameManager.total_targets   = 0

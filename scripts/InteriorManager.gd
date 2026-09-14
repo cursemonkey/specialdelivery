@@ -19,7 +19,7 @@ var _active  : Node    = null
 var _return  : Vector2 = Vector2.ZERO
 var _saved   : Rect2   = Rect2()
 var _inside_npcs : Array = []   # NPCs materialized inside the active interior
-var _inside_dogs : Array = []   # dogs shown at home inside the active interior
+var _inside_pets : Array = []   # dogs and cats shown at home inside the active interior
 var current_building_id : String = ""
 
 func _ready() -> void:
@@ -99,16 +99,16 @@ func enter(building_id: String) -> void:
 		GameManager.show_message("🚪 Inside. Walk out the south doorway to leave.", 4.0)
 
 	_inside_npcs.clear()
-	_inside_dogs.clear()
+	_inside_pets.clear()
 	_sync_inside_npcs()
-	_sync_inside_dogs()
+	_sync_inside_pets()
 	entered_building.emit()   # birds don't follow the player indoors
 	_try_auto_deliver(building_id)
 
 func _process(_delta: float) -> void:
 	if _active != null:
 		_sync_inside_npcs()    # materialize anyone who walks in while we're inside
-		_sync_inside_dogs()    # … and any dog that's home at this hour
+		_sync_inside_pets()    # … and any dog or cat that's home at this hour
 
 ## Materialize any NPCs whose schedule currently has them inside this building
 ## but who aren't shown yet, and lay them out along the room.
@@ -123,32 +123,39 @@ func _sync_inside_npcs() -> void:
 			if is_instance_valid(_inside_npcs[i]):
 				_inside_npcs[i].show_in_interior(STAGE_ORIGIN + _active.interior_npc_spot(i, _inside_npcs.size()))
 
-## Show any dogs whose home is this building and whose hours have them indoors,
-## curled up along the back of the room. They're display-only in here — a dog
-## can't be picked up indoors, it rejoins the world when its window opens.
-func _sync_inside_dogs() -> void:
-	var mgr : Node = get_parent().get_node_or_null("DogManager")
-	if mgr == null:
-		return
-	var home : Array = mgr.dogs_inside(current_building_id)
+## Show any dogs and cats whose home is this building and whose hours have them
+## indoors, curled up along the back of the room. They're display-only in here —
+## a pet can't be picked up indoors, it rejoins the world when its window opens.
+##
+## Both species are laid out in one shared row, so a household with a dog and a
+## cat doesn't stack them on the same spot.
+func _sync_inside_pets() -> void:
+	var parent : Node  = get_parent()
+	var home   : Array = []
+	var dog_mgr : Node = parent.get_node_or_null("DogManager")
+	if dog_mgr != null:
+		home.append_array(dog_mgr.dogs_inside(current_building_id))
+	var cat_mgr : Node = parent.get_node_or_null("CatManager")
+	if cat_mgr != null:
+		home.append_array(cat_mgr.cats_inside(current_building_id))
 	for i in home.size():
-		var dog : Node2D = home[i]
-		if not is_instance_valid(dog):
+		var pet : Node2D = home[i]
+		if not is_instance_valid(pet):
 			continue
-		if not _inside_dogs.has(dog):
-			_inside_dogs.append(dog)
+		if not _inside_pets.has(pet):
+			_inside_pets.append(pet)
 		# Spread them along the room, offset from where villagers stand.
 		var spot : Vector2 = _active.interior_npc_spot(i, maxi(home.size(), 1))
-		dog.global_position = STAGE_ORIGIN + spot + Vector2(0.0, 42.0)
-		dog.visible = true
+		pet.global_position = STAGE_ORIGIN + spot + Vector2(0.0, 42.0)
+		pet.visible = true
 
-## Hide the dogs again on the way out, so they aren't left visible at the
+## Hide the pets again on the way out, so they aren't left visible at the
 ## staging area once the interior is torn down.
-func _hide_inside_dogs() -> void:
-	for dog in _inside_dogs:
-		if is_instance_valid(dog) and dog.is_inside():
-			dog.visible = false
-	_inside_dogs.clear()
+func _hide_inside_pets() -> void:
+	for pet in _inside_pets:
+		if is_instance_valid(pet) and pet.is_inside():
+			pet.visible = false
+	_inside_pets.clear()
 
 ## If the building we entered is a live delivery target and the player has a
 ## package, drop it off automatically (the door markers are ArtBuildings, so the
@@ -173,7 +180,7 @@ func exit() -> void:
 		if is_instance_valid(npc):
 			npc.leave_interior()
 	_inside_npcs.clear()
-	_hide_inside_dogs()
+	_hide_inside_pets()
 	_active.queue_free()
 	_active = null
 	_player.in_interior = false
