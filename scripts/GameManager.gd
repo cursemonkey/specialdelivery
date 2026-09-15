@@ -821,6 +821,12 @@ func save_game(slot: int = -1) -> void:
 		"vehicle":          vehicle,
 		"storage_upgrades": storage_upgrades,
 		"hour":      TimeManager.hour,   # resume the in-game clock where we left off
+		# Condition at the moment of saving. Persisted so reloading can't be
+		# used to refill HP or energy — you resume as worn out as you were.
+		"hp":       hp,
+		"energy":   energy,
+		"rizz":     rizz,
+		"hp_debt":  _hp_debt,
 		# The day in progress. Saved so a mid-day save/reload keeps the
 		# calendar day's takings intact and the midnight ledger still reports
 		# the whole 24 hours, not just what happened after loading.
@@ -865,6 +871,12 @@ func load_game(slot: int) -> bool:
 	storage_upgrades = maxi(int(parsed.get("storage_upgrades", 0)), 0)
 	# Older saves have no clock — fall back to the normal 6am start.
 	loaded_hour = float(parsed.get("hour", TimeManager.DAY_START_HOUR))
+	# Resume the player's condition. Saves predating this restore a full bar,
+	# which is the old behaviour and can't punish an existing game.
+	hp       = clampi(int(parsed.get("hp",     max_hp)),     0, max_hp)
+	energy   = clampi(int(parsed.get("energy", max_energy)), 0, max_energy)
+	rizz     = clampi(int(parsed.get("rizz",   0)),          0, max_rizz)
+	_hp_debt = maxf(float(parsed.get("hp_debt", 0.0)), 0.0)
 	# Restore the calendar day already in progress, so the midnight ledger
 	# still covers the full 24 hours across a save/reload.
 	_ledger_from_save(parsed.get("ledger", null))
@@ -891,6 +903,9 @@ func load_game(slot: int) -> bool:
 	held_item_changed.emit(held_item)
 	cash_changed.emit(cash)
 	day_changed.emit(day)
+	hp_changed.emit(hp)
+	energy_changed.emit(energy)
+	rizz_changed.emit(rizz)
 	return true
 
 ## Settings (control scheme, drop tuning) are global user prefs, independent

@@ -521,7 +521,10 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 	if _interior_manager != null and _interior_manager.is_inside():
 		_interior_manager.exit()
 
-	GameManager.reset_day_stats()   # full HP & energy, zero rizz for the new day
+	# A genuine new day starts fresh; resuming a save keeps the condition the
+	# player saved with, so quitting and reloading can't refill HP or energy.
+	if not _continue_flow:
+		GameManager.reset_day_stats()   # full HP & energy, zero rizz for the new day
 	_energy_accum = 0.0
 	_rizz_accum   = 0.0
 
