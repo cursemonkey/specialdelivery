@@ -60,7 +60,7 @@ var snap_to_direction     : bool = true
 ## either too small to see or too big for the streets, so the setting is
 ## clamped here and the slider is built from the same bounds.
 const SPRITE_SCALE_MIN : float = 0.5
-const SPRITE_SCALE_MAX : float = 0.8
+const SPRITE_SCALE_MAX : float = 0.7
 
 var sprite_scale          : float = SPRITE_SCALE_MAX
 signal sprite_scale_changed(value: float)
