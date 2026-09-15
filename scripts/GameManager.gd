@@ -71,6 +71,19 @@ func set_sprite_scale(value: float) -> void:
 var max_drops_per_day     : int  = 4
 var max_packages_per_drop : int  = 3
 
+## How long packages wait on a drop pad before someone else collects them,
+## in GAME HOURS (a game hour is 30 real seconds). Player-tunable from the
+## settings panel; clamped to this range so a drop can't be impossible to reach
+## or effectively permanent.
+const PACKAGE_EXPIRY_MIN     : float = 3.0
+const PACKAGE_EXPIRY_MAX     : float = 6.0
+const PACKAGE_EXPIRY_DEFAULT : float = 4.0
+
+var package_expiry_hours : float = PACKAGE_EXPIRY_DEFAULT
+
+func set_package_expiry_hours(value: float) -> void:
+	package_expiry_hours = clampf(value, PACKAGE_EXPIRY_MIN, PACKAGE_EXPIRY_MAX)
+
 # ── Vehicle stats ─────────────────────────────────
 ## The bicycle's characteristics, shown on the status screen and read by
 ## Player for movement. These are progression (upgradeable), so they live in
@@ -888,6 +901,7 @@ func save_settings() -> void:
 		"snap_to_direction":     snap_to_direction,
 		"max_drops_per_day":     max_drops_per_day,
 		"max_packages_per_drop": max_packages_per_drop,
+		"package_expiry_hours":  package_expiry_hours,
 		"sprite_scale":          sprite_scale,
 	}
 	var file : FileAccess = FileAccess.open("user://settings.json", FileAccess.WRITE)
@@ -910,6 +924,8 @@ func load_settings() -> void:
 	snap_to_direction     = bool(parsed.get("snap_to_direction",    true))
 	max_drops_per_day     = int(parsed.get("max_drops_per_day",     4))
 	max_packages_per_drop = int(parsed.get("max_packages_per_drop", 3))
+	# Settings saved before pad expiry existed get the default.
+	set_package_expiry_hours(float(parsed.get("package_expiry_hours", PACKAGE_EXPIRY_DEFAULT)))
 	# Settings saved before the range narrowed can hold a bigger value; clamp
 	# it so an old prefs file can't reinstate an out-of-range size.
 	sprite_scale          = clampf(float(parsed.get("sprite_scale", SPRITE_SCALE_MAX)), SPRITE_SCALE_MIN, SPRITE_SCALE_MAX)

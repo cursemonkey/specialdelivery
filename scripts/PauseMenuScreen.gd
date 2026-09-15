@@ -8,6 +8,8 @@ extends Control
 @onready var easy_bike_toggle : CheckButton = $SettingsView/SettingsPanel/VBox/EasyBikeToggle
 @onready var drops_spin    : SpinBox     = $SettingsView/SettingsPanel/VBox/DropsRow/DropsSpinBox
 @onready var pkg_spin      : SpinBox     = $SettingsView/SettingsPanel/VBox/PkgRow/PkgSpinBox
+@onready var expiry_slider : HSlider     = $SettingsView/SettingsPanel/VBox/ExpiryRow/ExpirySlider
+@onready var expiry_value  : Label       = $SettingsView/SettingsPanel/VBox/ExpiryRow/ExpiryValue
 @onready var scale_slider  : HSlider     = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleSlider
 @onready var scale_value   : Label       = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleValue
 @onready var status_button   : Button        = $PanelContainer/HBoxContainer/Status
@@ -49,6 +51,7 @@ func _ready() -> void:
 	easy_bike_toggle.toggled.connect(_on_easy_bike_toggled)
 	drops_spin.value_changed.connect(_on_drops_changed)
 	pkg_spin.value_changed.connect(_on_pkg_changed)
+	expiry_slider.value_changed.connect(_on_package_expiry_changed)
 	scale_slider.value_changed.connect(_on_sprite_scale_changed)
 	status_button.pressed.connect(_on_status_button_pressed)
 	friends_button.pressed.connect(_on_friends_button_pressed)
@@ -97,6 +100,11 @@ func _on_settings_button_pressed() -> void:
 	pkg_spin.value   = GameManager.max_packages_per_drop
 	# Take the slider's bounds from GameManager so the allowed range lives in
 	# one place — the scene can't drift out of sync with the clamp.
+	# Bounds from GameManager so the allowed range lives in one place.
+	expiry_slider.min_value = GameManager.PACKAGE_EXPIRY_MIN
+	expiry_slider.max_value = GameManager.PACKAGE_EXPIRY_MAX
+	expiry_slider.set_value_no_signal(GameManager.package_expiry_hours)
+	expiry_value.text = "%.1f" % GameManager.package_expiry_hours
 	scale_slider.min_value = GameManager.SPRITE_SCALE_MIN
 	scale_slider.max_value = GameManager.SPRITE_SCALE_MAX
 	scale_slider.set_value_no_signal(GameManager.sprite_scale)
@@ -203,6 +211,13 @@ func _on_drops_changed(value: float) -> void:
 func _on_sprite_scale_changed(value: float) -> void:
 	GameManager.set_sprite_scale(value)
 	scale_value.text = "%.2f" % GameManager.sprite_scale
+	GameManager.save_settings()
+
+## How long packages linger on a pad before someone else takes them. Applies
+## live — packages already waiting are measured against the new window.
+func _on_package_expiry_changed(value: float) -> void:
+	GameManager.set_package_expiry_hours(value)
+	expiry_value.text = "%.1f" % GameManager.package_expiry_hours
 	GameManager.save_settings()
 
 func _on_pkg_changed(value: float) -> void:

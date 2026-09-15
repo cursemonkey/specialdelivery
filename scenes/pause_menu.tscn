@@ -167,7 +167,7 @@ layout_mode = 2
 [node name="DropsLabel" type="Label" parent="SettingsView/SettingsPanel/VBox/DropsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Max Drops/Day"
+text = "Max Drops/24 hrs"
 
 [node name="DropsSpinBox" type="SpinBox" parent="SettingsView/SettingsPanel/VBox/DropsRow"]
 layout_mode = 2
@@ -190,6 +190,26 @@ min_value = 1.0
 max_value = 5.0
 value = 3.0
 rounded = true
+
+[node name="ExpiryRow" type="HBoxContainer" parent="SettingsView/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="ExpiryLabel" type="Label" parent="SettingsView/SettingsPanel/VBox/ExpiryRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pad Expiry (hrs)"
+
+[node name="ExpiryValue" type="Label" parent="SettingsView/SettingsPanel/VBox/ExpiryRow"]
+layout_mode = 2
+text = "4.0"
+
+[node name="ExpirySlider" type="HSlider" parent="SettingsView/SettingsPanel/VBox/ExpiryRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+min_value = 3.0
+max_value = 6.0
+step = 0.5
+value = 4.0
 
 [node name="ScaleRow" type="HBoxContainer" parent="SettingsView/SettingsPanel/VBox"]
 layout_mode = 2
