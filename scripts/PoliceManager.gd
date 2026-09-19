@@ -32,9 +32,21 @@ var _site          : Vector2        = Vector2.ZERO
 var _officers      : Array          = []      # RegularNPCs posted to the block
 var _planned_today : bool           = false   # a roadblock is scheduled today
 var _deployed      : bool           = false   # officers have left the station
+var _world         : Node2D         = null    # for the shared RoadGraph
+var _station       : Vector2        = Vector2.ZERO
+var _has_station   : bool           = false
 
-func setup() -> void:
+## `world_gen` supplies the road graph the cruiser routes over, and `doors_root`
+## the station it sets out from. Both are optional: without them the cruiser
+## falls back to appearing at the scene as it used to.
+func setup(world_gen: Node2D = null, doors_root: Node = null) -> void:
 	_intersections = _find_intersections()
+	_world = world_gen
+	if doors_root != null:
+		var marker : Node2D = doors_root.get_node_or_null("Police") as Node2D
+		if marker != null:
+			_station     = marker.global_position
+			_has_station = true
 	TimeManager.hour_changed.connect(_on_hour_changed)
 
 func get_intersections() -> Array[Vector2]:
@@ -88,9 +100,20 @@ func _deploy() -> void:
 	_block.global_position = _site
 	_block.setup(BLOCK_SIZE)
 
+	# The cruiser drives out from the station rather than appearing at the
+	# scene. Without a station or a usable route it falls back to the old
+	# behaviour, so the roadblock is never left without a car.
 	_cruiser = CruiserScript.new()
 	add_child(_cruiser)
-	_cruiser.global_position = _site + CRUISER_OFFSET
+	var park : Vector2 = _site + CRUISER_OFFSET
+	var route : Array[Vector2] = []
+	if _has_station and _world != null and _world.has_method("road_route"):
+		route = _world.road_route(_station, park)
+	if route.size() >= 2:
+		_cruiser.drive_to(route)
+	else:
+		_cruiser.global_position = park
+		_cruiser.drive_to([] as Array[Vector2])
 
 	# Officers drive over (fast) and man the block, spread out beside it.
 	for i in officers.size():

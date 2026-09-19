@@ -134,6 +134,100 @@ func _scatter_pickups() -> void:
 		placed.append(pos)
 		index += 1
 
+## `count` uniformly random points on the road surface, for other systems that
+## want to place things on the street (SalvageManager uses this). Returns an
+## empty array when no road_zone regions exist.
+func random_road_points(count: int) -> Array:
+	if count <= 0:
+		return []
+	var tris : Array = _road_triangles()
+	if tris.is_empty():
+		return []
+	var cumulative : Array[float] = _cumulative_areas(tris)
+	var out : Array = []
+	for i in count:
+		out.append(_random_road_point(tris, cumulative))
+	return out
+
+# ── Road graph ─────────────────────────────────────────────
+## The navigable graph of the road network, built on first use and shared by
+## every system that needs to route a vehicle (see RoadGraph). Lazy because the
+## road regions must exist before it can be built.
+var _road_graph : RoadGraph = null
+
+## The shared RoadGraph, building it if this is the first call.
+func road_graph() -> RoadGraph:
+	if _road_graph == null:
+		_road_graph = RoadGraph.new()
+		_road_graph.build(get_tree())
+	return _road_graph
+
+## A drivable route between two world points, or [] when there is none. Thin
+## wrapper so callers don't have to reach for the graph themselves.
+func road_route(from: Vector2, to: Vector2) -> Array[Vector2]:
+	return road_graph().path(from, to)
+
+## `count` uniformly random points inside one NavigationRegion2D's polygon —
+## for placing things on a specific patch of ground rather than the road network
+## (SalvageManager uses this for the junk yard). Area-weighted, so an irregular
+## plot fills evenly. Returns an empty array when the region has no usable
+## polygon.
+func random_points_in_region(region: NavigationRegion2D, count: int, inset: float = 0.0) -> Array:
+	if region == null or count <= 0:
+		return []
+	var tris : Array = _region_triangles(region, inset)
+	if tris.is_empty():
+		return []
+	var cumulative : Array[float] = _cumulative_areas(tris)
+	var out : Array = []
+	for i in count:
+		out.append(_random_road_point(tris, cumulative))
+	return out
+
+## As random_points_in_region, but pooled over several regions at once. The
+## triangles of every region go into one area-weighted pool, so a plot twice the
+## size of its neighbour receives about twice as many points — which is what you
+## want for a junk yard made of a few adjoining pieces of ground.
+func random_points_in_regions(regions: Array, count: int, inset: float = 0.0) -> Array:
+	if regions.is_empty() or count <= 0:
+		return []
+	var tris : Array = []
+	for r in regions:
+		if r is NavigationRegion2D:
+			tris.append_array(_region_triangles(r, inset))
+	if tris.is_empty():
+		return []
+	var cumulative : Array[float] = _cumulative_areas(tris)
+	var out : Array = []
+	for i in count:
+		out.append(_random_road_point(tris, cumulative))
+	return out
+
+## One navigation region triangulated into global-space triangles. `inset`
+## shrinks the outline inward so points don't land right on the boundary.
+func _region_triangles(region: NavigationRegion2D, inset: float) -> Array:
+	var tris : Array = []
+	var np : NavigationPolygon = region.navigation_polygon
+	if np == null or np.vertices.size() < 3:
+		return tris
+	for oi in np.get_outline_count():
+		var outline : PackedVector2Array = np.get_outline(oi)
+		if outline.size() < 3:
+			continue
+		var polys : Array = [outline]
+		if inset > 0.0:
+			polys = Geometry2D.offset_polygon(outline, -inset)
+		for poly in polys:
+			if poly.size() < 3:
+				continue
+			var global_poly : PackedVector2Array = PackedVector2Array()
+			for pt in poly:
+				global_poly.append(region.to_global(pt))
+			var idx : PackedInt32Array = Geometry2D.triangulate_polygon(global_poly)
+			for i in range(0, idx.size(), 3):
+				tris.append([global_poly[idx[i]], global_poly[idx[i + 1]], global_poly[idx[i + 2]]])
+	return tris
+
 ## Every road polygon triangulated into global-space triangles.
 func _road_triangles() -> Array:
 	var tris : Array = []

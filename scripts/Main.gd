@@ -15,6 +15,8 @@ const DogManagerScript       := preload("res://scripts/DogManager.gd")
 const CatManagerScript       := preload("res://scripts/CatManager.gd")
 const InteriorManagerScript  := preload("res://scripts/InteriorManager.gd")
 const PoliceManagerScript    := preload("res://scripts/PoliceManager.gd")
+const SalvageManagerScript   := preload("res://scripts/SalvageManager.gd")
+const BusManagerScript       := preload("res://scripts/BusManager.gd")
 const DayTransitionScene     := preload("res://scenes/DayTransition.tscn")
 const LedgerScreenScene      := preload("res://scenes/LedgerScreen.tscn")
 const CutsceneScene          := preload("res://scenes/Cutscene.tscn")
@@ -56,6 +58,8 @@ var _dog_manager       : Node2D = null
 var _cat_manager       : Node2D = null
 var _interior_manager  : Node2D = null
 var _police_manager    : Node2D = null
+var _salvage_manager   : Node2D = null
+var _bus_manager       : Node2D = null
 var _day_transition    : CanvasLayer = null
 var _ledger_screen     : CanvasLayer = null
 var _sleep_prompt      : CanvasLayer = null
@@ -177,7 +181,23 @@ func _ready() -> void:
 	_police_manager = PoliceManagerScript.new()
 	_police_manager.name = "PoliceManager"
 	add_child(_police_manager)
-	_police_manager.setup()
+	_police_manager.setup(world, get_node_or_null("Doors"))
+
+	# Loose scrap and bolts lying about town. Thin on the streets, thicker in
+	# the junk yard; pieces expire and are topped back up every 12 in-game
+	# hours, all without announcing itself.
+	_salvage_manager = SalvageManagerScript.new()
+	_salvage_manager.name = "SalvageManager"
+	add_child(_salvage_manager)
+	_salvage_manager.setup(world)
+	_salvage_manager.begin()
+
+	# The town bus, running its loop of the six stops. Weekends it parks off
+	# the west edge from 1am to 7am.
+	_bus_manager = BusManagerScript.new()
+	_bus_manager.name = "BusManager"
+	add_child(_bus_manager)
+	_bus_manager.setup()
 
 	_ledger_screen = LedgerScreenScene.instantiate()
 	add_child(_ledger_screen)

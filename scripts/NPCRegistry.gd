@@ -502,8 +502,33 @@ func _register_mayor_henderson() -> void:
 		NPCScheduleEntry.make_hours([],  0.0, 24.0, "House96",           Vector2(0, 20),  -1, true),
 	]
 	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers. She starts in full public-office voice — warm, but the
+	# warmth is part of the job — and loosens into the actual woman underneath:
+	# the paperwork, the town she worries about, and finally Jimmy and the plain
+	# admission that she counts on you. Old lines stay in the pool at falling
+	# odds (see RegularNPC.get_dialogue), so the civic greeting never fully goes.
 	def.dialogue_lines = [
-		DialogueLine.make("Hi, how's the delivery business?", DialogueLine.SURPRISED),
+		# Stranger — the campaign handshake. Pleasant, practised, a little rehearsed.
+		DialogueLine.make("Hi, how's the delivery business?", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Welcome, welcome. City Hall is open to everyone — do come in sometime.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("A growing town needs good roads and good people. We're fortunate in both.", DialogueLine.CALM, 0),
+		DialogueLine.make("If you've a concern, bring it to my desk. That's what the desk is for.", DialogueLine.CALM, 0),
+		# Acquaintance — she's noticed you specifically, and the polish slips a little.
+		DialogueLine.make("You again! I'm starting to think you keep this town running more than I do.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Between us, I signed forty-one forms before lunch. Forty-one.", DialogueLine.CALM, 2),
+		DialogueLine.make("Mind the cobbles on the east lane. It's on the list. Everything's on the list.", DialogueLine.CALM, 2),
+		DialogueLine.make("People think the mayor's job is ribbon-cutting. It is mostly drainage.", DialogueLine.HAPPY, 2),
+		# Friend — the office door stays open, and she says what she actually thinks.
+		DialogueLine.make("Shut the door behind you, would you? Ten minutes where nobody wants anything.", DialogueLine.CALM, 5),
+		DialogueLine.make("I've lived here my whole life. Every pothole I approve is one I grew up tripping over.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Some days the council makes me want to move to the coast and raise geese.", DialogueLine.MAD, 5),
+		DialogueLine.make("Jimmy says I bring the office home with me. Jimmy is unfortunately correct.", DialogueLine.CALM, 5),
+		# Close friend — quieter, and she stops performing entirely.
+		DialogueLine.make("When I'm tired of being Mayor Henderson, I'm just glad someone still knocks.", DialogueLine.CALM, 8),
+		DialogueLine.make("Jimmy and I married young and nobody thought it would take. Thirty years next spring.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("I'll not run forever. I'd like to leave the place tidier than I found it, that's all.", DialogueLine.CALM, 8),
+		DialogueLine.make("You've done more for this town on that bicycle than half my council has in office.", DialogueLine.HAPPY, 8),
 	]
 	# Gifts: Fond of the finer spread at civic receptions.
 	def.loved_gifts = ["butter"]

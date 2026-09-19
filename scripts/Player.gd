@@ -63,6 +63,10 @@ var _hopping      := false
 var boost_timer   := 0.0
 var slow_timer    := 0.0
 var _spin_timer   := 0.0   # > 0 while spun out after running into an NPC
+# Bus knockdown: > 0 while lying stunned on the ground after being run over on
+# foot. Controls are dead for the duration and the sprite lies on its side.
+var _stun_timer   := 0.0
+var _knock_vel    := Vector2.ZERO   # residual shove from a bus impact
 
 var facing        := Vector2.DOWN
 var walk_frame    := 0
@@ -434,6 +438,16 @@ func _set_mode(biking: bool) -> void:
 
 # ── Foot movement ──────────────────────────────────────────
 func _process_foot(delta: float) -> void:
+	# Knocked down by the bus: no control at all until the stun runs out. The
+	# residual shove still carries, so the player slides to where they land.
+	if _stun_timer > 0.0:
+		_stun_timer -= delta
+		velocity = _knock_vel
+		_knock_vel = _knock_vel.move_toward(Vector2.ZERO, 520.0 * delta)
+		if _stun_timer <= 0.0:
+			_end_knockdown()
+		return
+
 	var dir := _get_dir()
 	var spd := FOOT_SPEED * _speed_mult(false)
 	velocity = dir * spd
@@ -548,11 +562,26 @@ func _handle_npc_collisions() -> void:
 				_spin_out()
 			elif not on_bike:
 				npc.push(velocity)
+		elif collider is RoadVehicle:
+			# A moving vehicle hits at any speed, riding or walking — it is the
+			# one doing the moving, so standing still is no defence.
+			_hit_moving_vehicle(collider)
 		elif collider is Vehicle:
 			# Riding into a parked vehicle: costs health and rizz, and spins out.
 			var cur_speed : float = velocity.length() if GameManager.easy_bike else absf(bike_speed)
 			if on_bike and cur_speed > NPC_RUNOVER_SPEED:
 				_hit_vehicle(collider)
+
+## Struck by a moving vehicle — bus, cruiser, fire truck, traffic. The vehicle
+## applies its own HP/rizz cost and calls back into the knockback or knockdown
+## hook, so each vehicle's penalty lives with that vehicle and this stays one
+## branch no matter how many vehicle types exist.
+func _hit_moving_vehicle(vehicle: RoadVehicle) -> void:
+	if _stun_timer > 0.0:
+		return   # already down; don't stack another run-over
+	var msg : String = vehicle.hit_player(self, on_bike)
+	if msg != "":
+		GameManager.show_message(msg)
 
 func _hit_vehicle(vehicle: Vehicle) -> void:
 	if _spin_timer > 0.0:
@@ -560,6 +589,39 @@ func _hit_vehicle(vehicle: Vehicle) -> void:
 	var msg : String = vehicle.on_hit_by_player()
 	_spin_timer = SPIN_DURATION
 	GameManager.show_message(msg)
+
+## Clipped by a moving vehicle while riding: a hard shove plus the usual
+## spin-out. HP and rizz are taken by the vehicle's hit_player, which knows the
+## rider/walker split.
+func knockback_riding(dir: Vector2, speed: float) -> void:
+	_spin_timer = SPIN_DURATION
+	_knock_vel  = dir.normalized() * speed
+	if GameManager.easy_bike:
+		velocity = _knock_vel
+	else:
+		# Kill forward drive and throw the bike the way the bus was going.
+		bike_speed = 0.0
+		bike_angle = dir.angle()
+
+## Run over on foot: dropped where it hit, controls dead, sprite on its side
+## until the stun expires.
+func knockdown_walking(duration: float) -> void:
+	if _stun_timer > 0.0:
+		return
+	_stun_timer = duration
+	_knock_vel  = Vector2.ZERO
+	foot_sprite.rotation = PI * 0.5      # flat on the ground
+	foot_sprite.modulate = Color(1.0, 0.75, 0.75)
+
+func _end_knockdown() -> void:
+	_stun_timer = 0.0
+	_knock_vel  = Vector2.ZERO
+	foot_sprite.rotation = 0.0
+	foot_sprite.modulate = Color(1, 1, 1)
+
+## True while the player is down after a bus knockdown.
+func is_stunned() -> bool:
+	return _stun_timer > 0.0
 
 func _spin_out() -> void:
 	if _spin_timer > 0.0:
