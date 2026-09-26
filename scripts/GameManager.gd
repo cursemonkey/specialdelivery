@@ -758,6 +758,19 @@ func add_packages(count: int) -> int:
 func add_targets(count: int) -> void:
 	total_targets += count
 
+## The four homes offered to the player at the start of the game. These are
+## reserved: no villager may live in one, so that whichever the player buys is
+## theirs alone. NPCRegistry checks its cast against this list on startup and
+## warns if anyone has moved in (see NPCRegistry._check_player_homes).
+##
+## Single source of truth — HomeSelection and Main both read it, so adding or
+## swapping a player home is a one-line change here.
+const PLAYER_HOME_IDS : Array[String] = ["Townhouse15", "Apartments", "House84", "House10"]
+
+## True when `id` is one of the reserved player homes.
+func is_player_home(id: String) -> bool:
+	return PLAYER_HOME_IDS.has(id)
+
 # Door markers were renumbered in the map; saves written before that still hold
 # the old names. Translate them on load so an existing home keeps working (this
 # is what drives the home-door spawn, the bed, and the map's home icon).

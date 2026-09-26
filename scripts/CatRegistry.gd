@@ -126,7 +126,7 @@ func _register_all() -> void:
 	# silently resolves to the world origin — see the note in _register_all.
 	_add(_make("gasket",  "Gasket",  "aidan",             "Mechanic",   19.5,   5.5, 390.0, "#26262a", "#7a7a82"))
 	# Apartments cat, roams the rooftops and back alleys all night.
-	_add(_make("juniper", "Juniper", "nayra",             "Apartments", 20.0,   5.0, 360.0, "#6b7a8f", "#e0e8f0"))
+	_add(_make("juniper", "Juniper", "nayra",             "House200" , 20.0,   5.0, 360.0, "#6b7a8f", "#e0e8f0"))
 	# The station cat — out with the late patrol, covers a wide beat.
 	_add(_make("bandit",  "Bandit",  "kali",              "Police",     19.0,   6.0, 440.0, "#3f3f45", "#f4f4f4"))
 	# Darin's, the oldest of them. Late riser, dawn wanderer, modest range.

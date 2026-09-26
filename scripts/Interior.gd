@@ -25,10 +25,19 @@ func build(def: InteriorDefinition, is_home: bool) -> void:
 	_is_home   = is_home
 	z_index    = -1000   # render behind the player
 	if _is_home:
-		_bed_rect = Rect2(_size.x * 0.5 - BED_SIZE.x * 0.5, 26.0, BED_SIZE.x, BED_SIZE.y)
+		_bed_rect = _resolve_bed_rect()
 	_build_walls()
 	_build_exit_area()
 	queue_redraw()
+
+## Where the bed sits. An authored scene places a Marker2D named "Bed" on the
+## bed in its art and that is used; otherwise the bed goes centre-top of the
+## room, where the procedural _draw paints it.
+func _resolve_bed_rect() -> Rect2:
+	var m : Marker2D = get_node_or_null("Bed") as Marker2D
+	if m != null:
+		return Rect2(m.position - BED_SIZE * 0.5, BED_SIZE)
+	return Rect2(_size.x * 0.5 - BED_SIZE.x * 0.5, 26.0, BED_SIZE.x, BED_SIZE.y)
 
 ## Overridable: a hand-authored interior draws its own art (a Sprite2D child)
 ## and supplies its own collision, so it returns false here to suppress the
@@ -115,7 +124,7 @@ func _on_exit_body_entered(body: Node) -> void:
 func _input(event: InputEvent) -> void:
 	if not _is_home or player_ref == null:
 		return
-	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
+	if event.is_action_pressed("interact"):
 		var bed_center : Vector2 = global_position + _bed_rect.position + _bed_rect.size * 0.5
 		if player_ref.global_position.distance_to(bed_center) <= BED_INTERACT:
 			sleep_requested.emit()

@@ -15,6 +15,22 @@ var _defs : Dictionary = {}   # id -> NPCDefinition
 
 func _ready() -> void:
 	_register_all()
+	_check_player_homes()
+
+## The four homes offered to the player are reserved (GameManager.PLAYER_HOME_IDS):
+## nobody else lives there, so whichever one is bought is the player's alone.
+## Nothing enforces that in the data, so this shouts during development if a
+## villager is given one as a home or is scheduled to go inside one — far easier
+## to catch here than to notice a flatmate months later.
+func _check_player_homes() -> void:
+	for def in _defs.values():
+		if GameManager.is_player_home(def.home_anchor):
+			push_warning("NPCRegistry: '%s' lives in %s, which is reserved for the player."
+				% [def.id, def.home_anchor])
+		for entry in def.schedule:
+			if entry.interior and GameManager.is_player_home(entry.anchor):
+				push_warning("NPCRegistry: '%s' is scheduled inside %s, which is reserved for the player."
+					% [def.id, entry.anchor])
 
 func get_definition(id: String) -> NPCDefinition:
 	return _defs.get(id)
@@ -51,12 +67,226 @@ func _register_all() -> void:
 	_register_flower_campbell()
 	_register_kali()
 	_register_darin()
+	_register_cole()
+	_register_james()
+	_register_nicolle()
+	_register_noah()
 	_register_nayra()
 	_register_marco()
 	_register_aidan()
 	_register_elias_thorne()
 	_register_silas_thorne()
 	_register_junia_thorne()
+
+## Cole — the firefighter. Works out of the Firehouse on alternating weeks, days
+## one week and nights the next, on the same week_parity pattern as Doctor
+## Carrington's hospital shifts. Young, loud and relentlessly cheerful: the sort
+## who tips his helmet at everyone and means it. Lives in Townhouse30, the
+## nearest free house to the Firehouse — the Apartments is reserved for the
+## player (see GameManager.PLAYER_HOME_IDS).
+const COLE_HOME : String = "Townhouse30"
+
+func _register_cole() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "cole"
+	def.display_name = "Cole"
+	def.home_anchor  = COLE_HOME
+	def.shirt_color  = Color("#d8b440")   # yellow turnout coat
+	def.pants_color  = Color("#b89a5a")   # tan turnout trousers
+	def.hair_color   = Color("#7a4ab8")   # purple
+	def.skin_color   = Color("#f0c8a0")
+	# The portrait file is "Cole.jpg", capitalised, where the id-based lookup
+	# would ask for "cole.jpg". That happens to work on Windows, whose disk
+	# ignores case, but an exported build is case-sensitive and would show no
+	# portrait. Naming the exact file sidesteps it.
+	def.portrait_path = "res://assets/Portraits/Cole.jpg"
+	# Mirrors Doctor Carrington: week_parity 0 = even weeks, 1 = odd weeks. All
+	# interior, so he's found by going inside.
+	var sched : Array[NPCScheduleEntry] = [
+		# Even weeks — day shift: at the Firehouse through the day and evening,
+		# home overnight.
+		NPCScheduleEntry.make([], Phase.DAY,    "Firehouse", Vector2(0, 40), 0, true),
+		NPCScheduleEntry.make([], Phase.SUNSET, "Firehouse", Vector2(0, 40), 0, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  COLE_HOME,   Vector2(0, 20), 0, true),
+		# Odd weeks — night shift: sleeps through the day, on at sunset, stays
+		# the night.
+		NPCScheduleEntry.make([], Phase.DAY,    COLE_HOME,   Vector2(0, 20), 1, true),
+		NPCScheduleEntry.make([], Phase.SUNSET, "Firehouse", Vector2(0, 40), 1, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  "Firehouse", Vector2(0, 40), 1, true),
+	]
+	def.schedule = sched
+	# Friendship tiers, as with the mayor and Aidan: all enthusiasm at first,
+	# then the job, then the part of it he doesn't joke about. Older lines stay
+	# in the pool at falling odds (see RegularNPC.get_dialogue).
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		# Stranger — the cheerful public face.
+		DialogueLine.make("Heya! Cole, Fire Department. Stay safe out there!", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Smoke alarm working? Test it tonight. Promise me.", DialogueLine.CALM, 0),
+		DialogueLine.make("Nice bike! Wear a helmet, though. I'm a big helmet guy.", DialogueLine.HAPPY, 0),
+		# Acquaintance — station life.
+		DialogueLine.make("Station's quiet today. Quiet's good. Quiet means nobody's having a bad day.", DialogueLine.CALM, 2),
+		DialogueLine.make("I'm on cooking duty this week. Pray for the crew.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Night shifts mess with my head. I had breakfast at 7pm yesterday.", DialogueLine.CALM, 2),
+		# Friend — why he does it.
+		DialogueLine.make("Most of the job's rescuing cats and checking alarms. Honestly? I love it.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Got into this after a fire on my street as a kid. Firefighters were so calm.", DialogueLine.CALM, 5),
+		DialogueLine.make("You're out on those roads more than anyone. You see smoke, you call me. Deal?", DialogueLine.CALM, 5),
+		# Close friend — the part he doesn't joke about.
+		DialogueLine.make("Some calls stay with you. I don't talk about those much. Thanks for not asking.", DialogueLine.SAD, 8),
+		DialogueLine.make("After a rough shift, running into you kind of fixes the day.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("If anything ever happens to your place, I'm there first. Not even a question.", DialogueLine.CALM, 8),
+	]
+	# Gifts: station cooking runs on bread; bolts are just clutter in the truck.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["milk", "butter"]
+	def.disliked_gifts = ["bolts"]
+	_add(def)
+
+# ── The Brookes ────────────────────────────────────────────
+## James (fire marshal), his wife Nicolle (teacher at the school) and their son
+## Noah. They share a house a short walk from the school, which is where two of
+## the three go every weekday.
+##
+## James runs the opposite shift rota to Cole: where Cole is on days, James is
+## on nights. They overlap at sunset both weeks, which reads as the handover.
+const BROOKE_HOME : String = "House130"
+
+## Family skin tones, kept together so they stay consistent if they are retuned.
+const BROOKE_SKIN_ADULT : Color = Color("#5e3c28")
+const BROOKE_SKIN_CHILD : Color = Color("#6b4630")
+
+## James — the fire marshal. Not front-line like Cole: he runs inspections and
+## works out what started things, so he is the one telling you your extinguisher
+## is out of date. Dry, precise, and fonder of people than he lets on.
+func _register_james() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "james"
+	def.display_name = "James"
+	def.home_anchor  = BROOKE_HOME
+	def.shirt_color  = Color("#e4e6ee")   # white marshal's dress shirt
+	def.pants_color  = Color("#2a2f3d")   # navy
+	def.hair_color   = Color("#1b1310")
+	def.skin_color   = BROOKE_SKIN_ADULT
+	# The mirror image of Cole's rota (see _register_cole): parity 0 = even
+	# weeks, 1 = odd. Where Cole works days, James works nights. Both are at the
+	# station at sunset, which is the shift handover.
+	var sched : Array[NPCScheduleEntry] = [
+		# Even weeks — night shift.
+		NPCScheduleEntry.make([], Phase.DAY,    BROOKE_HOME, Vector2(-25, 20), 0, true),
+		NPCScheduleEntry.make([], Phase.SUNSET, "Firehouse",  Vector2(-25, 40), 0, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  "Firehouse",  Vector2(-25, 40), 0, true),
+		# Odd weeks — day shift.
+		NPCScheduleEntry.make([], Phase.DAY,    "Firehouse",  Vector2(-25, 40), 1, true),
+		NPCScheduleEntry.make([], Phase.SUNSET, "Firehouse",  Vector2(-25, 40), 1, true),
+		NPCScheduleEntry.make([], Phase.NIGHT,  BROOKE_HOME, Vector2(-25, 20), 1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		# Stranger — the clipboard.
+		DialogueLine.make("Fire Marshal Brooke. When did you last check that extinguisher?", DialogueLine.CALM, 0),
+		DialogueLine.make("Most fires I look into were preventable. That is the part that gets me.", DialogueLine.CALM, 0),
+		DialogueLine.make("Keep those delivery boxes clear of the stairwells, would you.", DialogueLine.CALM, 0),
+		# Acquaintance — the job behind the clipboard.
+		DialogueLine.make("Cole thinks I am all paperwork. Somebody has to read the paperwork.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Opposite rota to Cole, so we mostly wave at each other at sunset.", DialogueLine.CALM, 2),
+		DialogueLine.make("Nicolle marks books, I file reports. Romantic household, ours.", DialogueLine.HAPPY, 2),
+		# Friend — why the rules matter to him.
+		DialogueLine.make("I do inspections so nobody has to do rescues. That is the whole job.", DialogueLine.CALM, 5),
+		DialogueLine.make("Noah wants to ride the engine. He is seven. I said we would discuss it at thirty.", DialogueLine.HAPPY, 5),
+		# Close friend.
+		DialogueLine.make("Night weeks are hard. I look in on Noah asleep before I go. Every time.", DialogueLine.SAD, 8),
+		DialogueLine.make("You are out on those streets at all hours. I would rather you were careful than quick.", DialogueLine.CALM, 8),
+	]
+	# Gifts: a thermos-and-sandwich man on a night rota.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["bread", "milk"]
+	def.disliked_gifts = ["scrap"]
+	_add(def)
+
+## Nicolle — teaches at the school, nine to five on weekdays. Weekend afternoons
+## she is out of the house: the grocery on Saturday, the cafe on Sunday.
+func _register_nicolle() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "nicolle"
+	def.display_name = "Nicolle"
+	def.home_anchor  = BROOKE_HOME
+	def.shirt_color  = Color("#7a9ec4")   # chalk-dust blue
+	def.pants_color  = Color("#3a3550")
+	def.hair_color   = Color("#241a16")
+	def.skin_color   = BROOKE_SKIN_ADULT
+	# First match wins, so the weekday and weekend entries come before the
+	# catch-all that keeps her at home the rest of the time.
+	var sched : Array[NPCScheduleEntry] = [
+		# Mon-Fri: at the school, 9 to 5.
+		NPCScheduleEntry.make_hours([1, 2, 3, 4, 5], 9.0, 17.0, "School", Vector2(0, 40), -1, true),
+		# Weekend afternoons out: Saturday the grocery, Sunday the cafe.
+		NPCScheduleEntry.make_hours([6], 13.0, 17.0, "Grocery", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([0], 13.0, 17.0, "Cafe",    Vector2(0, 40), -1, true),
+		# Everything else: home.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, BROOKE_HOME, Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		# Stranger.
+		DialogueLine.make("Morning! Sorry — teacher voice. I cannot switch it off.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Thirty seven-year-olds and one me. Outnumbered, but winning.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("If a parcel comes for the school, the office door is the green one.", DialogueLine.CALM, 0),
+		# Acquaintance.
+		DialogueLine.make("Noah is in my class this year. He has opinions about that.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("James is on nights this week, so it is me and the small one.", DialogueLine.CALM, 2),
+		DialogueLine.make("Saturday is the shop, Sunday is the cafe. That is my whole weekend and I love it.", DialogueLine.HAPPY, 2),
+		# Friend.
+		DialogueLine.make("Twelve years teaching. Still cannot sleep the night before term starts.", DialogueLine.CALM, 5),
+		DialogueLine.make("One kid who thought they were not clever finds out they are. That is the job.", DialogueLine.HAPPY, 5),
+		# Close friend.
+		DialogueLine.make("Marking done, house quiet, James at the station. Glad of the company.", DialogueLine.CALM, 8),
+		DialogueLine.make("Noah talks about you at dinner, you know. You have got a small fan.", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: staffroom tea and a decent loaf.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread", "butter"]
+	def.disliked_gifts = ["bolts"]
+	_add(def)
+
+## Noah Brooke — James and Nicolle's son, seven. He shadows his mother: in her
+## class on weekdays, trailing her round the shop and the cafe at weekends.
+func _register_noah() -> void:
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "noah"
+	def.display_name = "Noah"
+	def.home_anchor  = BROOKE_HOME
+	def.shirt_color  = Color("#e0703c")   # bright orange t-shirt
+	def.pants_color  = Color("#3f4a63")
+	def.hair_color   = Color("#191110")
+	def.skin_color   = BROOKE_SKIN_CHILD
+	def.sprite_scale = 0.8                # a head shorter than the grown-ups
+	# Nicolle's schedule with a small offset, so he stands beside her rather
+	# than inside her. Keep the two in step if hers is ever changed.
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours([1, 2, 3, 4, 5], 9.0, 17.0, "School", Vector2(34, 44), -1, true),
+		NPCScheduleEntry.make_hours([6], 13.0, 17.0, "Grocery", Vector2(34, 44), -1, true),
+		NPCScheduleEntry.make_hours([0], 13.0, 17.0, "Cafe",    Vector2(34, 44), -1, true),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, BROOKE_HOME, Vector2(28, 24), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("Are you the package person?! Mum said you are the package person!", DialogueLine.SURPRISED, 0),
+		DialogueLine.make("My dad is a FIRE MARSHAL. That is the boss of fires.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("I am not allowed on the fire engine yet. It is a whole thing.", DialogueLine.SAD, 0),
+		DialogueLine.make("Mum is my teacher AND my mum. So unfair, she knows everything.", DialogueLine.MAD, 2),
+		DialogueLine.make("Can I hold a package? I will be really careful. I am good at careful.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("When I am big I am going to have a bike like yours and go SO fast.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Dad works nights sometimes. I leave the hall light on for him.", DialogueLine.CALM, 8),
+	]
+	# Gifts: seven years old. Butter is not a treat, whatever the grown-ups think.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread"]
+	def.disliked_gifts = ["butter"]
+	_add(def)
 
 ## Aidan — the mechanic. Works the shop 11am to 8pm on weekdays and a short
 ## Saturday shift, drinks at the pub after closing on Friday and Saturday, and
@@ -173,7 +403,7 @@ func _register_nayra() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "nayra"
 	def.display_name = "Nayra"
-	def.home_anchor  = "Apartments"
+	def.home_anchor  = "House200"        # moved out of Apartments: player home
 	def.shirt_color  = Color("#8fbf8a")   # grocer's green apron
 	def.pants_color  = Color("#57506b")
 	def.hair_color   = Color("#2b1f1a")
@@ -182,7 +412,7 @@ func _register_nayra() -> void:
 	# the flat covers the gap; both are interior, so she's found by going inside.
 	var sched : Array[NPCScheduleEntry] = [
 		NPCScheduleEntry.make_hours([], 7.0, 1.0, "Grocery",    Vector2(0, 40), -1, true),
-		NPCScheduleEntry.make_hours([], 1.0, 7.0, "Apartments", Vector2(0, 20), -1, true),
+		NPCScheduleEntry.make_hours([], 1.0, 7.0, "House200", Vector2(0, 20), -1, true),
 	]
 	def.schedule = sched
 	def.random_dialogue = true
@@ -540,14 +770,14 @@ func _register_mabel() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "mabel"
 	def.display_name = "Mabel"
-	def.home_anchor  = "Apartments"
+	def.home_anchor  = "House134"        # moved out of Apartments: player home
 	def.shirt_color  = Color("#d46a6a")
 	def.hair_color   = Color("#e0d8c8")
 	var sched : Array[NPCScheduleEntry] = [
 		NPCScheduleEntry.make([1, 2, 3], Phase.DAY,    "Building1", Vector2(-30, 40)),
-		NPCScheduleEntry.make([4, 5],    Phase.DAY,    "House84",   Vector2(30, 30)),
+		NPCScheduleEntry.make([4, 5],    Phase.DAY,    "House80",   Vector2(30, 30)),
 		NPCScheduleEntry.make([2, 3],    Phase.SUNSET, "Pub",       Vector2(20, 30)),
-		NPCScheduleEntry.make([],        Phase.NIGHT,  "Apartments", Vector2(0, 20)),
+		NPCScheduleEntry.make([],        Phase.NIGHT,  "House134", Vector2(0, 20)),
 	]
 	def.schedule = sched
 	def.dialogue_lines = [
@@ -564,7 +794,7 @@ func _register_gus() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "gus"
 	def.display_name = "Gus"
-	def.home_anchor  = "House84"
+	def.home_anchor  = "House80"         # moved out of House84: player home
 	def.shirt_color  = Color("#5a7aa0")
 	def.hair_color   = Color("#7a6a4a")
 	var sched : Array[NPCScheduleEntry] = [
@@ -587,13 +817,13 @@ func _register_poppy() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "poppy"
 	def.display_name = "Poppy"
-	def.home_anchor  = "House10"
+	def.home_anchor  = "House12"         # moved out of House10: player home
 	def.shirt_color  = Color("#e0a040")
 	def.hair_color   = Color("#4a3020")
 	var sched : Array[NPCScheduleEntry] = [
-		NPCScheduleEntry.make([1, 2, 3, 4, 5], Phase.DAY,    "House10",    Vector2(50, 40)),
-		NPCScheduleEntry.make([0],             Phase.DAY,    "Apartments", Vector2(-60, 50)),
-		NPCScheduleEntry.make([],              Phase.SUNSET, "House10",    Vector2(0, 25)),
+		NPCScheduleEntry.make([1, 2, 3, 4, 5], Phase.DAY,    "House12",  Vector2(50, 40)),
+		NPCScheduleEntry.make([0],             Phase.DAY,    "House134", Vector2(-60, 50)),
+		NPCScheduleEntry.make([],              Phase.SUNSET, "House12",  Vector2(0, 25)),
 	]
 	def.schedule = sched
 	def.dialogue_lines = [

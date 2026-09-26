@@ -117,7 +117,7 @@ func _ready() -> void:
 	home_selection.dialogue_box_ref = get_node_or_null("DialogueBox")
 	home_selection.background_ref   = $Background
 	var _door_positions : Dictionary = {}
-	for _id in ["Townhouse15", "Apartments", "House84", "House10"]:
+	for _id in GameManager.PLAYER_HOME_IDS:
 		var _door : Node2D = get_node_or_null("Doors/" + _id)
 		if _door != null:
 			_door_positions[_id] = _door.global_position

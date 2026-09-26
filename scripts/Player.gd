@@ -156,14 +156,22 @@ func reset_trail() -> void:
 func _input(event: InputEvent) -> void:
 	if input_locked:
 		return
-	if event is InputEventKey and event.pressed and event.keycode == KEY_P:
+	if event.is_action_pressed("pause_game"):
 		_toggle_pause()
 		return
-	# E (talk to a nearby NPC / advance dialogue) works inside and outside.
-	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
+	# Flattened by a vehicle: the pause menu still works, and an open dialogue
+	# can still be advanced or closed so nothing is left hanging, but no world
+	# actions until back upright — no getting on or off the bike, no throwing,
+	# no hopping, no rummaging in the bag.
+	if _stun_timer > 0.0:
+		if dialogue_box != null and dialogue_box.visible 				and event.is_action_pressed("advance_dialogue"):
+			dialogue_box.advance()
+		return
+	# Interact (talk to a nearby NPC / advance dialogue) works inside and outside.
+	if event.is_action_pressed("interact"):
 		_try_dialogue()
 		return
-	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+	if event.is_action_pressed("advance_dialogue"):
 		if dialogue_box != null and dialogue_box.visible:
 			dialogue_box.advance()
 			return
@@ -174,8 +182,8 @@ func _input(event: InputEvent) -> void:
 		if not (dialogue_box != null and dialogue_box.visible) and not get_tree().paused:
 			_hold_slot(event.keycode - KEY_1)
 			return
-	# Q puts the held portion back in the bag.
-	if event is InputEventKey and event.pressed and event.keycode == KEY_Q:
+	# Stow puts the held portion back in the bag.
+	if event.is_action_pressed("stow_item"):
 		if not (dialogue_box != null and dialogue_box.visible) and not get_tree().paused:
 			_stow_held()
 			return
@@ -193,7 +201,7 @@ func _input(event: InputEvent) -> void:
 		_toggle_bike()
 	if event.is_action_pressed("throw_package"):
 		_try_throw()
-	if event is InputEventKey and event.pressed and event.keycode == KEY_M:
+	if event.is_action_pressed("hop"):
 		_hop()
 
 func _toggle_pause() -> void:
@@ -441,11 +449,8 @@ func _process_foot(delta: float) -> void:
 	# Knocked down by the bus: no control at all until the stun runs out. The
 	# residual shove still carries, so the player slides to where they land.
 	if _stun_timer > 0.0:
-		_stun_timer -= delta
 		velocity = _knock_vel
 		_knock_vel = _knock_vel.move_toward(Vector2.ZERO, 520.0 * delta)
-		if _stun_timer <= 0.0:
-			_end_knockdown()
 		return
 
 	var dir := _get_dir()
@@ -753,6 +758,14 @@ func _tick_effects(delta: float) -> void:
 	# otherwise a puddle hit while walking would leave the timer stuck.
 	if not on_bike and _spin_timer > 0.0:
 		_spin_timer -= delta
+	# The knockdown drains wherever the player is. It used to tick only inside
+	# _process_foot, so a player who got onto the bike mid-stun stayed stunned
+	# indefinitely — which also left them immune to further vehicle hits, since
+	# those bail out while the timer is running.
+	if _stun_timer > 0.0:
+		_stun_timer -= delta
+		if _stun_timer <= 0.0:
+			_end_knockdown()
 	if boost_timer > 0.0:
 		boost_timer -= delta
 		if boost_timer <= 0.0:

@@ -1,5 +1,7 @@
 extends Control
 
+const KeybindScreenScript := preload("res://scripts/KeybindScreen.gd")
+
 @onready var map_view      : Control     = $MapView
 @onready var map_texture   : TextureRect = $MapView/MapPanel/VBox/MapTexture
 @onready var player_marker : Label       = $MapView/MapPanel/VBox/MapTexture/PlayerMarker
@@ -12,6 +14,7 @@ extends Control
 @onready var expiry_value  : Label       = $SettingsView/SettingsPanel/VBox/ExpiryRow/ExpiryValue
 @onready var scale_slider  : HSlider     = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleSlider
 @onready var scale_value   : Label       = $SettingsView/SettingsPanel/VBox/ScaleRow/ScaleValue
+@onready var controls_button : Button = $SettingsView/SettingsPanel/VBox/ControlsButton
 @onready var status_button   : Button        = $PanelContainer/HBoxContainer/Status
 @onready var status_view     : Control       = $StatusView
 @onready var friends_button  : Button        = $PanelContainer/HBoxContainer/Friends
@@ -35,6 +38,7 @@ var home_position : Vector2      = Vector2.ZERO   # set by Main once a home is c
 var has_home      : bool         = false
 var _selected     : int          = -1     # index into _npc_markers, -1 = none
 var _name_label   : Label        = null
+var _keybind_screen : CanvasLayer = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -47,6 +51,7 @@ func _ready() -> void:
 	$PanelContainer/HBoxContainer/Save.pressed.connect(_on_save_pressed)
 	$MapView/MapPanel/VBox/CloseMap.pressed.connect(_on_close_map_pressed)
 	$SettingsView/SettingsPanel/VBox/CloseSettings.pressed.connect(_on_close_settings_pressed)
+	controls_button.pressed.connect(_on_controls_pressed)
 	snap_toggle.toggled.connect(_on_snap_toggled)
 	easy_bike_toggle.toggled.connect(_on_easy_bike_toggled)
 	drops_spin.value_changed.connect(_on_drops_changed)
@@ -113,6 +118,15 @@ func _on_settings_button_pressed() -> void:
 
 func _on_close_settings_pressed() -> void:
 	settings_view.visible = false
+
+## Open the controls page over the settings panel. It is created on first use
+## and kept, so the row list is built once.
+func _on_controls_pressed() -> void:
+	if _keybind_screen == null:
+		_keybind_screen = KeybindScreenScript.new()
+		_keybind_screen.name = "KeybindScreen"
+		add_child(_keybind_screen)
+	_keybind_screen.open()
 
 # ── Status ────────────────────────────────────────
 ## Player + bike read-out. The screen refreshes itself from GameManager.

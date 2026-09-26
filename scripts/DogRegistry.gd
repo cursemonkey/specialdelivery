@@ -98,6 +98,6 @@ func _register_all() -> void:
 	# The Thornes' \u2014 late roamer around the east side.
 	_add(_make("ember",   "Ember",   "elias_thorne",     "House138",   19.0,   5.0, 170.0, "#7a3b2a", "#d4a020"))
 	# Nayra's, out after the shop shuts, keeps near the Apartments.
-	_add(_make("mochi",   "Mochi",   "nayra",            "Apartments", 20.0,   4.0, 130.0, "#2e2a28", "#8fbf8a"))
+	_add(_make("mochi",   "Mochi",   "nayra",            "House200",   20.0,   4.0, 130.0, "#2e2a28", "#8fbf8a"))
 	# Doctor's dog, overlaps both ends \u2014 out at dusk, in after dawn.
-	_add(_make("pepper",  "Pepper",  "doctor_carrington","House10",    17.0,   7.0, 155.0, "#5c5c5c", "#c9d1d9"))
+	_add(_make("pepper",  "Pepper",  "doctor_carrington","House12",    17.0,   7.0, 155.0, "#5c5c5c", "#c9d1d9"))

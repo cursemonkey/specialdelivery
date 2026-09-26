@@ -21,7 +21,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not typing:
 		return
-	var speed : float = CHARS_PER_SEC * (FAST_MULTIPLIER if Input.is_key_pressed(KEY_SPACE) else 1.0)
+	var speed : float = CHARS_PER_SEC * (FAST_MULTIPLIER if Input.is_action_pressed("advance_dialogue") else 1.0)
 	_char_progress = minf(_char_progress + speed * delta, float(_current_text().length()))
 	label.visible_characters = int(_char_progress)
 	if label.visible_characters >= _current_text().length():
