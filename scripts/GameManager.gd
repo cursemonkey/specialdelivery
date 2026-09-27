@@ -122,6 +122,13 @@ var vehicle : int = Vehicle.BIKE
 var storage_upgrades : int = 0
 const STORAGE_UPGRADE_SLOTS : int = 2   # packages gained per upgrade bought
 
+## Storage buckets crafted at the home workbench and bolted on. Cheaper than
+## Aidan's upgrade (a few bits of salvage), so each adds less, and there is only
+## room for so many on the frame.
+var storage_buckets : int = 0
+const BUCKET_SLOTS        : int = 1   # packages gained per bucket fitted
+const MAX_STORAGE_BUCKETS : int = 2   # one front, one back
+
 signal bike_stats_changed()
 
 func has_scooter() -> bool:
@@ -152,7 +159,20 @@ func base_capacity() -> int:
 
 ## Recompute the rack from the vehicle plus everything bolted to it.
 func _apply_capacity() -> void:
-	set_bike_max_packages(base_capacity() + storage_upgrades * STORAGE_UPGRADE_SLOTS)
+	set_bike_max_packages(base_capacity() + storage_upgrades * STORAGE_UPGRADE_SLOTS
+			+ storage_buckets * BUCKET_SLOTS)
+
+## Bolt a crafted bike part onto the bike. Returns false (changing nothing) when
+## it can't take another, so the caller keeps the part in hand.
+func fit_bike_part(id: String) -> bool:
+	match id:
+		"storage_bucket":
+			if storage_buckets >= MAX_STORAGE_BUCKETS:
+				return false
+			storage_buckets += 1
+			_apply_capacity()
+			return true
+	return false
 
 ## Room left on the rack right now.
 func package_space() -> int:
@@ -427,6 +447,57 @@ func add_portions(id: String, amount: int) -> bool:
 		left -= take2
 	inventory_changed.emit()
 	return true
+
+## Take `amount` portions of `id` out of the bag, emptying later stacks first
+## so the one nearest the front stays put. All-or-nothing: returns false and
+## changes nothing when the bag holds fewer than that.
+func remove_portions(id: String, amount: int) -> bool:
+	if amount <= 0:
+		return true
+	if count_of(id) < amount:
+		return false
+	var left : int = amount
+	for i in range(inventory.size() - 1, -1, -1):
+		if left <= 0:
+			break
+		var s : Variant = inventory[i]
+		if not (s is Dictionary) or str(s.get("id", "")) != id:
+			continue
+		var have : int = int(s.get("portions", 0))
+		var take : int = mini(have, left)
+		left -= take
+		if have - take <= 0:
+			inventory[i] = null
+		else:
+			s["portions"] = have - take
+			inventory[i]  = s
+	inventory_changed.emit()
+	return true
+
+## True when the bag holds every input `recipe` needs (see ItemRegistry.RECIPES).
+func can_craft(recipe: Dictionary) -> bool:
+	var inputs : Dictionary = recipe.get("inputs", {})
+	for id in inputs:
+		if count_of(str(id)) < int(inputs[id]):
+			return false
+	return true
+
+## Use up the recipe's inputs and put its output in the bag. Returns "" on
+## success, or a short reason it couldn't be made. Nothing is consumed unless
+## the output actually fits.
+func craft(recipe: Dictionary) -> String:
+	if not can_craft(recipe):
+		return "missing materials"
+	var inputs : Dictionary = recipe.get("inputs", {})
+	var output : String     = str(recipe.get("output", ""))
+	for id in inputs:
+		remove_portions(str(id), int(inputs[id]))
+	if not add_item(output):
+		# No room even with the materials gone: put them back as they were.
+		for id in inputs:
+			add_portions(str(id), int(inputs[id]))
+		return "no room in your bag"
+	return ""
 
 ## Eat one portion from `slot`, restoring that item's energy. The slot empties
 ## when its last portion is gone. Returns false if the slot has nothing to eat.
@@ -833,6 +904,7 @@ func save_game(slot: int = -1) -> void:
 		"bike_off_road":     bike_off_road,
 		"vehicle":          vehicle,
 		"storage_upgrades": storage_upgrades,
+		"storage_buckets":  storage_buckets,
 		"hour":      TimeManager.hour,   # resume the in-game clock where we left off
 		# Condition at the moment of saving. Persisted so reloading can't be
 		# used to refill HP or energy — you resume as worn out as you were.
@@ -882,6 +954,7 @@ func load_game(slot: int) -> bool:
 	bike_off_road     = float(parsed.get("bike_off_road",  BIKE_BASE_OFF_ROAD))
 	vehicle          = int(parsed.get("vehicle",          Vehicle.BIKE))
 	storage_upgrades = maxi(int(parsed.get("storage_upgrades", 0)), 0)
+	storage_buckets  = clampi(int(parsed.get("storage_buckets", 0)), 0, MAX_STORAGE_BUCKETS)
 	# Older saves have no clock — fall back to the normal 6am start.
 	loaded_hour = float(parsed.get("hour", TimeManager.DAY_START_HOUR))
 	# Resume the player's condition. Saves predating this restore a full bar,
@@ -974,6 +1047,7 @@ func reset() -> void:
 	bike_off_road     = BIKE_BASE_OFF_ROAD
 	vehicle           = Vehicle.BIKE
 	storage_upgrades  = 0
+	storage_buckets   = 0
 	current_slot = -1
 	_ledger.clear()
 	_clear_inventory()

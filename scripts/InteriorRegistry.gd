@@ -36,6 +36,15 @@ const ApartmentsScene  : PackedScene = preload("res://scenes/ApartmentsInterior.
 const House84Scene     : PackedScene = preload("res://scenes/House84Interior.tscn")
 const House10Scene     : PackedScene = preload("res://scenes/House10Interior.tscn")
 
+## Each home's second room, through a doorway in its east wall: a garage for
+## the houses and the apartments, a back yard for the townhouse. Each holds the
+## workbench (see HomeAnnex.gd) and, like the homes, paints itself
+## procedurally until it has art.
+const Townhouse15BackYardScene : PackedScene = preload("res://scenes/Townhouse15BackYard.tscn")
+const ApartmentsGarageScene    : PackedScene = preload("res://scenes/ApartmentsGarage.tscn")
+const House84GarageScene       : PackedScene = preload("res://scenes/House84Garage.tscn")
+const House10GarageScene       : PackedScene = preload("res://scenes/House10Garage.tscn")
+
 func _register_overrides() -> void:
 	# City Hall is large enough that the interior scrolls, and is hand-authored:
 	# its art and collision live in CityHallInterior.tscn. Keep `size` matching
@@ -50,6 +59,26 @@ func _register_overrides() -> void:
 	_add(_make("Apartments",  Vector2(560, 380), ApartmentsScene))
 	_add(_make("House84",     Vector2(620, 420), House84Scene))
 	_add(_make("House10",     Vector2(700, 470), House10Scene))
+	# …and the room behind each. Room ids aren't door markers, so these can only
+	# be reached from inside the home they belong to.
+	_link_rooms("Townhouse15", "Townhouse15_BackYard", "Back Yard", "grass",    Vector2(560, 360), Townhouse15BackYardScene)
+	_link_rooms("Apartments",  "Apartments_Garage",    "Garage",    "concrete", Vector2(480, 340), ApartmentsGarageScene)
+	_link_rooms("House84",     "House84_Garage",       "Garage",    "concrete", Vector2(520, 360), House84GarageScene)
+	_link_rooms("House10",     "House10_Garage",       "Garage",    "concrete", Vector2(560, 380), House10GarageScene)
+
+## Register `room_id` as the room through the east wall of `home_id` (already
+## registered), with the doorway in each signed for the other.
+func _link_rooms(home_id: String, room_id: String, label: String, floor_style: String, size: Vector2, scene: PackedScene) -> void:
+	var home : InteriorDefinition = _defs[home_id]
+	home.link_id    = room_id
+	home.link_label = label
+	home.link_side  = InteriorDefinition.SIDE_EAST
+	var room : InteriorDefinition = _make(room_id, size, scene)
+	room.link_id     = home_id
+	room.link_label  = "Indoors"
+	room.link_side   = InteriorDefinition.SIDE_WEST
+	room.floor_style = floor_style
+	_add(room)
 
 func _make(id: String, size: Vector2, scene: PackedScene = null) -> InteriorDefinition:
 	var d : InteriorDefinition = InteriorDefinition.new()

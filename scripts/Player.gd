@@ -261,9 +261,26 @@ func _try_dialogue() -> void:
 				return
 		elif interior_manager.try_enter_nearest(global_position):
 			return
-	# Nobody to talk to and no door to open: E eats what's in hand.
+		# At the workbench in a home's garage or back yard: craft.
+		if interior_manager.try_use_workbench(global_position):
+			return
+	# Nobody to talk to and no door to open: E uses what's in hand — bolts a
+	# bike part on, or eats food.
 	if GameManager.is_holding():
-		_eat_held()
+		if ItemRegistry.is_bike_part(GameManager.held_item):
+			_fit_held_part()
+		else:
+			_eat_held()
+
+## Bolt the held bike part onto the bike. Refused (keeping it in hand) when the
+## bike has no room left for another.
+func _fit_held_part() -> void:
+	var id : String = GameManager.held_item
+	if not GameManager.fit_bike_part(id):
+		GameManager.show_message("🚲 There's no room on the bike for another %s." % ItemRegistry.display_name(id))
+		return
+	GameManager.take_held()
+	GameManager.show_message("%s Bolted the %s onto your bike. Rack now holds %d packages." 			% [ItemRegistry.icon(id), ItemRegistry.display_name(id), GameManager.bike_max_packages])
 
 ## Hand the held portion to `npc`. Their reaction comes from the gift tables on
 ## their NPCDefinition (see NPCRegistry): loved and liked add friendship,

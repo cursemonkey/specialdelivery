@@ -31,6 +31,9 @@ signal midnight_passed()
 ## Emitted when the clock crosses into a new whole hour — hour-based NPC
 ## schedules re-evaluate on this.
 signal hour_changed(new_hour: int)
+## Emitted after skip_hours() jumps the clock (a same-day nap). NPCs snap
+## straight to wherever their schedule now puts them rather than walking there.
+signal time_skipped()
 
 var phase         : int   = Phase.DAY
 var weekday       : int   = 0     # 0 = Sunday … 5 = Friday (mirrors GameManager.DAY_NAMES)
@@ -78,8 +81,14 @@ func advance(delta: float) -> void:
 func skip_hours(hours: float) -> bool:
 	var total  : float = hour + hours
 	var rolled : bool  = total >= 24.0
+	var before : float = hour
 	hour = fposmod(total, 24.0)
 	_update_phase()
+	# Without these, hour-based schedules (NPCs, police) stayed wherever they
+	# were before the nap until the next whole hour ticked over.
+	if int(hour) != int(before) or rolled:
+		hour_changed.emit(int(hour))
+	time_skipped.emit()
 	return rolled
 
 ## True if sleeping `hours` from now would carry the player past midnight.

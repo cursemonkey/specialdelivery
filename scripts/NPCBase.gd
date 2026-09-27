@@ -53,6 +53,8 @@ func _ready() -> void:
 	TimeManager.day_started.connect(func(_weekday: int) -> void: _retarget(true))
 	# Hour-based schedule entries (e.g. shift work) change on the hour.
 	TimeManager.hour_changed.connect(func(_h: int) -> void: _retarget(false))
+	# A nap jumps the clock: place them at the new spot, as at the start of a day.
+	TimeManager.time_skipped.connect(func() -> void: _retarget(true))
 	_retarget(true)
 
 func _physics_process(delta: float) -> void:

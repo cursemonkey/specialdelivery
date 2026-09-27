@@ -60,7 +60,25 @@ const ITEMS : Dictionary = {
 		"portions": 1,
 		"material": true,
 	},
+	# Bike parts. Made at the home workbench rather than bought; using one
+	# (E while holding it) bolts it onto the bike. See GameManager.fit_bike_part.
+	"storage_bucket": {
+		"id":       "storage_bucket",
+		"name":     "Storage Bucket",
+		"icon":     "🪣",
+		"price":    0,
+		"energy":   0,
+		"portions": 1,
+		"bike_part": true,
+	},
 }
+
+## What the workbench can make. Each recipe consumes `inputs` (item id ->
+## portions) from the bag and puts one `output` in it. Order is the order the
+## crafting panel lists them.
+const RECIPES : Array = [
+	{"output": "storage_bucket", "inputs": {"scrap": 3, "bolts": 5}},
+]
 
 ## Ids in the order Nayra offers them.
 const SHOP_STOCK : Array = ["butter", "bread", "milk"]
@@ -71,6 +89,10 @@ const GARAGE_STOCK : Array = ["scrap", "bolts"]
 ## True for workshop materials, which sit in the bag but can't be eaten.
 func is_material(id: String) -> bool:
 	return bool(get_item(id).get("material", false))
+
+## True for parts that are fitted to the bike rather than eaten or used up.
+func is_bike_part(id: String) -> bool:
+	return bool(get_item(id).get("bike_part", false))
 
 func get_item(id: String) -> Dictionary:
 	return ITEMS.get(id, {})

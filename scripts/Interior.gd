@@ -7,6 +7,9 @@ extends Node2D
 
 signal exit_requested
 signal sleep_requested
+## Walked through the doorway into the linked room (a home's garage or back
+## yard, or back from it). InteriorManager swaps rooms in response.
+signal link_requested(room_id: String)
 
 const WALL_THICKNESS : float   = 10.0
 const BED_SIZE       : Vector2 = Vector2(72, 46)
@@ -18,16 +21,30 @@ var _size      : Vector2 = Vector2.ZERO
 var _doorway_w : float   = 64.0
 var _is_home   : bool    = false
 var _bed_rect  : Rect2   = Rect2()
+var _link_id    : String = ""
+var _link_label : String = ""
+var _link_side  : int    = InteriorDefinition.SIDE_EAST
+var _floor      : String = "tiles"
+
+## Set by InteriorManager before build(): false hides the linked doorway, so a
+## home the player hasn't bought doesn't lead into its garage.
+var link_enabled : bool = true
 
 func build(def: InteriorDefinition, is_home: bool) -> void:
 	_size      = def.size
 	_doorway_w = def.doorway_width
 	_is_home   = is_home
+	_floor     = def.floor_style
+	if def.has_link() and link_enabled:
+		_link_id    = def.link_id
+		_link_label = def.link_label
+		_link_side  = def.link_side
 	z_index    = -1000   # render behind the player
 	if _is_home:
 		_bed_rect = _resolve_bed_rect()
 	_build_walls()
 	_build_exit_area()
+	_build_link_area()
 	queue_redraw()
 
 ## Where the bed sits. An authored scene places a Marker2D named "Bed" on the
@@ -70,6 +87,23 @@ func interior_npc_spot(index: int, count: int) -> Vector2:
 	var x     : float = _size.x * float(index + 1) / float(slots + 1)
 	return Vector2(clampf(x, 40.0, _size.x - 40.0), _size.y * 0.45)
 
+## Where the player appears on coming through from the linked room — just
+## inside the linked doorway, or at a Marker2D named "LinkSpawn".
+func link_spawn_point() -> Vector2:
+	var m : Marker2D = get_node_or_null("LinkSpawn") as Marker2D
+	if m != null:
+		return m.position
+	var x : float = _size.x - 50.0 if _link_side == InteriorDefinition.SIDE_EAST else 50.0
+	return Vector2(x, _size.y * 0.5)
+
+func has_link() -> bool:
+	return not _link_id.is_empty()
+
+# y-range [top, bottom] of the linked doorway's gap in the east or west wall.
+func _link_gap() -> Vector2:
+	var half : float = _doorway_w * 0.5
+	return Vector2(_size.y * 0.5 - half, _size.y * 0.5 + half)
+
 # x-range [left, right] of the doorway gap in the south wall.
 func _door_gap() -> Vector2:
 	var half : float = _doorway_w * 0.5
@@ -84,10 +118,20 @@ func _build_walls() -> void:
 	var t   : float   = WALL_THICKNESS
 	var gap : Vector2 = _door_gap()
 	_add_wall(body, Rect2(-t, -t, _size.x + 2.0 * t, t))          # north
-	_add_wall(body, Rect2(-t, 0.0, t, _size.y))                   # west
-	_add_wall(body, Rect2(_size.x, 0.0, t, _size.y))              # east
+	_add_side_wall(body, -t,      InteriorDefinition.SIDE_WEST)   # west
+	_add_side_wall(body, _size.x, InteriorDefinition.SIDE_EAST)   # east
 	_add_wall(body, Rect2(0.0, _size.y, gap.x, t))               # south-left
 	_add_wall(body, Rect2(gap.y, _size.y, _size.x - gap.y, t))   # south-right
+
+# An east or west wall, split around the linked doorway when it's on that side.
+func _add_side_wall(body: StaticBody2D, x: float, side: int) -> void:
+	var t : float = WALL_THICKNESS
+	if not has_link() or _link_side != side:
+		_add_wall(body, Rect2(x, 0.0, t, _size.y))
+		return
+	var gap : Vector2 = _link_gap()
+	_add_wall(body, Rect2(x, 0.0, t, gap.x))
+	_add_wall(body, Rect2(x, gap.y, t, _size.y - gap.y))
 
 func _add_wall(body: StaticBody2D, rect: Rect2) -> void:
 	var shape : CollisionShape2D  = CollisionShape2D.new()
@@ -116,6 +160,32 @@ func _build_exit_area() -> void:
 	area.add_child(shape)
 	area.body_entered.connect(_on_exit_body_entered)
 
+## Wire up the doorway to the linked room, as _build_exit_area does for the way
+## out: an authored Area2D named "LinkArea" is used if present, otherwise a
+## strip is built just beyond the gap in the side wall.
+func _build_link_area() -> void:
+	if not has_link():
+		return
+	var authored : Area2D = get_node_or_null("LinkArea") as Area2D
+	if authored != null:
+		authored.body_entered.connect(_on_link_body_entered)
+		return
+	var gap  : Vector2 = _link_gap()
+	var area : Area2D  = Area2D.new()
+	add_child(area)
+	var shape : CollisionShape2D = CollisionShape2D.new()
+	var box   : RectangleShape2D = RectangleShape2D.new()
+	box.size       = Vector2(24.0, gap.y - gap.x)
+	shape.shape    = box
+	var x : float = _size.x + 14.0 if _link_side == InteriorDefinition.SIDE_EAST else -14.0
+	shape.position = Vector2(x, _size.y * 0.5)
+	area.add_child(shape)
+	area.body_entered.connect(_on_link_body_entered)
+
+func _on_link_body_entered(body: Node) -> void:
+	if body == player_ref:
+		link_requested.emit(_link_id)
+
 func _on_exit_body_entered(body: Node) -> void:
 	if body == player_ref:
 		exit_requested.emit()
@@ -137,8 +207,18 @@ func _draw() -> void:
 	draw_rect(Rect2(-3000, -3000, _size.x + 6000, _size.y + 6000), Color.BLACK)
 	if not _is_procedural():
 		return
-	# White room floor with a faint grey checkerboard so motion reads clearly.
-	draw_rect(Rect2(Vector2.ZERO, _size), Color(0.93, 0.93, 0.93))
+	# Room floor with a faint checkerboard so motion reads clearly: white tiles
+	# indoors, grey concrete in a garage, grass in a back yard.
+	var floor_a : Color = Color(0.93, 0.93, 0.93)
+	var floor_b : Color = Color(0.85, 0.85, 0.87)
+	match _floor:
+		"concrete":
+			floor_a = Color(0.62, 0.62, 0.60)
+			floor_b = Color(0.57, 0.57, 0.55)
+		"grass":
+			floor_a = Color(0.45, 0.66, 0.36)
+			floor_b = Color(0.41, 0.61, 0.33)
+	draw_rect(Rect2(Vector2.ZERO, _size), floor_a)
 	var cell : float = 32.0
 	var cols : int   = int(ceil(_size.x / cell))
 	var rows : int   = int(ceil(_size.y / cell))
@@ -147,8 +227,7 @@ func _draw() -> void:
 			if (i + j) % 2 == 1:
 				var x : float = float(i) * cell
 				var y : float = float(j) * cell
-				draw_rect(Rect2(x, y, minf(cell, _size.x - x), minf(cell, _size.y - y)),
-						Color(0.85, 0.85, 0.87))
+				draw_rect(Rect2(x, y, minf(cell, _size.x - x), minf(cell, _size.y - y)), floor_b)
 	draw_rect(Rect2(Vector2.ZERO, _size), Color(0.14, 0.14, 0.14), false, WALL_THICKNESS)
 	# Open the doorway in the south wall and mark it.
 	var gap : Vector2 = _door_gap()
@@ -156,6 +235,21 @@ func _draw() -> void:
 	draw_rect(Rect2(gap.x, _size.y - 5.0, gap.y - gap.x, 9.0), Color(0.55, 0.35, 0.18))
 	draw_string(ThemeDB.fallback_font, Vector2(gap.x - 4.0, _size.y + 28.0), "EXIT",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.8, 0.8, 0.8))
+	# The doorway through to the linked room, signed with where it goes.
+	if has_link():
+		var lg : Vector2 = _link_gap()
+		var wx : float   = _size.x - WALL_THICKNESS if _link_side == InteriorDefinition.SIDE_EAST else -WALL_THICKNESS
+		draw_rect(Rect2(wx, lg.x, WALL_THICKNESS * 2.0, lg.y - lg.x), Color.BLACK)
+		var mx : float = _size.x - 5.0 if _link_side == InteriorDefinition.SIDE_EAST else -4.0
+		draw_rect(Rect2(mx, lg.x, 9.0, lg.y - lg.x), Color(0.55, 0.35, 0.18))
+		var font : Font  = ThemeDB.fallback_font
+		var text : String = _link_label.to_upper() + (" →" if _link_side == InteriorDefinition.SIDE_EAST else "")
+		if _link_side == InteriorDefinition.SIDE_WEST:
+			text = "← " + text
+		var tw : float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+		var tx : float = _size.x - tw - 16.0 if _link_side == InteriorDefinition.SIDE_EAST else 16.0
+		draw_string(font, Vector2(tx, lg.x - 8.0), text,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.25, 0.25, 0.25))
 	# Bed (home only).
 	if _is_home:
 		draw_rect(_bed_rect, Color(0.55, 0.7, 0.95))

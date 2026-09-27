@@ -32,6 +32,15 @@ extends Node2D
 @export var idle_frame_time  : float     = 0.28   # seconds per idle frame
 @export var idle_reuses_walk : bool      = false  # animate idle from the walk frames
 
+# ── Mapped layout (optional) ───────────────────────────────
+# Filled from the sheet's JSON (see NPCDefinition.load_sheet_layout). When
+# walk_rows is set, rows are looked up per facing here instead of by ROW_*, and
+# idle frames come from the same sheet: the idle row for the facing if there is
+# one, else that facing's standing pose.
+var walk_rows   : Dictionary = {}   # facing -> row
+var idle_rows   : Dictionary = {}   # facing -> row
+var still_cells : Dictionary = {}   # facing -> Vector2i(col, row)
+
 var _walking : bool = false
 
 func _ready() -> void:
@@ -55,6 +64,8 @@ func _active_sheet() -> Texture2D:
 func frames_for_state(walking: bool) -> int:
 	if walking:
 		return maxi(1, frame_count)
+	if not walk_rows.is_empty():
+		return maxi(1, idle_frame_count) if not idle_rows.is_empty() else 1
 	if idle_sheet != null:
 		return maxi(1, idle_frame_count if idle_frame_count > 0 else frame_count)
 	if idle_reuses_walk and sheet != null:
@@ -90,24 +101,36 @@ func _draw() -> void:
 func _draw_sheet() -> void:
 	var sheet : Texture2D = _active_sheet()
 	var rows : int = maxi(1, int(sheet.get_height() / maxi(1, frame_size.y)))
-	var row  : int = _row_for_facing()
-	if row >= rows:
-		row = 0
-	var col : int = _walk_frame % maxi(1, frame_count)
-	var src : Rect2 = Rect2(
-		Vector2(col * frame_size.x, row * frame_size.y),
-		Vector2(frame_size))
+	var cell : Vector2i
+	if not walk_rows.is_empty():
+		cell = _mapped_cell()
+	else:
+		var row : int = _row_for_facing()
+		if row >= rows:
+			row = 0
+		cell = Vector2i(_walk_frame % maxi(1, frame_count), row)
+	var src : Rect2 = Rect2(Vector2(cell * frame_size), Vector2(frame_size))
 	# Scale the frame, anchored on the NPC's feet rather than its centre.
 	var draw_size : Vector2 = Vector2(frame_size) * sheet_scale
 	var dst : Rect2 = Rect2(
 		sheet_offset - Vector2(draw_size.x * 0.5, draw_size.y),
 		draw_size)
 	# Flip horizontally for LEFT when the sheet has no dedicated left row.
-	if _facing == Vector2.LEFT and rows <= ROW_LEFT:
+	if _facing == Vector2.LEFT and walk_rows.is_empty() and rows <= ROW_LEFT:
 		draw_texture_rect_region(sheet, Rect2(dst.position + Vector2(dst.size.x, 0),
 				Vector2(-dst.size.x, dst.size.y)), src)
 	else:
 		draw_texture_rect_region(sheet, dst, src)
+
+## Sheet cell for the current facing/state under a mapped layout.
+func _mapped_cell() -> Vector2i:
+	if _walking or not idle_rows.has(_facing):
+		if not _walking and still_cells.has(_facing):
+			return still_cells[_facing]
+		var walk_row : int = walk_rows.get(_facing, walk_rows.get(Vector2.DOWN, 0))
+		var col      : int = _walk_frame % maxi(1, frame_count) if _walking else 0
+		return Vector2i(col, walk_row)
+	return Vector2i(_walk_frame % maxi(1, idle_frame_count), idle_rows[_facing])
 
 func _row_for_facing() -> int:
 	if _facing == Vector2.UP:    return ROW_UP

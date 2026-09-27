@@ -42,6 +42,7 @@ func has(id: String) -> bool:
 	return _defs.has(id)
 
 func _add(def: NPCDefinition) -> void:
+	def.load_sheet_layout()
 	_defs[def.id] = def
 
 ## Stable placeholder name for an NPC with no name of its own: the first such
@@ -77,6 +78,70 @@ func _register_all() -> void:
 	_register_elias_thorne()
 	_register_silas_thorne()
 	_register_junia_thorne()
+	_register_teri_sanders()
+
+## Teri Sanders — serves at the pub five nights a week (Wednesday to Sunday,
+## 5pm to 1am) while she saves up and chases modelling work. Outgoing and quick
+## with a line: she knows every regular by name and treats the bar like a stage.
+## Monday and Tuesday are her nights off; Tuesday afternoons she takes her
+## portfolio to the cafe. Lives in House55, a short walk down from the pub.
+const TERI_HOME : String = "House55"
+
+func _register_teri_sanders() -> void:
+	const MON : int = 1
+	const TUE : int = 2
+	# Wed(3) Thu(4) Fri(5) Sat(6) Sun(0). The shift runs past midnight, and
+	# entries match the *current* weekday, so the last hour of each shift is
+	# written against the following day (Thu–Mon), as with Aidan's nights out.
+	var shift_nights : Array[int] = [3, 4, 5, 6, 0]
+	var shift_tails  : Array[int] = [4, 5, 6, 0, 1]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "teri_sanders"
+	def.display_name = "Teri Sanders"
+	def.home_anchor  = TERI_HOME
+	def.shirt_color  = Color("#1f1c24")   # black bar-staff top
+	def.pants_color  = Color("#8a2f4a")   # plum
+	def.hair_color   = Color("#e8c46a")   # honey blonde
+	def.skin_color   = Color("#f0c8a0")
+	# First match wins, so the pub and cafe entries come before the home fallback.
+	var sched : Array[NPCScheduleEntry] = [
+		# Working nights: behind the bar from 5pm…
+		NPCScheduleEntry.make_hours(shift_nights, 17.0, 24.0, "Pub", Vector2(50, 20), -1, true),
+		# …until close at 1am the next morning.
+		NPCScheduleEntry.make_hours(shift_tails, 0.0, 1.0, "Pub", Vector2(50, 20), -1, true),
+		# Tuesday afternoon: portfolio and a latte at the cafe.
+		NPCScheduleEntry.make_hours([TUE], 13.0, 16.0, "Cafe", Vector2(-40, 40), -1, true),
+		# Everything else (sleeping in after late shifts, and Monday off): home.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, TERI_HOME, Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers. Loud and friendly from the first hello — she is the
+	# pub's welcome committee — then the modelling ambitions, then the doubt she
+	# keeps under the smile. Old lines stay in the pool at falling odds.
+	def.dialogue_lines = [
+		# Stranger — bar patter, and she means every word.
+		DialogueLine.make("Hiya! You're new. I'm Teri — I never forget a face, so don't make me.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Pub opens at five. First one's on me if you tell me a good story.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Love the bike. Very 'windswept courier.' It's working for you.", DialogueLine.HAPPY, 0),
+		# Acquaintance — the other job.
+		DialogueLine.make("Serving's the day job. Well, night job. I'm a model. Aspiring. Same thing!", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Had a casting call in the city Monday. They said 'we'll be in touch.' Classic.", DialogueLine.CALM, 2),
+		DialogueLine.make("Five nights a week on my feet. Honestly, it's basically runway training.", DialogueLine.HAPPY, 2),
+		# Friend — what it actually takes.
+		DialogueLine.make("Tuesdays I sit in the cafe redoing my portfolio. Marco says I'm his best decor.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Forty rejections this year. I count them. Is that weird? It's probably weird.", DialogueLine.SAD, 5),
+		DialogueLine.make("Some bloke told me I'd never make it out of a small-town pub. Watch me.", DialogueLine.MAD, 5),
+		# Close friend — the quiet version of her.
+		DialogueLine.make("If I ever do make it, I'm going to miss this place more than I let on.", DialogueLine.CALM, 8),
+		DialogueLine.make("You're the only one who asks how the castings went and actually waits for the answer.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("Got a callback! A real one! You're the first person I've told.", DialogueLine.SURPRISED, 8),
+	]
+	# Gifts: runs on lattes between castings; butter is off the menu before a shoot.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread"]
+	def.disliked_gifts = ["butter"]
+	_add(def)
 
 ## Cole — the firefighter. Works out of the Firehouse on alternating weeks, days
 ## one week and nights the next, on the same week_parity pattern as Doctor
@@ -492,9 +557,9 @@ func officer_works_today(id: String, weekday: int) -> bool:
 		return false
 	return not off[id].has(weekday)
 
-## Flower Campbell — lives and works on the farm. Out in the fields on spring and
-## summer mornings, indoors the rest of the day, church on Sundays and the
-## grocery on Thursday afternoons.
+## Flower Campbell — lives and works on the farm. Out in the fields from 6am to
+## 2pm in spring and summer, indoors the rest of the day, church on Sundays and
+## the grocery on Thursday afternoons.
 func _register_flower_campbell() -> void:
 	const SUN : int = 0
 	const THU : int = 4
@@ -505,15 +570,23 @@ func _register_flower_campbell() -> void:
 	def.shirt_color  = Color("#c0392b")   # red shirt
 	def.pants_color  = Color("#33509c")   # blue pants
 	def.hair_color   = Color("#c1440e")   # red hair
+	# flower_campbell.png + flower_campbell.json: 80x80 cells, 8 walk frames and
+	# a 4-frame breathing idle; rows come from the JSON. She fills ~46px of each
+	# cell, so draw the sheet 1:1 (matching Spider) rather than normalising the
+	# 80px cell down to 68, and drop the ~17px of empty space below her feet.
+	def.sprite_scale  = 80.0 / NPCDefinition.TARGET_FRAME_HEIGHT
+	def.sprite_offset = Vector2(0, 5)
 	var spring_summer : Array[int] = [Calendar.Season.SPRING, Calendar.Season.SUMMER]
 	var sched : Array[NPCScheduleEntry] = [
 		# Sundays: church during the day.
 		NPCScheduleEntry.make_hours([SUN], 9.0, 13.0, "Church", Vector2(0, 40), -1, true),
 		# Thursday afternoons: the grocery store.
 		NPCScheduleEntry.make_hours([THU], 13.0, 17.0, "Grocery", Vector2(0, 40), -1, true),
-		# Spring & summer mornings: wandering the fields outside the farmhouse.
-		NPCScheduleEntry.make_hours([], 6.0, 12.0, "Farm", Vector2(0, 60), -1, false) \
-				.in_seasons(spring_summer).wandering(110.0),
+		# Spring & summer, 6am–2pm: farm rounds across the fields either side of
+		# the farm road (Grass5 west, Grass6 east). Church and the Thursday
+		# grocery run are listed first, so they cut the rounds short on those days.
+		NPCScheduleEntry.make_hours([], 6.0, 14.0, "Farm", Vector2(0, 60), -1, false) \
+				.in_seasons(spring_summer).wandering_in(["Grass5", "Grass6"]),
 		# Everything else: inside the farmhouse.
 		NPCScheduleEntry.make_hours([], 0.0, 24.0, "Farm", Vector2(0, 30), -1, true),
 	]

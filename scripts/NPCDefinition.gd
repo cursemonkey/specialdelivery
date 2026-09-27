@@ -75,6 +75,59 @@ func sprite_sheet() -> Texture2D:
 		return load(path)
 	return null
 
+# Optional JSON layout exported alongside the sheet (res://assets/NPCs/<id>.json,
+# or sheet_json_path). It says which rows hold which animation and facing, so
+# generator exports with rows in any order (e.g. 8-direction sheets) work as-is.
+# load_sheet_layout() fills the fields below from it and overrides frame_size,
+# frame_count and idle_frame_count; with no JSON they stay empty and the sheet
+# follows the plain down/left/right/up row convention.
+@export var sheet_json_path : String = ""
+var walk_rows   : Dictionary = {}   # facing -> row of the walk cycle
+var idle_rows   : Dictionary = {}   # facing -> row of the idle animation
+var still_cells : Dictionary = {}   # facing -> Vector2i(col, row) standing pose
+
+## JSON direction names -> NPC facings. Diagonals are skipped: NPCs only face
+## the four cardinal directions.
+const _JSON_FACINGS : Dictionary = {
+	"south": Vector2.DOWN, "north": Vector2.UP,
+	"east": Vector2.RIGHT, "west": Vector2.LEFT,
+}
+
+func load_sheet_layout() -> void:
+	var path : String = sheet_json_path
+	if path.is_empty():
+		if id.is_empty():
+			return
+		path = SPRITE_DIR + "%s.json" % id
+	if not FileAccess.file_exists(path):
+		return
+	var data : Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not (data is Dictionary and data.has("spritesheet")):
+		push_warning("NPC sheet layout %s has no 'spritesheet' section" % path)
+		return
+	var ss   : Dictionary = data["spritesheet"]
+	var cell : Dictionary = ss.get("cell_size", {})
+	frame_size = Vector2i(int(cell.get("width", frame_size.x)), int(cell.get("height", frame_size.y)))
+	for entry in ss.get("rows", []):
+		var row : int = int(entry.get("row", 0))
+		if entry.get("type", "") == "rotations":
+			var dirs : Array = entry.get("directions", [])
+			for col in dirs.size():
+				if _JSON_FACINGS.has(dirs[col]):
+					still_cells[_JSON_FACINGS[dirs[col]]] = Vector2i(col, row)
+			continue
+		if not _JSON_FACINGS.has(entry.get("direction", "")):
+			continue
+		var facing : Vector2 = _JSON_FACINGS[entry["direction"]]
+		var anim   : String  = String(entry.get("animation", "")).to_lower()
+		var frames : int     = int(entry.get("frame_count", 1))
+		if anim.contains("walk"):
+			walk_rows[facing] = row
+			frame_count = frames
+		elif anim.contains("idle"):
+			idle_rows[facing] = row
+			idle_frame_count = frames
+
 # Daily routine.
 @export var schedule       : Array[NPCScheduleEntry] = []
 

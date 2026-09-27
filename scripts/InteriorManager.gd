@@ -6,6 +6,8 @@ extends Node2D
 
 signal sleep_requested
 signal entered_building
+## E at a home workbench. Main opens the crafting panel.
+signal craft_requested
 
 const InteriorScene : PackedScene = preload("res://scenes/Interior.tscn")
 const STAGE_ORIGIN  : Vector2     = Vector2(100000, 100000)   # far from the world map
@@ -71,30 +73,15 @@ func enter(building_id: String) -> void:
 	_player.force_dismount()
 	_player.in_interior = true
 
-	var def : InteriorDefinition = InteriorRegistry.get_definition(building_id)
-	# A building may supply its own hand-authored interior (painted background,
-	# collision drawn over it); everything else gets the generic room.
-	var packed : PackedScene = def.scene if def.has_custom_scene() else InteriorScene
-	_active = packed.instantiate()
-	# Match the Player (PROCESS_MODE_ALWAYS) so the interior's input/processing
-	# stays consistent with it while dialogue or menus pause the tree.
-	_active.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_active)
-	_active.global_position = STAGE_ORIGIN
-	_active.player_ref = _player
-	_active.build(def, building_id == GameManager.home_id)
-	_active.exit_requested.connect(exit)
-	_active.sleep_requested.connect(_on_sleep)
-
-	_player.global_position = STAGE_ORIGIN + _active.player_spawn_point()
 	_saved = Rect2(_camera.limit_left, _camera.limit_top,
 			_camera.limit_right - _camera.limit_left,
 			_camera.limit_bottom - _camera.limit_top)
-	_apply_limits(Rect2(STAGE_ORIGIN, def.size))
-	_snap_camera()
+	_stage_room(building_id, false)
 
 	if building_id == GameManager.home_id:
-		GameManager.show_message("🏠 Home. Press E at the bed to sleep, or leave by the south doorway.", 4.0)
+		var link : String = InteriorRegistry.get_definition(building_id).link_label
+		var via  : String = "" if link.is_empty() else " The %s is through the east doorway." % link.to_lower()
+		GameManager.show_message("🏠 Home. Press E at the bed to sleep.%s" % via, 4.0)
 	else:
 		GameManager.show_message("🚪 Inside. Walk out the south doorway to leave.", 4.0)
 
@@ -104,6 +91,65 @@ func enter(building_id: String) -> void:
 	_sync_inside_pets()
 	entered_building.emit()   # birds don't follow the player indoors
 	_try_auto_deliver(building_id)
+
+## Build `room_id`'s interior at the staging area and put the player and camera
+## in it — at its entrance, or beside the linked doorway when `via_link` (the
+## player came through from the room next door).
+func _stage_room(room_id: String, via_link: bool) -> void:
+	current_building_id = room_id
+	var def : InteriorDefinition = InteriorRegistry.get_definition(room_id)
+	# A building may supply its own hand-authored interior (painted background,
+	# collision drawn over it); everything else gets the generic room.
+	var packed : PackedScene = def.scene if def.has_custom_scene() else InteriorScene
+	_active = packed.instantiate()
+	# Match the Player (PROCESS_MODE_ALWAYS) so the interior's input/processing
+	# stays consistent with it while dialogue or menus pause the tree.
+	_active.process_mode = Node.PROCESS_MODE_ALWAYS
+	# A home's garage is only open to the home's owner: one of the other homes
+	# on offer shows no doorway to it.
+	_active.link_enabled = not GameManager.is_player_home(room_id) or room_id == GameManager.home_id
+	add_child(_active)
+	_active.global_position = STAGE_ORIGIN
+	_active.player_ref = _player
+	_active.build(def, room_id == GameManager.home_id)
+	_active.exit_requested.connect(exit)
+	_active.sleep_requested.connect(_on_sleep)
+	_active.link_requested.connect(_on_link_requested)
+
+	var spawn : Vector2 = _active.link_spawn_point() if via_link else _active.player_spawn_point()
+	_player.global_position = STAGE_ORIGIN + spawn
+	_apply_limits(Rect2(STAGE_ORIGIN, def.size))
+	_snap_camera()
+
+## Walked through into the linked room. Deferred: this arrives from a physics
+## callback, where new collision areas can't be added.
+func _on_link_requested(room_id: String) -> void:
+	_switch_room.call_deferred(room_id)
+
+## Swap the active room for `room_id` without going back outside, so leaving
+## either room still returns the player to the building's street door.
+func _switch_room(room_id: String) -> void:
+	if not is_inside() or room_id == current_building_id:
+		return
+	for npc in _inside_npcs:
+		if is_instance_valid(npc):
+			npc.leave_interior()
+	_inside_npcs.clear()
+	_hide_inside_pets()
+	_active.queue_free()
+	_stage_room(room_id, true)
+	if _active.has_method("workbench_near"):
+		GameManager.show_message("🔧 Press E at the workbench to craft.", 3.5)
+
+## E pressed inside: if it's at a workbench, ask for the crafting panel.
+## Returns true when it was, so the player doesn't also use what's in hand.
+func try_use_workbench(from_pos: Vector2) -> bool:
+	if not is_inside() or not _active.has_method("workbench_near"):
+		return false
+	if not _active.workbench_near(from_pos):
+		return false
+	craft_requested.emit()
+	return true
 
 func _process(_delta: float) -> void:
 	if _active != null:

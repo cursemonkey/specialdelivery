@@ -22,6 +22,7 @@ const LedgerScreenScene      := preload("res://scenes/LedgerScreen.tscn")
 const CutsceneScene          := preload("res://scenes/Cutscene.tscn")
 const SleepPromptScript      := preload("res://scripts/SleepPrompt.gd")
 const ShopPanelScript        := preload("res://scripts/ShopPanel.gd")
+const CraftingPanelScript    := preload("res://scripts/CraftingPanel.gd")
 const MortgagePanelScript    := preload("res://scripts/MortgagePanel.gd")
 const ChoicePanelScript      := preload("res://scripts/ChoicePanel.gd")
 const BIRD_COUNT             := 6
@@ -64,6 +65,7 @@ var _day_transition    : CanvasLayer = null
 var _ledger_screen     : CanvasLayer = null
 var _sleep_prompt      : CanvasLayer = null
 var _shop_panel        : CanvasLayer = null
+var _crafting_panel    : CanvasLayer = null
 var _mortgage_panel    : CanvasLayer = null
 var _choice_panel      : CanvasLayer = null
 var _choice_npc        : RegularNPC  = null
@@ -211,6 +213,12 @@ func _ready() -> void:
 	_shop_panel.name = "ShopPanel"
 	add_child(_shop_panel)
 	player.shop_panel = _shop_panel
+
+	# The workbench in the home's garage / back yard.
+	_crafting_panel = CraftingPanelScript.new()
+	_crafting_panel.name = "CraftingPanel"
+	add_child(_crafting_panel)
+	_interior_manager.craft_requested.connect(_crafting_panel.open)
 
 	_mortgage_panel = MortgagePanelScript.new()
 	_mortgage_panel.name = "MortgagePanel"

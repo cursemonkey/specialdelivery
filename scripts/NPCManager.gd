@@ -62,6 +62,7 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	npc.conversation     = def.conversation
 	npc.portrait         = def.portrait_texture()
 	npc.anchor_positions = _resolve_anchors(def)
+	npc.zone_triangles   = _zone_triangles_for(def)
 	npc.home_anchor      = def.home_anchor
 	npc.home_position    = npc.anchor_positions.get(def.home_anchor, Vector2.ZERO) + def.home_offset
 	npc.global_position  = npc.home_position
@@ -82,7 +83,42 @@ func _spawn_from_definition(def: NPCDefinition) -> void:
 	sprite.idle_frame_count = def.idle_frame_count
 	sprite.idle_frame_time  = def.idle_frame_time
 	sprite.idle_reuses_walk = def.idle_reuses_walk
+	sprite.walk_rows        = def.walk_rows
+	sprite.idle_rows        = def.idle_rows
+	sprite.still_cells      = def.still_cells
 	npc._retarget(true)
+
+## World-space triangles for every grass zone a definition's schedule wanders
+## across, keyed by zone name.
+func _zone_triangles_for(def: NPCDefinition) -> Dictionary:
+	var result : Dictionary = {}
+	for entry in def.schedule:
+		for zone in entry.wander_zones:
+			if not result.has(zone):
+				result[zone] = _zone_triangles(zone)
+	return result
+
+## Split a grass zone's navigation polygons (convex) into triangles.
+func _zone_triangles(zone_name: String) -> Array:
+	var tris : Array = []
+	for node in get_tree().get_nodes_in_group("grass_zone"):
+		if node.name != zone_name or not node is NavigationRegion2D:
+			continue
+		var region : NavigationRegion2D = node
+		var poly   : NavigationPolygon  = region.navigation_polygon
+		if poly == null:
+			break
+		var verts : PackedVector2Array = poly.get_vertices()
+		var xf    : Transform2D        = region.global_transform
+		for i in poly.get_polygon_count():
+			var idx : PackedInt32Array = poly.get_polygon(i)
+			for k in range(1, idx.size() - 1):
+				tris.append(PackedVector2Array([
+					xf * verts[idx[0]], xf * verts[idx[k]], xf * verts[idx[k + 1]]]))
+		break
+	if tris.is_empty():
+		push_warning("NPC wander zone '%s' not found in the grass_zone group" % zone_name)
+	return tris
 
 ## Resolve every door anchor a definition references into world positions.
 func _resolve_anchors(def: NPCDefinition) -> Dictionary:

@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/HomeAnnex.gd" id="1"]
+
+[node name="House84Garage" type="Node2D"]
+script = ExtResource("1")
+
+; Assign the room art to this Sprite2D. Keep centered = false and leave the
+; position at (0, 0) so the art's top-left corner is the room's origin. Until it
+; has a texture the room paints itself procedurally (520x360).
+[node name="Background" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, 0)
+centered = false
+
+; Draw CollisionPolygon2D children in here, over the walls, furniture and the
+; workbench, once there is art.
+[node name="Walls" type="StaticBody2D" parent="."]
+
+; E-to-craft is measured from here, so put it on the workbench in the art.
+; Once there is art, also add an Area2D "ExitArea" (south, to the street), an
+; Area2D "LinkArea" (west, back into the house), a Marker2D "PlayerSpawn" and
+; a Marker2D "LinkSpawn" — see Interior.gd. Without them they are generated to
+; fit the procedural room.
+[node name="Workbench" type="Marker2D" parent="."]
+position = Vector2(260.0, 44)

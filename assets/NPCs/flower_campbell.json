@@ -1,0 +1,141 @@
+{
+  "character": {
+    "id": "b5b57c87-014a-46fe-8053-24d691a1faae",
+    "name": "Idle",
+    "prompt": "Red head farm woman in overalls and a straw hat. Bright green shirt with very short sleeves, green eyes, medium breasts",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Flower-Idle.png",
+    "cell_size": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet_size": {
+      "width": 640,
+      "height": 1040
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "south-east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "east"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "north-east"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "north"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "north-west"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "west"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "walking",
+        "animation_group_id": "45b91147-4ad7-49ef-aedd-8fe978afe3ff",
+        "direction": "south-west"
+      },
+      {
+        "row": 9,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "81db22d4-13f5-4a02-bf3f-2d7d2b49f9cd",
+        "direction": "south"
+      },
+      {
+        "row": 10,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "81db22d4-13f5-4a02-bf3f-2d7d2b49f9cd",
+        "direction": "north-east"
+      },
+      {
+        "row": 11,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "81db22d4-13f5-4a02-bf3f-2d7d2b49f9cd",
+        "direction": "north-west"
+      },
+      {
+        "row": 12,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "81db22d4-13f5-4a02-bf3f-2d7d2b49f9cd",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-09-27T03:40:13.628647+00:00"
+}

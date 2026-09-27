@@ -24,6 +24,10 @@ extends Resource
 ## Wander radius in px around the anchor spot. 0 = stand still; >0 makes the NPC
 ## drift to random points within this radius (outdoor entries only).
 @export var wander      : float      = 0.0
+## Grass zones (NavigationRegion2D names in the "grass_zone" group, e.g. "Grass5")
+## to wander across instead of a radius: the NPC drifts between random points
+## anywhere inside them. Outdoor entries only; takes precedence over `wander`.
+@export var wander_zones : Array[String] = []
 
 static func make(days: Array[int], entry_phase: int, anchor_name: String, pos_offset: Vector2 = Vector2.ZERO, parity: int = -1, is_interior: bool = false) -> NPCScheduleEntry:
 	var entry : NPCScheduleEntry = NPCScheduleEntry.new()
@@ -70,6 +74,10 @@ func in_seasons(season_list: Array[int]) -> NPCScheduleEntry:
 
 func wandering(radius: float) -> NPCScheduleEntry:
 	wander = radius
+	return self
+
+func wandering_in(zone_names: Array[String]) -> NPCScheduleEntry:
+	wander_zones = zone_names
 	return self
 
 func _hour_in_range(h: float) -> bool:

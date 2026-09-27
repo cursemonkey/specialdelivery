@@ -27,6 +27,11 @@ var _pinned          : bool    = false
 var _away            : bool    = false   # out of town this part of the year
 var _wander_centre   : Vector2 = Vector2.ZERO
 var _wander_radius   : float   = 0.0     # > 0 while drifting around _wander_centre
+# Grass zone name -> world-space triangles (PackedVector2Array of 3), filled by
+# NPCManager for the zones this NPC's schedule wanders across.
+var zone_triangles   : Dictionary = {}
+var _wander_tris     : Array        = []   # triangles of the active wander zones
+var _wander_weights  : Array[float] = []   # running area total, for area-weighted picks
 var _on_duty         : bool    = false   # posted to a police roadblock
 var _duty_post       : Vector2 = Vector2.ZERO
 var _prepin_pos      : Vector2 = Vector2.ZERO
@@ -66,8 +71,7 @@ func _retarget(immediate: bool = false) -> void:
 		if entry.matches(TimeManager.weekday, TimeManager.phase, TimeManager.week_parity,
 				TimeManager.hour, TimeManager.season):
 			if entry.interior:
-				_wander_centre = Vector2.ZERO
-				_wander_radius = 0.0
+				_stop_wandering()
 				_target_interior(entry.anchor, _resolve(entry.anchor, entry.offset), immediate)
 			else:
 				# Standing outside a building: keep clear of its doorway.
@@ -75,12 +79,16 @@ func _retarget(immediate: bool = false) -> void:
 				_come_outside()
 				var door : Vector2 = anchor_positions.get(entry.anchor, home_position)
 				var spot : Vector2 = _clear_of_door(door, _resolve(entry.anchor, entry.offset))
-				_wander_radius = entry.wander
-				if _wander_radius > 0.0:
+				_stop_wandering()
+				_set_wander_zones(entry.wander_zones)
+				if not _wander_tris.is_empty():
+					_wander_centre = spot
+					set_move_target(_pick_wander_point())
+				elif entry.wander > 0.0:
+					_wander_radius = entry.wander
 					_wander_centre = spot
 					set_move_target(_pick_wander_point())
 				else:
-					_wander_centre = Vector2.ZERO
 					set_move_target(spot)
 				# Spawn / start of day: stand at the spot rather than walking to
 				# it, so an outdoor post is reached even when the navmesh doesn't
@@ -91,18 +99,73 @@ func _retarget(immediate: bool = false) -> void:
 			return
 	_pending_interior = ""
 	_come_outside()
-	_wander_centre = Vector2.ZERO
-	_wander_radius = 0.0
+	_stop_wandering()
 	set_move_target(_clear_of_door(_home_door_pos(), home_position))
 	if immediate:
 		global_position = _move_target
 		velocity = Vector2.ZERO
 
-## A random point within the current wander area, kept clear of the doorway.
+func _stop_wandering() -> void:
+	_wander_centre = Vector2.ZERO
+	_wander_radius = 0.0
+	_wander_tris.clear()
+	_wander_weights.clear()
+
+func _is_wandering() -> bool:
+	return _wander_radius > 0.0 or not _wander_tris.is_empty()
+
+## Load the triangles of the named grass zones as the active wander area.
+func _set_wander_zones(zone_names: Array[String]) -> void:
+	var total : float = 0.0
+	for zone in zone_names:
+		for tri in zone_triangles.get(zone, []):
+			var t : PackedVector2Array = tri
+			total += absf((t[1] - t[0]).cross(t[2] - t[0])) * 0.5
+			_wander_tris.append(t)
+			_wander_weights.append(total)
+
+## How many random points to try before settling for one inside a building.
+const WANDER_TRIES : int = 8
+
+## A random point in the current wander area (grass zones, else the radius
+## around _wander_centre). Points inside a building's collision are rejected so
+## the NPC doesn't spend the visit grinding against a wall.
 func _pick_wander_point() -> Vector2:
+	var p : Vector2 = _wander_centre
+	for _i in WANDER_TRIES:
+		p = _random_zone_point() if not _wander_tris.is_empty() else _random_radius_point()
+		if not _inside_building_collision(p):
+			break
+	return p
+
+func _random_radius_point() -> Vector2:
 	var a : float = randf() * TAU
 	var r : float = sqrt(randf()) * _wander_radius   # uniform over the disc
 	return _wander_centre + Vector2(cos(a), sin(a)) * r
+
+## Uniform over the zones: pick a triangle weighted by area, then a point in it.
+func _random_zone_point() -> Vector2:
+	var roll : float = randf() * _wander_weights[_wander_weights.size() - 1]
+	var i    : int   = _wander_weights.bsearch(roll)
+	var t    : PackedVector2Array = _wander_tris[mini(i, _wander_tris.size() - 1)]
+	var u : float = randf()
+	var v : float = randf()
+	if u + v > 1.0:
+		u = 1.0 - u
+		v = 1.0 - v
+	return t[0] + (t[1] - t[0]) * u + (t[2] - t[0]) * v
+
+func _inside_building_collision(p: Vector2) -> bool:
+	var space : PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	if space == null:
+		return false
+	var query : PhysicsPointQueryParameters2D = PhysicsPointQueryParameters2D.new()
+	query.position = p
+	query.collide_with_areas = false
+	for hit in space.intersect_point(query, 4):
+		if hit.collider is StaticBody2D:
+			return true
+	return false
 
 ## The home door itself (home_position already includes the definition offset).
 func _home_door_pos() -> Vector2:
@@ -141,7 +204,7 @@ func _on_arrived() -> void:
 		_go_inside(b, anchor_positions.get(b, global_position))
 		return
 	# Wandering: pause a beat, then drift to another nearby spot.
-	if _wander_radius > 0.0:
+	if _is_wandering():
 		_halt_timer = maxf(_halt_timer, randf_range(1.5, 4.0))
 		set_move_target(_pick_wander_point())
 
@@ -160,7 +223,7 @@ func post_to_duty(post: Vector2) -> void:
 	_on_duty   = true
 	_duty_post = post
 	_pending_interior = ""
-	_wander_radius = 0.0
+	_stop_wandering()
 	_come_outside()
 	# Arrive by cruiser: they cover the distance quickly rather than strolling.
 	global_position = post

@@ -15,5 +15,25 @@ extends Resource
 ## Left null, the building gets the generic room as before.
 @export var scene         : PackedScene = null
 
+## A second room reached through a doorway inside this one, rather than from
+## the street: a player home's garage or back yard, and the way back from it.
+## `link_id` is that room's id in InteriorRegistry ("" = no such doorway),
+## `link_label` is what the doorway is signed as, and `link_side` is the wall it
+## sits in — homes put it in the east wall, their annexes in the west, so the
+## two doorways face each other.
+@export var link_id    : String = ""
+@export var link_label : String = ""
+@export var link_side  : int    = SIDE_EAST
+
+const SIDE_EAST : int = 0
+const SIDE_WEST : int = 1
+
+## Floor for the procedural room: "tiles" (the white checkerboard), "concrete"
+## (a garage) or "grass" (a back yard).
+@export var floor_style : String = "tiles"
+
+func has_link() -> bool:
+	return not link_id.is_empty()
+
 func has_custom_scene() -> bool:
 	return scene != null
