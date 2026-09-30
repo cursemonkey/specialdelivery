@@ -1,0 +1,17 @@
+﻿Food,ID,Icon,Price ($),Energy per portion,Portions,Total energy,Cost per energy ($),Sold at,Season,Loved by,Liked by
+Stick of Butter,butter,🧈,20,15,1,15,1.33,Grocery (Nayra),All year,"Mayor Henderson, Poppy, Apple Campbell, Sergeant Darin, James, Marco, Silas Thorne","Jimmy Henderson, Elsie Carrington, Mabel, Officer Kali, Cole, Nicolle, Reverend Elias Thorne, Junia Thorne"
+Loaf of Bread,bread,🍞,75,10,5,50,1.5,Grocery (Nayra),All year,"Jimmy Henderson, Doctor Carrington, Gus, Marsha Campbell, Officer Kali, Cole, Reverend Elias Thorne","Mayor Henderson, Elsie Carrington, Mabel, Poppy, Spider, Apple Campbell, Sergeant Darin, James, Nicolle, Noah, Nayra, Marco, Aidan, Junia Thorne, Teri Sanders"
+Box of Eggs,eggs,🥚,40,7,6,42,0.95,"Farm (Marsha, Wed–Sat 7am–5pm)",All year,,
+Carton of Milk,milk,🥛,45,12,3,36,1.25,"Grocery (Nayra); Farm (Marsha, Wed–Sat 7am–5pm)",All year,"Elsie Carrington, Mabel, Nicolle, Noah, Nayra, Junia Thorne, Teri Sanders","Jimmy Henderson, Doctor Carrington, Poppy, Flower Campbell, Marsha Campbell, Apple Campbell, Officer Kali, Cole, James, Marco, Reverend Elias Thorne"
+Bunch of Onions,onions,🧅,15,3,3,9,1.67,"Farm (Marsha, Wed–Sat 7am–5pm)",Spring,,
+Fiddleheads,fiddleheads,🌿,30,6,3,18,1.67,"Farm (Marsha, Wed–Sat 7am–5pm)",Spring,,
+Blueberry Pie,blueberry_pie,🫐,90,12,6,72,1.25,"Farm (Marsha, Wed–Sat 7am–5pm)",Spring,,
+Ears of Corn,corn,🌽,30,6,3,18,1.67,"Farm (Marsha, Wed–Sat 7am–5pm)",Summer,,
+Basket of Strawberries,strawberries,🍓,35,4,6,24,1.46,"Farm (Marsha, Wed–Sat 7am–5pm)",Summer,,
+Bunch of Carrots,carrots,🥕,20,4,4,16,1.25,"Farm (Marsha, Wed–Sat 7am–5pm)","Summer, Fall",,
+Pumpkin,pumpkin,🎃,40,5,6,30,1.33,"Farm (Marsha, Wed–Sat 7am–5pm)",Fall,,
+Zucchini,zucchini,🥒,15,5,2,10,1.5,"Farm (Marsha, Wed–Sat 7am–5pm)",Fall,,
+Meat Pie,meat_pie,🥟,80,14,4,56,1.43,"Farm (Marsha, Wed–Sat 7am–5pm)",Winter,,
+Pumpkin Pie,pumpkin_pie,🥧,85,12,6,72,1.18,"Farm (Marsha, Wed–Sat 7am–5pm)",Winter,,
+Fruitcake,fruitcake,🍰,25,2,4,8,3.12,"Farm (Marsha, Wed–Sat 7am–5pm)",Winter,Jimmy Henderson,
+Jar of Jam,jam,🍯,30,4,5,20,1.5,"Farm (Marsha, Wed–Sat 7am–5pm)",Winter,,

@@ -1,0 +1,7 @@
+﻿Item,ID,Icon,Type,Uses,Price ($),How to get it,Loved by,Liked by
+Bag of Flour,flour,🌾,Baking ingredient,Not edible on its own; for baking once cooking exists. Gift.,25,"Farm (Marsha, Wed–Sat 7am–5pm)",,
+Scrap Metal,scrap,🪛,Workshop material,Crafting: 3 scrap + 5 bolts make a Storage Bucket at the home workbench. Gift.,10,Mechanic shop (Aidan); found lying around town and at the junk yard,Aidan,"Gus, Spider, Flower Campbell, Silas Thorne"
+Bag of Bolts,bolts,🔩,Workshop material,Crafting: 5 bolts + 3 scrap make a Storage Bucket at the home workbench. Gift.,2,Mechanic shop (Aidan); found lying around town and at the junk yard,"Spider, Flower Campbell","Gus, Marsha Campbell, Aidan, Silas Thorne"
+Storage Bucket,storage_bucket,🪣,Bike part,Hold it and press E to bolt it on: +1 package capacity. Max 2 on the bike.,Not sold,Crafted at the workbench in your garage / back yard (3 scrap + 5 bolts),,
+Storage Upgrade,storage,📦,Vehicle upgrade,"+2 package capacity, fitted straight to the vehicle. Can be bought repeatedly.",500,Mechanic shop (Aidan),,
+Scooter,scooter,🛵,Vehicle,"Replaces the bike: 5 packages, much faster on roads, worse on grass. One-time purchase.",15000,Mechanic shop (Aidan),,

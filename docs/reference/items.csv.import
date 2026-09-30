@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://2yntwfly20n5"
+
+[deps]
+
+files=["res://docs/reference/items.ID.translation", "res://docs/reference/items.Icon.translation", "res://docs/reference/items.Type.translation", "res://docs/reference/items.Uses.translation", "res://docs/reference/items.Price ($).translation", "res://docs/reference/items.How to get it.translation", "res://docs/reference/items.Loved by.translation", "res://docs/reference/items.Liked by.translation"]
+
+source_file="res://docs/reference/items.csv"
+dest_files=["res://docs/reference/items.ID.translation", "res://docs/reference/items.Icon.translation", "res://docs/reference/items.Type.translation", "res://docs/reference/items.Uses.translation", "res://docs/reference/items.Price ($).translation", "res://docs/reference/items.How to get it.translation", "res://docs/reference/items.Loved by.translation", "res://docs/reference/items.Liked by.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
