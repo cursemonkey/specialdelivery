@@ -60,12 +60,46 @@ func fallback_name_for(id: String) -> String:
 # ── The cast ───────────────────────────────────────────────
 # Add a villager by writing a _register_* function and calling it here.
 func _register_all() -> void:
+	_register_cast()
+	_apply_fruitcake_tastes()
+
+## Fruitcake is sold at the farm every winter and almost nobody wants it. Rather
+## than repeat that in every villager's gift lists, it's settled here once the
+## whole cast exists: everyone dislikes it unless listed below.
+const FRUITCAKE_LOVERS  : Array[String] = [
+	"jimmy_henderson",   # the one man in town who buys it on purpose
+]
+const FRUITCAKE_NEUTRAL : Array[String] = [
+	"marsha_campbell",   # she sells it; she's not going to insult the stock
+]
+const FRUITCAKE_HATERS  : Array[String] = [
+	"mayor_henderson",   # thirty Christmases of Jimmy's fruitcake
+	"marco",             # takes it personally, as a baker
+	"spider",
+	"teri_sanders",
+	"noah", "poppy", "apple_campbell", "junia_thorne",   # the kids
+]
+
+func _apply_fruitcake_tastes() -> void:
+	for def in _defs.values():
+		if FRUITCAKE_NEUTRAL.has(def.id):
+			continue
+		if FRUITCAKE_LOVERS.has(def.id):
+			def.loved_gifts.append("fruitcake")
+		elif FRUITCAKE_HATERS.has(def.id):
+			def.hated_gifts.append("fruitcake")
+		else:
+			def.disliked_gifts.append("fruitcake")
+
+func _register_cast() -> void:
 	_register_mayor_henderson()
 	_register_jimmy_henderson()
 	_register_doctor_carrington()
 	_register_elsie_carrington()
 	_register_spider()
 	_register_flower_campbell()
+	_register_marsha_campbell()
+	_register_apple_campbell()
 	_register_kali()
 	_register_darin()
 	_register_cole()
@@ -560,6 +594,10 @@ func officer_works_today(id: String, weekday: int) -> bool:
 ## Flower Campbell — lives and works on the farm. Out in the fields from 6am to
 ## 2pm in spring and summer, indoors the rest of the day, church on Sundays and
 ## the grocery on Thursday afternoons.
+##
+## Old enough to remember her father walking out when Marsha fell pregnant with
+## Apple, and still bitter about it. She doesn't talk about him; she works, and
+## a lot of the farm now runs on her. See "The Campbells" below.
 func _register_flower_campbell() -> void:
 	const SUN : int = 0
 	const THU : int = 4
@@ -593,13 +631,148 @@ func _register_flower_campbell() -> void:
 	def.schedule = sched
 	def.random_dialogue = true
 	def.dialogue_lines = [
-		DialogueLine.make("Mornin'! The fields are lookin' good this year.", DialogueLine.HAPPY),
-		DialogueLine.make("Nothin' beats a quiet morning out here.", DialogueLine.CALM),
+		# Stranger — friendly, busy, nothing personal.
+		DialogueLine.make("Mornin'! The fields are lookin' good this year.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Nothin' beats a quiet morning out here.", DialogueLine.CALM, 0),
+		DialogueLine.make("Can't stop long — those fences won't mend themselves.", DialogueLine.CALM, 0),
+		# Acquaintance — the family, and how much she carries.
+		DialogueLine.make("Mum sells the eggs, I do most of the rest. Apple does her best, bless her.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Up before the hens most days. Somebody's got to be.", DialogueLine.CALM, 2),
+		DialogueLine.make("Apple follows me round the fields on Saturdays. Slows me right down. I don't mind.", DialogueLine.HAPPY, 2),
+		# Friend — the father, briefly and sharply.
+		DialogueLine.make("It's just the three of us. Has been since Apple was on the way.", DialogueLine.CALM, 5),
+		DialogueLine.make("Dad left when he found out about Apple. Packed a bag. That was that.", DialogueLine.MAD, 5),
+		DialogueLine.make("Apple doesn't remember him. Honestly? She's lucky.", DialogueLine.SAD, 5),
+		# Close friend — what's under the anger.
+		DialogueLine.make("I'm not working this hard for him. I'm doing it so Mum never has to worry again.", DialogueLine.CALM, 8),
+		DialogueLine.make("Sometimes I think I'm still waiting for him to come up the lane. Stupid, eh.", DialogueLine.SAD, 8),
+		DialogueLine.make("Mum's the strongest person I know. Don't tell her I said that.", DialogueLine.HAPPY, 8),
 	]
 	# Gifts: Fence posts and gate hinges always need fixing. Her farm makes its own butter.
 	def.loved_gifts = ["bolts"]
 	def.liked_gifts = ["scrap", "milk"]
 	def.disliked_gifts = ["butter"]
+	_add(def)
+
+# ── The Campbells ──────────────────────────────────────────
+## Flower's mother Marsha and her little sister Apple share the farmhouse with
+## her. The girls' father left when he found out Marsha was pregnant with Apple,
+## and Marsha has run the farm alone since, with Flower increasingly doing the
+## heavy lifting. Flower remembers him and is bitter about it; Apple has no
+## memory of him at all and pitches in anyway. Marsha sells the farm's eggs
+## from a desk inside the farmhouse.
+const CAMPBELL_HOME : String = "Farm"
+
+## Marsha's selling hours at her desk: Wednesday to Saturday, 7am to 5pm.
+const MARSHA_DESK_DAYS  : Array[int] = [3, 4, 5, 6]
+const MARSHA_DESK_OPEN  : float = 7.0
+const MARSHA_DESK_CLOSE : float = 17.0
+
+## True while Marsha's desk is open. Player checks this before opening the farm
+## counter, so talking to her outside those hours is just a chat.
+func marsha_selling_now() -> bool:
+	return MARSHA_DESK_DAYS.has(TimeManager.weekday) \
+			and TimeManager.hour >= MARSHA_DESK_OPEN and TimeManager.hour < MARSHA_DESK_CLOSE
+
+## Marsha Campbell — Flower and Apple's mum. Sells eggs from her desk in the
+## farmhouse Wednesday to Saturday, 7am–5pm; takes the girls to church on
+## Sunday mornings; otherwise about the farmhouse. Brisk, warm, and fond of
+## calling everyone "love". Her husband walked out when she was pregnant with
+## Apple; she doesn't dwell on it, but she worries it has hardened Flower.
+func _register_marsha_campbell() -> void:
+	const SUN : int = 0
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "marsha_campbell"
+	def.display_name = "Marsha Campbell"
+	def.home_anchor  = CAMPBELL_HOME
+	def.shirt_color  = Color("#e8d8a8")   # cream blouse
+	def.pants_color  = Color("#6b4f3a")   # brown work skirt
+	def.hair_color   = Color("#a3502a")   # auburn — where Flower gets it
+	def.skin_color   = Color("#f0c8a0")
+	# First match wins: the desk and church come before the farmhouse fallback.
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours(MARSHA_DESK_DAYS, MARSHA_DESK_OPEN, MARSHA_DESK_CLOSE,
+				CAMPBELL_HOME, Vector2(-40, 30), -1, true),
+		NPCScheduleEntry.make_hours([SUN], 9.0, 13.0, "Church", Vector2(-40, 40), -1, true),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, CAMPBELL_HOME, Vector2(-40, 30), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		# Stranger — the farm stand.
+		DialogueLine.make("Eggs, love? Wednesday to Saturday, seven till five. Laid this morning.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Wipe your feet. Not you — the bike. Well, both.", DialogueLine.CALM, 0),
+		DialogueLine.make("You'll have met Flower out in the fields. She works harder than I did at her age.", DialogueLine.HAPPY, 0),
+		# Acquaintance — family.
+		DialogueLine.make("Apple's named every hen. I daren't tell her where the eggs go.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("I bake the fruitcake for Jimmy Henderson, mostly. He's the only one who buys it.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Ran this farm on my own since before Apple was born. We manage fine.", DialogueLine.CALM, 2),
+		DialogueLine.make("If Apple asks you for a ride on that bike, the answer's no.", DialogueLine.MAD, 2),
+		# Friend — the man who left, told plainly.
+		DialogueLine.make("Their father left the week I told him Apple was coming. Didn't even take his boots.", DialogueLine.CALM, 5),
+		DialogueLine.make("Flower'll take this place on one day. I just hope she wants to, and isn't doing it for me.", DialogueLine.CALM, 5),
+		DialogueLine.make("Sit down a minute, love. Kettle's always on in this house.", DialogueLine.HAPPY, 5),
+		# Close friend — what she worries about.
+		DialogueLine.make("Flower's still angry at him. I wish she'd put it down. It's heavy, and it's not hers.", DialogueLine.SAD, 8),
+		DialogueLine.make("Apple's never known him and never asked. Some nights that breaks my heart more than him going did.", DialogueLine.SAD, 8),
+		DialogueLine.make("Some winters I didn't know how we'd get through. We did. We always do.", DialogueLine.CALM, 8),
+		DialogueLine.make("You're practically family now. That means you're not getting paid for chores.", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: a baker's loaf is a treat when you keep hens; scrap is one more
+	# thing for the yard.
+	def.loved_gifts = ["bread"]
+	def.liked_gifts = ["milk", "bolts"]
+	def.disliked_gifts = ["scrap"]
+	_add(def)
+
+## Apple Campbell — Flower's little sister, about eight. Has no memory of her
+## father (he left before she was born) and doesn't miss what she never had;
+## she just likes helping. School Monday to Friday, church with the family on
+## Sunday. On Saturdays in spring and summer she follows Flower round the farm
+## rounds, 6am–2pm; otherwise she's in the farmhouse, "helping" at Mum's desk.
+func _register_apple_campbell() -> void:
+	const SUN : int = 0
+	const SAT : int = 6
+	var school_days   : Array[int] = [1, 2, 3, 4, 5]
+	var spring_summer : Array[int] = [Calendar.Season.SPRING, Calendar.Season.SUMMER]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "apple_campbell"
+	def.display_name = "Apple Campbell"
+	def.home_anchor  = CAMPBELL_HOME
+	def.shirt_color  = Color("#d94a4a")   # apple red, naturally
+	def.pants_color  = Color("#4a8a4a")   # green dungarees
+	def.hair_color   = Color("#c1440e")   # red hair, like Flower
+	def.skin_color   = Color("#f0c8a0")
+	def.sprite_scale = 0.8                # a head shorter than the grown-ups
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours([SUN], 9.0, 13.0, "Church", Vector2(40, 40), -1, true),
+		NPCScheduleEntry.make_hours(school_days, 9.0, 15.5, "School", Vector2(40, 40), -1, true),
+		# Saturdays in the growing season: on Flower's rounds with her, same
+		# hours and fields (keep in step with _register_flower_campbell). She
+		# trails Flower; if Flower isn't out yet, she potters about the fields.
+		NPCScheduleEntry.make_hours([SAT], 6.0, 14.0, CAMPBELL_HOME, Vector2(30, 60), -1, false) \
+				.in_seasons(spring_summer).wandering_in(["Grass5", "Grass6"]).following("flower_campbell"),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, CAMPBELL_HOME, Vector2(40, 30), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	def.dialogue_lines = [
+		DialogueLine.make("I'm Apple! Like the fruit. Flower's named after a flower. Mum likes plants.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("That hen is Duchess. She's the boss. Don't look her in the eye.", DialogueLine.SURPRISED, 0),
+		DialogueLine.make("I help Mum at the desk. I count the eggs. Sometimes I count them twice.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Flower won't let me drive the tractor. I'm EIGHT.", DialogueLine.MAD, 2),
+		DialogueLine.make("Can I ride on your bike? Mum said no but she's not here. Oh. She is here.", DialogueLine.SAD, 2),
+		DialogueLine.make("When I grow up I'm going to have a hundred hens and you can deliver them.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Saturdays I do the rounds with Flower. I carry the bucket. It's a very important bucket.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("I don't have a dad. I've got Mum and Flower, so that's two, which is more than one.", DialogueLine.CALM, 5),
+		DialogueLine.make("Flower goes quiet if anyone says about our dad. So I don't.", DialogueLine.SAD, 5),
+		DialogueLine.make("Mum works really hard. I'm going to make her breakfast one day. With eggs.", DialogueLine.CALM, 8),
+		DialogueLine.make("When I'm big I'm going to do ALL the jobs so Flower can have a lie-in.", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: a kid's treat; she names the hens, so eggs are not a present.
+	def.loved_gifts = ["butter"]
+	def.liked_gifts = ["milk", "bread"]
+	def.disliked_gifts = ["eggs"]
 	_add(def)
 
 ## Spider — lives with Elsie Carrington, plays in a band. Out at the pub most
@@ -781,6 +954,7 @@ func _register_jimmy_henderson() -> void:
 		DialogueLine.make("Lovely day for it, isn't it?", DialogueLine.HAPPY),
 		DialogueLine.make("The wife's busy running the town. I keep the books.", DialogueLine.CALM),
 		DialogueLine.make("Mind how you go on that bicycle!", DialogueLine.CALM),
+		DialogueLine.make("Marsha does a fruitcake at the farm come winter. Nobody appreciates it like I do.", DialogueLine.HAPPY),
 	]
 	# Gifts: Banker's lunch. Scrap metal doesn't fit the City Hall aesthetic.
 	def.loved_gifts = ["bread"]
@@ -821,6 +995,7 @@ func _register_mayor_henderson() -> void:
 		DialogueLine.make("You again! I'm starting to think you keep this town running more than I do.", DialogueLine.HAPPY, 2),
 		DialogueLine.make("Between us, I signed forty-one forms before lunch. Forty-one.", DialogueLine.CALM, 2),
 		DialogueLine.make("Mind the cobbles on the east lane. It's on the list. Everything's on the list.", DialogueLine.CALM, 2),
+		DialogueLine.make("If Jimmy offers you fruitcake, you say you've just eaten. Trust me.", DialogueLine.MAD, 2),
 		DialogueLine.make("People think the mayor's job is ribbon-cutting. It is mostly drainage.", DialogueLine.HAPPY, 2),
 		# Friend — the office door stays open, and she says what she actually thinks.
 		DialogueLine.make("Shut the door behind you, would you? Ten minutes where nobody wants anything.", DialogueLine.CALM, 5),

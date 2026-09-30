@@ -32,6 +32,9 @@ var _wander_radius   : float   = 0.0     # > 0 while drifting around _wander_cen
 var zone_triangles   : Dictionary = {}
 var _wander_tris     : Array        = []   # triangles of the active wander zones
 var _wander_weights  : Array[float] = []   # running area total, for area-weighted picks
+var _follow_id       : String  = ""      # villager to tag along behind (see NPCScheduleEntry.follow_id)
+var _follow_leader   : RegularNPC = null
+var _follow_tick     : float   = 0.0
 var _on_duty         : bool    = false   # posted to a police roadblock
 var _duty_post       : Vector2 = Vector2.ZERO
 var _prepin_pos      : Vector2 = Vector2.ZERO
@@ -44,6 +47,42 @@ func _ready() -> void:
 	add_to_group("regular_npc")
 	_col_layer = collision_layer
 	_col_mask  = collision_mask
+
+## How close a follower keeps to its leader, and how often it re-aims at them.
+const FOLLOW_GAP    : float = 34.0
+const FOLLOW_REPATH : float = 0.5
+
+func _physics_process(delta: float) -> void:
+	_update_follow(delta)
+	super._physics_process(delta)
+
+## Tagging along: every FOLLOW_REPATH seconds, head for the leader if they've
+## drifted more than FOLLOW_GAP away. While the leader is indoors or away, this
+## does nothing and the entry's ordinary wandering carries on.
+func _update_follow(delta: float) -> void:
+	if _follow_id.is_empty() or _inside or _pinned:
+		return
+	_follow_tick -= delta
+	if _follow_tick > 0.0:
+		return
+	_follow_tick = FOLLOW_REPATH
+	var leader : RegularNPC = _find_leader()
+	if leader == null:
+		return
+	if global_position.distance_to(leader.global_position) > FOLLOW_GAP:
+		set_move_target(leader.global_position, FOLLOW_GAP)
+
+## The villager being followed, if they're out in the world right now.
+func _find_leader() -> RegularNPC:
+	if _follow_leader == null or not is_instance_valid(_follow_leader):
+		_follow_leader = null
+		for n in get_tree().get_nodes_in_group("regular_npc"):
+			if n.id == _follow_id:
+				_follow_leader = n
+				break
+	if _follow_leader == null or _follow_leader._inside or _follow_leader.is_away():
+		return null
+	return _follow_leader
 
 ## First schedule entry matching the current weekday/phase/week wins. Interior
 ## entries make the NPC walk to the building and go inside on arrival (or, when
@@ -81,6 +120,8 @@ func _retarget(immediate: bool = false) -> void:
 				var spot : Vector2 = _clear_of_door(door, _resolve(entry.anchor, entry.offset))
 				_stop_wandering()
 				_set_wander_zones(entry.wander_zones)
+				_follow_id   = entry.follow_id
+				_follow_tick = 0.0
 				if not _wander_tris.is_empty():
 					_wander_centre = spot
 					set_move_target(_pick_wander_point())
@@ -106,6 +147,7 @@ func _retarget(immediate: bool = false) -> void:
 		velocity = Vector2.ZERO
 
 func _stop_wandering() -> void:
+	_follow_id     = ""
 	_wander_centre = Vector2.ZERO
 	_wander_radius = 0.0
 	_wander_tris.clear()
@@ -202,6 +244,9 @@ func _on_arrived() -> void:
 		# Park on the door itself, not wherever we stopped short of it, so
 		# stepping back out later puts us at the doorway.
 		_go_inside(b, anchor_positions.get(b, global_position))
+		return
+	# Caught up with the leader: stay put; _update_follow moves us on.
+	if not _follow_id.is_empty() and _find_leader() != null:
 		return
 	# Wandering: pause a beat, then drift to another nearby spot.
 	if _is_wandering():

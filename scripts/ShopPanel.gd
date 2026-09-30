@@ -5,6 +5,7 @@ extends CanvasLayer
 ##
 ## Serves both counters. open() takes the shop to display:
 ##   • Nayra's groceries — consumables that fill inventory slots
+##   • Marsha's desk     — Campbell farm produce, changing with the season
 ##   • Aidan's garage    — materials, plus one-off vehicle upgrades that go
 ##     onto the bike rather than into the bag
 ##
@@ -15,6 +16,7 @@ signal closed()
 ## Which counter is open.
 const GROCERY : String = "grocery"
 const GARAGE  : String = "garage"
+const FARM    : String = "farm"
 
 ## Aidan's one-off upgrades. Each is bought once, costs cash, and modifies the
 ## vehicle instead of taking an inventory slot:
@@ -106,7 +108,10 @@ func open(shop: String = GROCERY) -> void:
 	_awaiting = true
 	get_tree().paused = true
 	_status.text = ""
-	_title.text  = "🧺 Nayra's Groceries" if shop == GROCERY else "🔧 Aidan's Garage"
+	match shop:
+		GARAGE: _title.text = "🔧 Aidan's Garage"
+		FARM:   _title.text = "🥚 Campbell Farm — Marsha's Desk (%s)" % TimeManager.season_name()
+		_:      _title.text = "🧺 Nayra's Groceries"
 	_build_rows()
 	_refresh()
 	if not _buttons.is_empty():
@@ -114,7 +119,10 @@ func open(shop: String = GROCERY) -> void:
 
 ## Item ids this counter stocks.
 func _stock() -> Array:
-	return ItemRegistry.GARAGE_STOCK if _shop == GARAGE else ItemRegistry.SHOP_STOCK
+	match _shop:
+		GARAGE: return ItemRegistry.GARAGE_STOCK
+		FARM:   return ItemRegistry.farm_stock(TimeManager.season)
+	return ItemRegistry.SHOP_STOCK
 
 ## The upgrades on offer here, minus any the player already owns.
 func _upgrades() -> Array:
@@ -228,7 +236,10 @@ func _buy_upgrade(id: String) -> void:
 
 ## Shopkeeper's parting line, per counter.
 func _thanks() -> String:
-	return "\"Nice one.\"" if _shop == GARAGE else "\"Thank you — take care out there.\""
+	match _shop:
+		GARAGE: return "\"Nice one.\""
+		FARM:   return "\"Laid this morning, love. Mind you don't crack 'em on that bike.\""
+	return "\"Thank you — take care out there.\""
 
 func _say(text: String, color: Color) -> void:
 	_status.text = text

@@ -32,6 +32,15 @@ const ITEMS : Dictionary = {
 		"energy":   10,
 		"portions": 5,
 	},
+	# Laid on the Campbell farm, sold from Marsha's desk in the farmhouse.
+	"eggs": {
+		"id":       "eggs",
+		"name":     "Box of Eggs",
+		"icon":     "🥚",
+		"price":    40,
+		"energy":   7,
+		"portions": 6,
+	},
 	"milk": {
 		"id":       "milk",
 		"name":     "Carton of Milk",
@@ -39,6 +48,119 @@ const ITEMS : Dictionary = {
 		"price":    45,
 		"energy":   12,
 		"portions": 3,
+	},
+	# ── Campbell farm produce (see FARM_STOCK) ──────────────
+	# Flour is for baking, not eating: `ingredient` marks it inedible, like the
+	# workshop materials, until there's a kitchen to use it in.
+	"flour": {
+		"id":         "flour",
+		"name":       "Bag of Flour",
+		"icon":       "🌾",
+		"price":      25,
+		"energy":     0,
+		"portions":   1,
+		"ingredient": true,
+	},
+	# Spring.
+	"onions": {
+		"id":       "onions",
+		"name":     "Bunch of Onions",
+		"icon":     "🧅",
+		"price":    15,
+		"energy":   3,
+		"portions": 3,
+	},
+	"fiddleheads": {
+		"id":       "fiddleheads",
+		"name":     "Fiddleheads",
+		"icon":     "🌿",
+		"price":    30,
+		"energy":   6,
+		"portions": 3,
+	},
+	"blueberry_pie": {
+		"id":       "blueberry_pie",
+		"name":     "Blueberry Pie",
+		"icon":     "🫐",
+		"price":    90,
+		"energy":   12,
+		"portions": 6,
+	},
+	# Summer.
+	"corn": {
+		"id":       "corn",
+		"name":     "Ears of Corn",
+		"icon":     "🌽",
+		"price":    30,
+		"energy":   6,
+		"portions": 3,
+	},
+	"strawberries": {
+		"id":       "strawberries",
+		"name":     "Basket of Strawberries",
+		"icon":     "🍓",
+		"price":    35,
+		"energy":   4,
+		"portions": 6,
+	},
+	"carrots": {
+		"id":       "carrots",
+		"name":     "Bunch of Carrots",
+		"icon":     "🥕",
+		"price":    20,
+		"energy":   4,
+		"portions": 4,
+	},
+	# Fall (carrots again, too).
+	"pumpkin": {
+		"id":       "pumpkin",
+		"name":     "Pumpkin",
+		"icon":     "🎃",
+		"price":    40,
+		"energy":   5,
+		"portions": 6,
+	},
+	"zucchini": {
+		"id":       "zucchini",
+		"name":     "Zucchini",
+		"icon":     "🥒",
+		"price":    15,
+		"energy":   5,
+		"portions": 2,
+	},
+	# Winter.
+	"meat_pie": {
+		"id":       "meat_pie",
+		"name":     "Meat Pie",
+		"icon":     "🥟",
+		"price":    80,
+		"energy":   14,
+		"portions": 4,
+	},
+	"pumpkin_pie": {
+		"id":       "pumpkin_pie",
+		"name":     "Pumpkin Pie",
+		"icon":     "🥧",
+		"price":    85,
+		"energy":   12,
+		"portions": 6,
+	},
+	# Famously unloved: see NPCRegistry._apply_fruitcake_tastes.
+	"fruitcake": {
+		"id":       "fruitcake",
+		"name":     "Fruitcake",
+		"icon":     "🍰",
+		"price":    25,
+		"energy":   2,
+		"portions": 4,
+	},
+	"jam": {
+		"id":       "jam",
+		"name":     "Jar of Jam",
+		"icon":     "🍯",
+		"price":    30,
+		"energy":   4,
+		"portions": 5,
 	},
 	# Workshop materials. Not food: `material` marks them inedible, so eating
 	# keys skip them and the shop describes them by the piece.
@@ -83,12 +205,32 @@ const RECIPES : Array = [
 ## Ids in the order Nayra offers them.
 const SHOP_STOCK : Array = ["butter", "bread", "milk"]
 
+## What Marsha sells at the farmhouse: the staples all year, plus whatever is
+## in season. Use farm_stock() rather than reading these directly.
+const FARM_STOCK_ALWAYS : Array = ["milk", "eggs", "flour"]
+const FARM_STOCK_SEASONAL : Dictionary = {
+	Calendar.Season.SPRING: ["onions", "fiddleheads", "blueberry_pie"],
+	Calendar.Season.SUMMER: ["corn", "strawberries", "carrots"],
+	Calendar.Season.FALL:   ["pumpkin", "zucchini", "carrots"],
+	Calendar.Season.WINTER: ["meat_pie", "pumpkin_pie", "fruitcake", "jam"],
+}
+
+## Marsha's stock for `season` (a Calendar.Season), staples first.
+func farm_stock(season: int) -> Array:
+	var seasonal : Array = FARM_STOCK_SEASONAL.get(season, [])
+	return FARM_STOCK_ALWAYS + seasonal
+
 ## Ids in the order Aidan offers them at the garage.
 const GARAGE_STOCK : Array = ["scrap", "bolts"]
 
 ## True for workshop materials, which sit in the bag but can't be eaten.
 func is_material(id: String) -> bool:
 	return bool(get_item(id).get("material", false))
+
+## True for cooking ingredients (flour), which can be carried and gifted but
+## not eaten as they are.
+func is_ingredient(id: String) -> bool:
+	return bool(get_item(id).get("ingredient", false))
 
 ## True for parts that are fitted to the bike rather than eaten or used up.
 func is_bike_part(id: String) -> bool:
@@ -118,7 +260,7 @@ func portions(id: String) -> int:
 ## "Loaf of Bread — $75  (+10 energy × 5)", or for materials that have no
 ## energy value, just "🪛 Scrap Metal — $10".
 func shop_label(id: String) -> String:
-	if is_material(id):
+	if is_material(id) or is_ingredient(id):
 		return "%s %s — $%d" % [icon(id), display_name(id), price(id)]
 	var p : int = portions(id)
 	var suffix : String = "" if p <= 1 else " × %d" % p

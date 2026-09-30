@@ -145,10 +145,13 @@ var conversation           : Resource = null
 @export var loved_gifts    : Array[String] = []
 @export var liked_gifts    : Array[String] = []
 @export var disliked_gifts : Array[String] = []
+## Worse than disliked: costs GIFT_HATE friendship.
+@export var hated_gifts    : Array[String] = []
 
 ## How this villager feels about being given `item_id`:
-## GIFT_LOVE / GIFT_LIKE / GIFT_DISLIKE points, or 0 for anything unlisted.
-## Loved wins over liked wins over disliked, so an id listed twice by mistake
+## GIFT_LOVE / GIFT_LIKE / GIFT_DISLIKE / GIFT_HATE points, or 0 for anything
+## unlisted. Loved wins over liked wins over disliked wins over hated, so an id
+## listed twice by mistake
 ## still resolves to a single, predictable outcome.
 func gift_reaction(item_id: String) -> int:
 	if loved_gifts.has(item_id):
@@ -157,6 +160,8 @@ func gift_reaction(item_id: String) -> int:
 		return GameManager.GIFT_LIKE
 	if disliked_gifts.has(item_id):
 		return GameManager.GIFT_DISLIKE
+	if hated_gifts.has(item_id):
+		return GameManager.GIFT_HATE
 	return 0
 
 const PORTRAIT_DIR : String = "res://assets/Portraits/"

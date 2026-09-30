@@ -28,6 +28,10 @@ extends Resource
 ## to wander across instead of a radius: the NPC drifts between random points
 ## anywhere inside them. Outdoor entries only; takes precedence over `wander`.
 @export var wander_zones : Array[String] = []
+## Another villager's NPCRegistry id to tag along behind while this entry is
+## active (outdoor entries only). When that villager isn't out and about, the
+## entry falls back to its wander settings.
+@export var follow_id : String = ""
 
 static func make(days: Array[int], entry_phase: int, anchor_name: String, pos_offset: Vector2 = Vector2.ZERO, parity: int = -1, is_interior: bool = false) -> NPCScheduleEntry:
 	var entry : NPCScheduleEntry = NPCScheduleEntry.new()
@@ -78,6 +82,10 @@ func wandering(radius: float) -> NPCScheduleEntry:
 
 func wandering_in(zone_names: Array[String]) -> NPCScheduleEntry:
 	wander_zones = zone_names
+	return self
+
+func following(npc_id: String) -> NPCScheduleEntry:
+	follow_id = npc_id
 	return self
 
 func _hour_in_range(h: float) -> bool:

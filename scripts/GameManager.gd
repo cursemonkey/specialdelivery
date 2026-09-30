@@ -630,7 +630,7 @@ func take_held() -> String:
 ## the table stays small and an NPC added later simply starts at zero.
 ##
 ## Points come from gifts today: a liked item is worth GIFT_LIKE, a loved one
-## GIFT_LOVE, and a disliked one costs GIFT_DISLIKE. The gift tables live on
+## GIFT_LOVE, a disliked one costs GIFT_DISLIKE and a hated one GIFT_HATE. The gift tables live on
 ## NPCDefinition; ItemRegistry knows nothing about who likes what.
 const FRIENDSHIP_MAX : int = 100
 
@@ -642,6 +642,7 @@ const FRIENDSHIP_HEARTS    : int = FRIENDSHIP_MAX / FRIENDSHIP_PER_HEART
 const GIFT_LOVE    : int =  3
 const GIFT_LIKE    : int =  1
 const GIFT_DISLIKE : int = -1
+const GIFT_HATE    : int = -3
 
 var friendship : Dictionary = {}   # npc id -> int points
 

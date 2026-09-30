@@ -31,6 +31,8 @@ const CITY_HALL_ID       := "Building_TownHall"
 const GROCERY_ID         := "Grocery"      # Nayra only sells from behind this counter
 const MECHANIC_ID        := "Mechanic"     # Aidan only sells from behind this one
 const MECHANIC_ID_NPC    := "aidan"        # runs the garage counter
+const FARM_ID            := "Farm"         # Marsha sells eggs from her desk in here
+const FARM_SELLER_ID     := "marsha_campbell"
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -250,6 +252,11 @@ func _try_dialogue() -> void:
 		# Aidan sells parts and vehicle upgrades, but only at the garage.
 		elif shop_panel != null and nearest_npc.id == MECHANIC_ID_NPC and _at_mechanic():
 			after = func() -> void: shop_panel.open(shop_panel.GARAGE)
+		# Marsha sells eggs at her desk in the farmhouse, but only on her
+		# selling days — the rest of the week she's just Flower's mum.
+		elif shop_panel != null and nearest_npc.id == FARM_SELLER_ID and _at_farm() \
+				and NPCRegistry.marsha_selling_now():
+			after = func() -> void: shop_panel.open(shop_panel.FARM)
 		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks(), after)
 		return
 	# Otherwise, enter the building whose door we're standing at — but only on
@@ -280,7 +287,8 @@ func _fit_held_part() -> void:
 		GameManager.show_message("🚲 There's no room on the bike for another %s." % ItemRegistry.display_name(id))
 		return
 	GameManager.take_held()
-	GameManager.show_message("%s Bolted the %s onto your bike. Rack now holds %d packages." 			% [ItemRegistry.icon(id), ItemRegistry.display_name(id), GameManager.bike_max_packages])
+	GameManager.show_message("%s Bolted the %s onto your bike. Rack now holds %d packages." \
+			% [ItemRegistry.icon(id), ItemRegistry.display_name(id), GameManager.bike_max_packages])
 
 ## Hand the held portion to `npc`. Their reaction comes from the gift tables on
 ## their NPCDefinition (see NPCRegistry): loved and liked add friendship,
@@ -307,6 +315,9 @@ func _offer_gift(npc: RegularNPC) -> void:
 	elif reaction > 0:
 		mood = DialogueLine.HAPPY
 		line = "The %s? That's kind of you, thanks." % item_name
+	elif reaction <= GameManager.GIFT_HATE:
+		mood = DialogueLine.MAD
+		line = "%s?! Absolutely not. Take it away." % item_name
 	elif reaction < 0:
 		mood = DialogueLine.MAD
 		line = "%s… no thank you. Not for me." % item_name
@@ -362,6 +373,10 @@ func _eat_held() -> void:
 	var id : String = GameManager.held_item
 	if id.is_empty():
 		return
+	# Ingredients are for baking; nothing to bake with yet.
+	if ItemRegistry.is_ingredient(id):
+		GameManager.show_message("%s %s isn't something to eat on its own." % [ItemRegistry.icon(id), ItemRegistry.display_name(id)])
+		return
 	# Workshop materials can be carried and gifted, but not eaten.
 	if ItemRegistry.is_material(id):
 		GameManager.show_message("🔧 %s isn't edible — it's for repairs." % ItemRegistry.display_name(id))
@@ -388,6 +403,10 @@ func _at_grocery() -> bool:
 ## Aidan's counter is open for business.
 func _at_mechanic() -> bool:
 	return in_interior and interior_manager != null and interior_manager.current_building_id == MECHANIC_ID
+
+## True while the player is inside the Campbell farmhouse.
+func _at_farm() -> bool:
+	return in_interior and interior_manager != null and interior_manager.current_building_id == FARM_ID
 
 ## Jimmy's City Hall greeting, then a menu: pay the mortgage, or just chat.
 func _open_banker_choice(npc: RegularNPC) -> void:
