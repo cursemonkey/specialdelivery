@@ -152,6 +152,12 @@ func _build_rows() -> void:
 	for id in _stock():
 		var btn : Button = Button.new()
 		btn.text = ItemRegistry.shop_label(id)
+		# Items with sprite art show it as the button's icon.
+		var tex : Texture2D = ItemRegistry.icon_texture(id)
+		if tex != null:
+			btn.icon = tex
+			btn.add_theme_constant_override("icon_max_width", 24)
+			btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		btn.custom_minimum_size = Vector2(320, 32)
 		btn.pressed.connect(_buy.bind(id))
 		_rows.add_child(btn)

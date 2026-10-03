@@ -10,6 +10,9 @@ extends Node
 ##   price     — shop cost in dollars
 ##   energy    — energy restored per portion eaten
 ##   portions  — how many portions one purchase puts in a slot
+##   sprite    — optional folder of 8 rotation frames (south.png, south-east.png
+##               … see ROTATIONS). When set, the art replaces the emoji icon
+##               wherever the item is drawn; the emoji stays for text messages.
 ##
 ## Prices are set against the current delivery economy (a delivery pays roughly
 ## $100–220): a full slot of bread is about one good delivery, so restocking is
@@ -28,6 +31,7 @@ const ITEMS : Dictionary = {
 		"id":       "bread",
 		"name":     "Loaf of Bread",
 		"icon":     "🍞",
+		"sprite":   "res://assets/Items/Bread",
 		"price":    75,
 		"energy":   10,
 		"portions": 5,
@@ -236,6 +240,42 @@ func is_ingredient(id: String) -> bool:
 func is_bike_part(id: String) -> bool:
 	return bool(get_item(id).get("bike_part", false))
 
+## Frame names in a sprite folder, in turning order: stepping through them
+## spins the item a full circle.
+const ROTATIONS : Array[String] = [
+	"south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west",
+]
+
+var _frame_cache : Dictionary = {}   # item id -> Array[Texture2D]
+
+## True when the item has sprite art rather than just an emoji.
+func has_sprite(id: String) -> bool:
+	return not rotation_frames(id).is_empty()
+
+## The item's resting image (its first, south-facing frame), or null when it
+## only has an emoji.
+func icon_texture(id: String) -> Texture2D:
+	var frames : Array[Texture2D] = rotation_frames(id)
+	return frames[0] if not frames.is_empty() else null
+
+## Every rotation frame in turning order, or an empty array for emoji-only
+## items. Loaded once per item and cached.
+func rotation_frames(id: String) -> Array[Texture2D]:
+	if _frame_cache.has(id):
+		return _frame_cache[id]
+	var frames : Array[Texture2D] = []
+	var dir : String = str(get_item(id).get("sprite", ""))
+	if not dir.is_empty():
+		for r in ROTATIONS:
+			var tex : Texture2D = load("%s/%s.png" % [dir, r]) as Texture2D
+			if tex == null:
+				push_warning("ItemRegistry: '%s' is missing %s/%s.png" % [id, dir, r])
+				frames.clear()
+				break
+			frames.append(tex)
+	_frame_cache[id] = frames
+	return frames
+
 func get_item(id: String) -> Dictionary:
 	return ITEMS.get(id, {})
 
@@ -259,9 +299,13 @@ func portions(id: String) -> int:
 
 ## "Loaf of Bread — $75  (+10 energy × 5)", or for materials that have no
 ## energy value, just "🪛 Scrap Metal — $10".
+##
+## Items with sprite art leave the emoji off, since the shop shows the sprite as
+## the button's icon instead.
 func shop_label(id: String) -> String:
+	var prefix : String = "" if has_sprite(id) else icon(id) + " "
 	if is_material(id) or is_ingredient(id):
-		return "%s %s — $%d" % [icon(id), display_name(id), price(id)]
+		return "%s%s — $%d" % [prefix, display_name(id), price(id)]
 	var p : int = portions(id)
 	var suffix : String = "" if p <= 1 else " × %d" % p
-	return "%s %s — $%d  (+%d energy%s)" % [icon(id), display_name(id), price(id), energy(id), suffix]
+	return "%s%s — $%d  (+%d energy%s)" % [prefix, display_name(id), price(id), energy(id), suffix]

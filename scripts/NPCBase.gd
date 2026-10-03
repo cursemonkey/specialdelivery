@@ -180,10 +180,18 @@ func knock_back(dir: Vector2) -> void:
 	_knock_vel  = dir.normalized() * KNOCKBACK_SPEED
 	_halt_timer = KNOCK_HALT_DURATION
 
+## Turn to face `pos`, a point in world space — ideally the middle of whatever
+## is being looked at (see Player.visual_centre). Measured from the middle of
+## this villager's figure rather than its feet, or someone standing alongside
+## reads as being "above" and the villager looks north.
 func face_toward(pos: Vector2) -> void:
-	facing = _dominant_axis(pos - global_position)
+	facing = _dominant_axis(pos - visual_centre())
 	_walk_frame = 0
 	_sprite.set_facing(facing, 0)
+
+## The middle of this villager's figure in world space.
+func visual_centre() -> Vector2:
+	return global_position + _sprite.visual_centre()
 
 # ── Overridables ───────────────────────────────────────────
 ## Decide where to walk for the current TimeManager weekday/phase. `immediate`

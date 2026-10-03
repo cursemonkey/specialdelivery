@@ -13,7 +13,12 @@ const SLOT_GAP : float = 4.0
 ## Extra space between the last bag slot and the held-item box.
 const HAND_GAP : float = 14.0
 
+## Drawn size of an item's sprite inside a slot.
+const SPRITE_SIZE : float = 26.0
+
 func _ready() -> void:
+	# Item sprites are pixel art: keep them crisp when scaled down.
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	GameManager.inventory_changed.connect(_redraw)
 	GameManager.held_item_changed.connect(func(_id: String) -> void: _redraw())
 	queue_redraw()
@@ -40,8 +45,7 @@ func _draw() -> void:
 			continue
 
 		var id : String = str(slot.get("id", ""))
-		draw_string(font, Vector2(x + 9.0, 25.0), ItemRegistry.icon(id),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1))
+		_draw_item(font, id, x)
 
 		# Stack size, bottom-right — only when more than one is held.
 		var left : int = int(slot.get("portions", 0))
@@ -70,5 +74,15 @@ func _draw_held() -> void:
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.80, 0.72, 0.50) if filled \
 			else Color(0.55, 0.55, 0.62))
 	if filled:
-		draw_string(font, Vector2(x + 9.0, 25.0), ItemRegistry.icon(held),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1))
+		_draw_item(font, held, x)
+
+## An item in the box starting at `x`: its sprite's resting frame if it has
+## one, otherwise its emoji.
+func _draw_item(font: Font, id: String, x: float) -> void:
+	var tex : Texture2D = ItemRegistry.icon_texture(id)
+	if tex != null:
+		var inset : Vector2 = Vector2((SLOT_W - SPRITE_SIZE) * 0.5, SLOT_H - SPRITE_SIZE - 2.0)
+		draw_texture_rect(tex, Rect2(Vector2(x, 0.0) + inset, Vector2(SPRITE_SIZE, SPRITE_SIZE)), false)
+		return
+	draw_string(font, Vector2(x + 9.0, 25.0), ItemRegistry.icon(id),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1))

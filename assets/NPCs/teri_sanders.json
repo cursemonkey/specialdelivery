@@ -1,0 +1,141 @@
+{
+  "character": {
+    "id": "e4e2c3fc-ecd3-458e-8bde-ba6cdddc7ba4",
+    "name": "Idle",
+    "prompt": "A blonde woman with red crop top and blue cutoff shorts, black shoes, blue eyes, model, large chest.\nHair swept to one side.",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Geri_Sanders-Idle.png",
+    "cell_size": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet_size": {
+      "width": 640,
+      "height": 1040
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "12209d98-32bb-45b1-a6b3-82c28a35e48c",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "12209d98-32bb-45b1-a6b3-82c28a35e48c",
+        "direction": "east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "12209d98-32bb-45b1-a6b3-82c28a35e48c",
+        "direction": "north"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Breathing Idle",
+        "animation_group_id": "12209d98-32bb-45b1-a6b3-82c28a35e48c",
+        "direction": "west"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "south"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "south-east"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "east"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "north-east"
+      },
+      {
+        "row": 9,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "north"
+      },
+      {
+        "row": 10,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "north-west"
+      },
+      {
+        "row": 11,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "west"
+      },
+      {
+        "row": 12,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Walking",
+        "animation_group_id": "42181bdc-b2fa-416c-a26a-25c6cf69b914",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-09-30T13:33:21.499286+00:00"
+}

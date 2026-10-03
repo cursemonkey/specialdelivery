@@ -19,8 +19,8 @@ centered = false
 
 ; E-to-craft is measured from here, so put it on the workbench in the art.
 ; Once there is art, also add an Area2D "ExitArea" (south, to the street), an
-; Area2D "LinkArea" (west, back into the house), a Marker2D "PlayerSpawn" and
-; a Marker2D "LinkSpawn" — see Interior.gd. Without them they are generated to
+; Area2D "Door_<home id>" (west, back into the house), a Marker2D "PlayerSpawn" and
+; a Marker2D "Spawn_<home id>" — see Interior.gd. Without them they are generated to
 ; fit the procedural room.
 [node name="Workbench" type="Marker2D" parent="."]
 position = Vector2(260.0, 44)

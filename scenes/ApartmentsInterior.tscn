@@ -1,10 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://apartmentsinterior"]
+[gd_scene load_steps=2 format=3 uid="uid://apartmentsinterior"]
 
 [ext_resource type="Script" path="res://scripts/HomeInterior.gd" id="1"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
-size = Vector2(64, 24)
-
+; Apartment 301 on the third floor — the flat the player can buy. Its only door
+; is in the south wall, back out to the Floor 3 hallway; there is no street
+; exit (that's in the lobby). See InteriorRegistry._register_apartments().
 [node name="ApartmentsInterior" type="Node2D"]
 script = ExtResource("1")
 
@@ -18,14 +18,11 @@ centered = false
 ; Draw CollisionPolygon2D children in here, over the walls and furniture.
 [node name="Walls" type="StaticBody2D" parent="."]
 
-; Walk into this to leave. Put it on the doorway in the art.
-[node name="ExitArea" type="Area2D" parent="."]
-position = Vector2(280.0, 394)
+; Once there is art, add an Area2D "Door_Apartments_F3" over the doorway to
+; the hallway and a Marker2D "Spawn_Apartments_F3" just inside it — see
+; Interior.gd. Without them they are generated to fit the procedural room.
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitArea"]
-shape = SubResource("RectangleShape2D_exit")
-
-; Where the player appears — just inside the doorway.
+; Where the player appears when the day starts here — just inside the doorway.
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(280.0, 334)
 

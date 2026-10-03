@@ -14,7 +14,12 @@ const BENCH_INTERACT : float   = 56.0
 
 var _bench_rect : Rect2 = Rect2()
 
+## False in a shared garage the player doesn't own (the apartment block's
+## basement): the bench is there, but it isn't theirs to use.
+var workbench_enabled : bool = true
+
 func build(def: InteriorDefinition, is_home: bool) -> void:
+	workbench_enabled = def.owner_home.is_empty() or def.owner_home == GameManager.home_id
 	super.build(def, is_home)
 	var m : Marker2D = get_node_or_null("Workbench") as Marker2D
 	var centre : Vector2 = m.position if m != null else Vector2(_size.x * 0.5, 26.0 + BENCH_SIZE.y * 0.5)
@@ -24,6 +29,8 @@ func build(def: InteriorDefinition, is_home: bool) -> void:
 
 ## True when `world_pos` is close enough to the workbench to use it.
 func workbench_near(world_pos: Vector2) -> bool:
+	if not workbench_enabled:
+		return false
 	var centre : Vector2 = global_position + _bench_rect.position + _bench_rect.size * 0.5
 	return world_pos.distance_to(centre) <= BENCH_INTERACT
 
@@ -46,4 +53,4 @@ func _draw() -> void:
 	draw_rect(Rect2(_bench_rect.position + Vector2(18.0, 13.0), Vector2(22.0, 5.0)), Color(0.45, 0.47, 0.52))
 	draw_rect(Rect2(_bench_rect.position + Vector2(58.0, 12.0), Vector2(6.0, 14.0)), Color(0.45, 0.47, 0.52))
 	draw_string(ThemeDB.fallback_font, _bench_rect.position + Vector2(-8.0, _bench_rect.size.y + 16.0),
-			"Workbench — E to craft", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.15, 0.15, 0.15))
+			"Workbench — E to craft" if workbench_enabled else "Workbench (residents only)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.15, 0.15, 0.15))

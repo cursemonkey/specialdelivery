@@ -127,6 +127,12 @@ func _ready() -> void:
 	GameManager.sprite_scale_changed.connect(_on_sprite_scale_changed)
 	_on_sprite_scale_changed(GameManager.sprite_scale)
 
+## The middle of the player's figure in world space, for villagers turning to
+## face them. The walking sprite is drawn centred on FootSprite; the bike art
+## sits within a couple of pixels of the same point.
+func visual_centre() -> Vector2:
+	return global_position + foot_sprite.position
+
 func _on_sprite_scale_changed(value: float) -> void:
 	var target : float = NPCDefinition.TARGET_FRAME_HEIGHT
 	var foot   : float = (target / FOOT_FRAME_H) * value

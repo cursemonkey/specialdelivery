@@ -214,7 +214,8 @@ func _ready() -> void:
 	add_child(_shop_panel)
 	player.shop_panel = _shop_panel
 
-	# The workbench in the home's garage / back yard.
+	# The workbench in the home's garage / back yard (the basement, for the
+	# apartments).
 	_crafting_panel = CraftingPanelScript.new()
 	_crafting_panel.name = "CraftingPanel"
 	add_child(_crafting_panel)
@@ -612,7 +613,7 @@ func _begin_day(at_hour: float = TimeManager.DAY_START_HOUR) -> void:
 	# Each day starts inside the player's home; they walk out to begin. (The
 	# bike was just parked at the home door above, so it's waiting outside.)
 	if _interior_manager != null and not GameManager.home_id.is_empty() and _home_door_node != null:
-		_interior_manager.enter(GameManager.home_id)
+		_interior_manager.enter(GameManager.home_id, InteriorRegistry.home_room(GameManager.home_id))
 
 func _spawn_bike() -> void:
 	if _world_bike != null:

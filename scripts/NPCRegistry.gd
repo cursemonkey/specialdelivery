@@ -113,6 +113,122 @@ func _register_cast() -> void:
 	_register_silas_thorne()
 	_register_junia_thorne()
 	_register_teri_sanders()
+	_register_declan_murphy()
+	_register_rosie_finch()
+
+# ── The pub ────────────────────────────────────────────────
+## Declan Murphy and Rosie Finch run the pub together and live in House50, right
+## next door. They got engaged last spring and are planning the wedding between
+## shifts: Declan keeps the bar and the cellar, Rosie runs the kitchen and the
+## books. The pub opens at 11am and closes at 1am every day, so the two of them
+## are behind the bar most waking hours and each takes one weekday afternoon off.
+## Teri Sanders works for them Wednesday to Sunday nights.
+const PUB_HOME : String = "House50"
+
+## Declan Murphy — the landlord. Big, warm, and sentimental about the place; he
+## proposed to Rosie in the pub after closing. Tuesdays he takes the afternoon to
+## buy produce at the farm, then goes home and leaves Rosie to open the evening.
+func _register_declan_murphy() -> void:
+	const TUE : int = 2
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "declan_murphy"
+	def.display_name = "Declan Murphy"
+	def.home_anchor  = PUB_HOME
+	def.shirt_color  = Color("#2f5a3a")   # bottle-green shirt
+	def.pants_color  = Color("#3a3028")
+	def.hair_color   = Color("#a0472a")   # ginger
+	def.skin_color   = Color("#f0c8a0")
+	# First match wins, so the Tuesday errand comes before the bar shift.
+	var sched : Array[NPCScheduleEntry] = [
+		# Tuesday afternoon: the farm for the week's produce, then home.
+		NPCScheduleEntry.make_hours([TUE], 12.0, 15.0, "Farm", Vector2(30, 30), -1, true),
+		NPCScheduleEntry.make_hours([TUE], 15.0, 24.0, PUB_HOME, Vector2(0, 20), -1, true),
+		# Every other day: behind the bar from opening at 11am…
+		NPCScheduleEntry.make_hours([], 11.0, 24.0, "Pub", Vector2(20, 20), -1, true),
+		# …until close at 1am.
+		NPCScheduleEntry.make_hours([], 0.0, 1.0, "Pub", Vector2(20, 20), -1, true),
+		# Everything else: home next door.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, PUB_HOME, Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers: publican patter, then the pub's history, then how much
+	# he can't believe Rosie said yes.
+	def.dialogue_lines = [
+		# Stranger — the landlord's welcome.
+		DialogueLine.make("Welcome in! Declan. I pour, Rosie cooks, and nobody argues with either of us.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Delivery for the pub? Round the side, mind the kegs.", DialogueLine.CALM, 0),
+		DialogueLine.make("You look like a soup-of-the-day sort of person. Rosie's is the best in town.", DialogueLine.HAPPY, 0),
+		# Acquaintance — the regulars and the wedding.
+		DialogueLine.make("Gus has had the same stool for twenty years. We'll bury him in it.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Rosie and I are getting married. You'll hear about it. Everyone hears about it.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Wedding budget, pub budget. Same budget. Don't tell Rosie I said that.", DialogueLine.CALM, 2),
+		# Friend — what the place means to him.
+		DialogueLine.make("My dad ran this pub before me. I still hear him every time the cellar door creaks.", DialogueLine.CALM, 5),
+		DialogueLine.make("Asked Spider to play the wedding. He said yes before I finished asking.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Rosie wants the reception somewhere fancy. I want it here. Guess who'll win.", DialogueLine.MAD, 5),
+		# Close friend — the soft centre.
+		DialogueLine.make("I proposed right there behind the bar, after close. Dropped the ring in the sink first.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("Some nights I watch her laughing with the regulars and think, how did I get this lucky.", DialogueLine.CALM, 8),
+		DialogueLine.make("Keep a seat free on the big day. Front row. You've earned it.", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: a meat pie is a proper pub supper; milk has no place behind his bar.
+	def.loved_gifts = ["meat_pie"]
+	def.liked_gifts = ["bread", "onions"]
+	def.disliked_gifts = ["milk"]
+	_add(def)
+
+## Rosie Finch — the landlady. Sharp, organised and funny; she runs the kitchen,
+## the books, and very firmly the wedding. Monday afternoons she meets Reverend
+## Thorne at the church to plan the ceremony, then has the evening off at home.
+func _register_rosie_finch() -> void:
+	const MON : int = 1
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "rosie_finch"
+	def.display_name = "Rosie Finch"
+	def.home_anchor  = PUB_HOME
+	def.shirt_color  = Color("#c8584a")   # brick red
+	def.pants_color  = Color("#3d3a4a")
+	def.hair_color   = Color("#3a2418")   # dark brown
+	def.skin_color   = Color("#d9a57c")
+	# First match wins, so the Monday church visit comes before the bar shift.
+	var sched : Array[NPCScheduleEntry] = [
+		# Monday afternoon: wedding planning with the Reverend, then home.
+		NPCScheduleEntry.make_hours([MON], 13.0, 15.0, "Church", Vector2(30, 40), -1, true),
+		NPCScheduleEntry.make_hours([MON], 15.0, 24.0, PUB_HOME, Vector2(20, 20), -1, true),
+		# Every other day: in the kitchen and behind the bar from 11am…
+		NPCScheduleEntry.make_hours([], 11.0, 24.0, "Pub", Vector2(-20, 20), -1, true),
+		# …until close at 1am.
+		NPCScheduleEntry.make_hours([], 0.0, 1.0, "Pub", Vector2(-20, 20), -1, true),
+		# Everything else: home next door.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, PUB_HOME, Vector2(20, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers: brisk landlady, then the wedding planner, then the nerves.
+	def.dialogue_lines = [
+		# Stranger — brisk and friendly.
+		DialogueLine.make("Hi love, Rosie. Kitchen's open till nine — after that it's crisps or nothing.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("If Declan offers you a 'house special', it's whatever he forgot to order.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Wipe your feet. I've just done the floor and I will know.", DialogueLine.MAD, 0),
+		# Acquaintance — the ring and the plans.
+		DialogueLine.make("Did you see the ring? Look. No, properly look.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Mondays I see the Reverend about the ceremony. He's very patient. I am not.", DialogueLine.CALM, 2),
+		DialogueLine.make("Teri's covering more nights so we can plan. That girl's a saint in eyeliner.", DialogueLine.HAPPY, 2),
+		# Friend — the business behind the bar.
+		DialogueLine.make("Declan's brilliant with people and hopeless with numbers. That's what I'm for.", DialogueLine.CALM, 5),
+		DialogueLine.make("He wants the reception here. Honestly? I do too. I'm just making him sweat.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Seating plan's a nightmare. Half this town isn't speaking to the other half.", DialogueLine.MAD, 5),
+		# Close friend — the nerves.
+		DialogueLine.make("My mum never thought I'd settle. Running a pub, marrying the landlord. Bit of a cliché.", DialogueLine.SAD, 8),
+		DialogueLine.make("Sometimes I wonder if I'm ready. Then he does something daft and I know I am.", DialogueLine.CALM, 8),
+		DialogueLine.make("You're on the guest list. In pen. Do you know how rare pen is?", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: a baker's pie tempts the cook; scrap is clutter in her kitchen.
+	def.loved_gifts = ["blueberry_pie"]
+	def.liked_gifts = ["butter", "flour", "strawberries"]
+	def.disliked_gifts = ["scrap"]
+	_add(def)
 
 ## Teri Sanders — serves at the pub five nights a week (Wednesday to Sunday,
 ## 5pm to 1am) while she saves up and chases modelling work. Outgoing and quick

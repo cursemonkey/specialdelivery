@@ -15,10 +15,16 @@ const ICON_SIZE    : int   = 20
 ## Radius of the soft disc drawn behind the icon, so it stays readable against
 ## a busy background.
 const BACKING_R    : float = 13.0
+## Items with sprite art turn slowly while held aloft, stepping through their
+## rotation frames: one full turn takes this long.
+const SPIN_SECONDS : float = 1.6
+const SPRITE_SIZE  : float = 28.0
 
 var _elapsed : float = 0.0
 
 func _ready() -> void:
+	# Item sprites are pixel art: keep them crisp when scaled down.
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	GameManager.held_item_changed.connect(_on_held_changed)
 	# The player node scales its art by the Sprite Scale setting; the hover
 	# height has to follow, or the item drifts away from the head.
@@ -64,6 +70,14 @@ func _draw() -> void:
 	# Soft dark disc so the emoji reads over grass, road, or building alike.
 	draw_circle(centre, BACKING_R, Color(0.08, 0.08, 0.11, 0.55))
 	draw_arc(centre, BACKING_R, 0.0, TAU, 24, Color(0.95, 0.80, 0.45, 0.75), 1.5, true)
+
+	# Sprite art: spin through the rotation frames, a full turn per SPIN_SECONDS.
+	var frames : Array[Texture2D] = ItemRegistry.rotation_frames(id)
+	if not frames.is_empty():
+		var step : int = int(_elapsed / SPIN_SECONDS * frames.size()) % frames.size()
+		var half : Vector2 = Vector2(SPRITE_SIZE, SPRITE_SIZE) * 0.5
+		draw_texture_rect(frames[step], Rect2(centre - half, half * 2.0), false)
+		return
 
 	# draw_string anchors at the text baseline, so shift down by roughly half
 	# the glyph height to sit the icon in the middle of the disc.

@@ -97,6 +97,18 @@ func _draw() -> void:
 		return
 	_draw_procedural()
 
+## The middle of the figure as drawn, in the owning NPC's coordinates. The
+## NPC's origin sits at its feet, so anything aiming at "the villager" (like
+## turning to face the player) should measure from here instead.
+func visual_centre() -> Vector2:
+	var c : Vector2
+	if _active_sheet() != null:
+		# Sheet art is drawn upward from sheet_offset (the feet).
+		c = sheet_offset + Vector2(0.0, -float(frame_size.y) * sheet_scale * 0.5)
+	else:
+		c = Vector2(0.0, 0.5)   # procedural figure spans roughly y -16 … 17
+	return position + c * scale
+
 ## Blit the frame matching the current facing and walk step.
 func _draw_sheet() -> void:
 	var sheet : Texture2D = _active_sheet()

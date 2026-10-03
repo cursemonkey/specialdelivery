@@ -394,7 +394,8 @@ func _clear_of_door(preferred_door: Vector2, spot: Vector2) -> Vector2:
 func begin_interaction(player: Node2D) -> void:
 	_halt_timer = maxf(_halt_timer, 1.0)
 	velocity = Vector2.ZERO
-	face_toward(player.global_position)
+	var target : Vector2 = player.visual_centre() if player.has_method("visual_centre") else player.global_position
+	face_toward(target)
 
 ## How much likelier the newest unlocked tier is than each step below it. A line
 ## one tier back is half as likely, two tiers back a quarter, and so on, with

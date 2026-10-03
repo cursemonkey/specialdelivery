@@ -10,6 +10,7 @@ signal entered_building
 signal craft_requested
 
 const InteriorScene : PackedScene = preload("res://scenes/Interior.tscn")
+const ChoicePanelScript : GDScript = preload("res://scripts/ChoicePanel.gd")
 const STAGE_ORIGIN  : Vector2     = Vector2(100000, 100000)   # far from the world map
 const ENTER_RANGE   : float       = 84.0
 
@@ -22,10 +23,36 @@ var _return  : Vector2 = Vector2.ZERO
 var _saved   : Rect2   = Rect2()
 var _inside_npcs : Array = []   # NPCs materialized inside the active interior
 var _inside_pets : Array = []   # dogs and cats shown at home inside the active interior
+
+## Villagers shown indoors don't stand frozen: every SHUFFLE_MIN–MAX game
+## minutes each one strolls to a new spot within SHUFFLE_RADIUS of where the
+## room placed them (never while the player is chatting to them).
+const SHUFFLE_MIN_MINUTES : float = 20.0
+const SHUFFLE_MAX_MINUTES : float = 40.0
+const SHUFFLE_RADIUS      : float = 60.0
+const SHUFFLE_WALL_MARGIN : float = 30.0   # keep this far inside the room's edge
+const SHUFFLE_TALK_RANGE  : float = 60.0   # player this close = mid-chat, stay put
+
+var _npc_spots    : Dictionary = {}   # npc -> its resting spot in the room (world)
+var _npc_next     : Dictionary = {}   # npc -> game minute of its next stroll
+var _game_minutes : float      = 0.0  # game minutes since entering, for the above
+var _last_hour    : float      = -1.0
 var current_building_id : String = ""
+
+## Arrival point for _stage_room: the street door, the elevator, or otherwise
+## the id of the room the player just came from.
+const FROM_STREET   : String = ""
+const FROM_ELEVATOR : String = "<elevator>"
+
+## The floor picker shown on walking into an elevator.
+var _elevator_panel : CanvasLayer = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_elevator_panel = ChoicePanelScript.new()
+	_elevator_panel.name = "ElevatorPanel"
+	add_child(_elevator_panel)
+	_elevator_panel.chosen.connect(_on_floor_chosen)
 
 func setup(player: CharacterBody2D, camera: Camera2D, door_markers: Array) -> void:
 	_player  = player
@@ -60,7 +87,10 @@ func _nearest_door(from_pos: Vector2) -> Node2D:
 				best   = m
 	return best
 
-func enter(building_id: String) -> void:
+## Go in through `building_id`'s street door. `start_room` puts the player
+## straight into another room of the building instead — the flat upstairs when
+## a day begins at home in the apartments.
+func enter(building_id: String, start_room: String = "") -> void:
 	if is_inside():
 		return
 	current_building_id = building_id
@@ -76,26 +106,34 @@ func enter(building_id: String) -> void:
 	_saved = Rect2(_camera.limit_left, _camera.limit_top,
 			_camera.limit_right - _camera.limit_left,
 			_camera.limit_bottom - _camera.limit_top)
-	_stage_room(building_id, false)
+	var room : String = building_id if start_room.is_empty() else start_room
+	_stage_room(room, FROM_STREET)
 
-	if building_id == GameManager.home_id:
-		var link : String = InteriorRegistry.get_definition(building_id).link_label
-		var via  : String = "" if link.is_empty() else " The %s is through the east doorway." % link.to_lower()
+	var def : InteriorDefinition = InteriorRegistry.get_definition(room)
+	if _is_home_room(room):
+		var via : String = "" if def.home_hint.is_empty() else " " + def.home_hint
 		GameManager.show_message("🏠 Home. Press E at the bed to sleep.%s" % via, 4.0)
+	elif not def.enter_hint.is_empty():
+		GameManager.show_message(def.enter_hint, 4.0)
 	else:
 		GameManager.show_message("🚪 Inside. Walk out the south doorway to leave.", 4.0)
 
 	_inside_npcs.clear()
 	_inside_pets.clear()
+	_reset_shuffle()
 	_sync_inside_npcs()
 	_sync_inside_pets()
 	entered_building.emit()   # birds don't follow the player indoors
 	_try_auto_deliver(building_id)
 
+## True when `room_id` is the room with the player's bed in it.
+func _is_home_room(room_id: String) -> bool:
+	return not GameManager.home_id.is_empty() and room_id == InteriorRegistry.home_room(GameManager.home_id)
+
 ## Build `room_id`'s interior at the staging area and put the player and camera
-## in it — at its entrance, or beside the linked doorway when `via_link` (the
-## player came through from the room next door).
-func _stage_room(room_id: String, via_link: bool) -> void:
+## in it — at its street entrance, out of its elevator, or beside the doorway
+## back to the room they came `from` (see FROM_STREET / FROM_ELEVATOR).
+func _stage_room(room_id: String, from: String) -> void:
 	current_building_id = room_id
 	var def : InteriorDefinition = InteriorRegistry.get_definition(room_id)
 	# A building may supply its own hand-authored interior (painted background,
@@ -105,41 +143,70 @@ func _stage_room(room_id: String, via_link: bool) -> void:
 	# Match the Player (PROCESS_MODE_ALWAYS) so the interior's input/processing
 	# stays consistent with it while dialogue or menus pause the tree.
 	_active.process_mode = Node.PROCESS_MODE_ALWAYS
-	# A home's garage is only open to the home's owner: one of the other homes
-	# on offer shows no doorway to it.
-	_active.link_enabled = not GameManager.is_player_home(room_id) or room_id == GameManager.home_id
 	add_child(_active)
 	_active.global_position = STAGE_ORIGIN
 	_active.player_ref = _player
-	_active.build(def, room_id == GameManager.home_id)
+	_active.build(def, _is_home_room(room_id))
 	_active.exit_requested.connect(exit)
 	_active.sleep_requested.connect(_on_sleep)
 	_active.link_requested.connect(_on_link_requested)
+	_active.elevator_requested.connect(_on_elevator_requested)
 
-	var spawn : Vector2 = _active.link_spawn_point() if via_link else _active.player_spawn_point()
+	var spawn : Vector2
+	match from:
+		FROM_STREET:   spawn = _active.player_spawn_point()
+		FROM_ELEVATOR: spawn = _active.elevator_spawn_point()
+		_:             spawn = _active.door_spawn_point(from)
 	_player.global_position = STAGE_ORIGIN + spawn
 	_apply_limits(Rect2(STAGE_ORIGIN, def.size))
 	_snap_camera()
 
-## Walked through into the linked room. Deferred: this arrives from a physics
-## callback, where new collision areas can't be added.
+## Forget indoor strolling state: a new room lays everyone out afresh.
+func _reset_shuffle() -> void:
+	_npc_spots.clear()
+	_npc_next.clear()
+	_game_minutes = 0.0
+	_last_hour    = -1.0
+
+## Walked through a doorway into another room. Deferred: this arrives from a
+## physics callback, where new collision areas can't be added.
 func _on_link_requested(room_id: String) -> void:
-	_switch_room.call_deferred(room_id)
+	_switch_room.call_deferred(room_id, current_building_id)
+
+## Walked into the elevator: offer every other floor on its shaft.
+func _on_elevator_requested() -> void:
+	var def   : InteriorDefinition = InteriorRegistry.get_definition(current_building_id)
+	var stops : Array              = InteriorRegistry.elevator_stops(def.elevator)
+	var options : Array = []
+	for i in range(stops.size() - 1, -1, -1):   # top floor first, like the buttons
+		var stop : Dictionary = stops[i]
+		if stop["room"] != current_building_id:
+			options.append({"text": stop["label"], "id": stop["room"]})
+	if options.is_empty():
+		return
+	_elevator_panel.open.call_deferred("🛗 Which floor?", options)
+
+func _on_floor_chosen(room_id: String) -> void:
+	_switch_room.call_deferred(room_id, FROM_ELEVATOR)
 
 ## Swap the active room for `room_id` without going back outside, so leaving
-## either room still returns the player to the building's street door.
-func _switch_room(room_id: String) -> void:
+## through the street door still returns the player to where they came in.
+## `from` is where they arrive in the new room (see _stage_room).
+func _switch_room(room_id: String, from: String) -> void:
 	if not is_inside() or room_id == current_building_id:
 		return
 	for npc in _inside_npcs:
 		if is_instance_valid(npc):
 			npc.leave_interior()
 	_inside_npcs.clear()
+	_reset_shuffle()
 	_hide_inside_pets()
 	_active.queue_free()
-	_stage_room(room_id, true)
-	if _active.has_method("workbench_near"):
+	_stage_room(room_id, from)
+	if _active.get("workbench_enabled") == true:
 		GameManager.show_message("🔧 Press E at the workbench to craft.", 3.5)
+	elif _is_home_room(room_id):
+		GameManager.show_message("🏠 Home. Press E at the bed to sleep.", 3.0)
 
 ## E pressed inside: if it's at a workbench, ask for the crafting panel.
 ## Returns true when it was, so the player doesn't also use what's in hand.
@@ -155,6 +222,37 @@ func _process(_delta: float) -> void:
 	if _active != null:
 		_sync_inside_npcs()    # materialize anyone who walks in while we're inside
 		_sync_inside_pets()    # … and any dog or cat that's home at this hour
+		_shuffle_inside_npcs()
+
+## Advance the indoor clock and send any villager whose time has come for a
+## short stroll. Game time is read off TimeManager.hour (wrapping at midnight),
+## so it follows the in-game clock rather than real seconds, and a sleep or a
+## pause simply doesn't count.
+func _shuffle_inside_npcs() -> void:
+	var h : float = TimeManager.hour
+	if _last_hour >= 0.0:
+		var step : float = fposmod(h - _last_hour, 24.0)
+		# A big jump is a nap or a day rollover, not minutes passing indoors.
+		if step < 1.0:
+			_game_minutes += step * 60.0
+	_last_hour = h
+	if get_tree().paused:
+		return
+	var room : Rect2 = Rect2(STAGE_ORIGIN, InteriorRegistry.get_definition(current_building_id).size) \
+			.grow(-SHUFFLE_WALL_MARGIN)
+	for npc in _inside_npcs:
+		if not is_instance_valid(npc) or not _npc_spots.has(npc):
+			continue
+		if _game_minutes < float(_npc_next.get(npc, 0.0)):
+			continue
+		_npc_next[npc] = _game_minutes + randf_range(SHUFFLE_MIN_MINUTES, SHUFFLE_MAX_MINUTES)
+		if _player.global_position.distance_to(npc.global_position) <= SHUFFLE_TALK_RANGE:
+			continue
+		var a    : float   = randf() * TAU
+		var r    : float   = sqrt(randf()) * SHUFFLE_RADIUS
+		var spot : Vector2 = _npc_spots[npc] + Vector2(cos(a), sin(a)) * r
+		spot = spot.clamp(room.position, room.end)
+		npc.set_move_target(spot)
 
 ## Materialize any NPCs whose schedule currently has them inside this building
 ## but who aren't shown yet, and lay them out along the room.
@@ -166,8 +264,15 @@ func _sync_inside_npcs() -> void:
 			added = true
 	if added:
 		for i in _inside_npcs.size():
-			if is_instance_valid(_inside_npcs[i]):
-				_inside_npcs[i].show_in_interior(STAGE_ORIGIN + _active.interior_npc_spot(i, _inside_npcs.size()))
+			var npc : Node = _inside_npcs[i]
+			if not is_instance_valid(npc):
+				continue
+			var spot : Vector2 = STAGE_ORIGIN + _active.interior_npc_spot(i, _inside_npcs.size())
+			npc.show_in_interior(spot)
+			_npc_spots[npc] = spot
+			# Stagger first strolls so the room doesn't all move at once.
+			if not _npc_next.has(npc):
+				_npc_next[npc] = _game_minutes + randf_range(SHUFFLE_MIN_MINUTES, SHUFFLE_MAX_MINUTES)
 
 ## Show any dogs and cats whose home is this building and whose hours have them
 ## indoors, curled up along the back of the room. They're display-only in here —
@@ -222,10 +327,12 @@ func _try_auto_deliver(building_id: String) -> void:
 func exit() -> void:
 	if not is_inside():
 		return
+	_elevator_panel.close()
 	for npc in _inside_npcs:
 		if is_instance_valid(npc):
 			npc.leave_interior()
 	_inside_npcs.clear()
+	_reset_shuffle()
 	_hide_inside_pets()
 	_active.queue_free()
 	_active = null

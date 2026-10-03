@@ -2,12 +2,15 @@
 
 [ext_resource type="Script" path="res://scripts/HomeAnnex.gd" id="1"]
 
+; The apartment block's basement: the residents' garage, reached only by the
+; elevator in its west wall. The workbench only works for the player who owns
+; the apartment (InteriorDefinition.owner_home).
 [node name="ApartmentsGarage" type="Node2D"]
 script = ExtResource("1")
 
 ; Assign the room art to this Sprite2D. Keep centered = false and leave the
 ; position at (0, 0) so the art's top-left corner is the room's origin. Until it
-; has a texture the room paints itself procedurally (480x340).
+; has a texture the room paints itself procedurally (560x380).
 [node name="Background" type="Sprite2D" parent="."]
 texture_filter = 1
 position = Vector2(0, 0)
@@ -18,9 +21,8 @@ centered = false
 [node name="Walls" type="StaticBody2D" parent="."]
 
 ; E-to-craft is measured from here, so put it on the workbench in the art.
-; Once there is art, also add an Area2D "ExitArea" (south, to the street), an
-; Area2D "LinkArea" (west, back into the house), a Marker2D "PlayerSpawn" and
-; a Marker2D "LinkSpawn" — see Interior.gd. Without them they are generated to
-; fit the procedural room.
+; Once there is art, also add an Area2D "Elevator" (west wall) and a Marker2D
+; "ElevatorSpawn" just in front of it — see Interior.gd. Without them they are
+; generated to fit the procedural room.
 [node name="Workbench" type="Marker2D" parent="."]
-position = Vector2(240.0, 44)
+position = Vector2(280.0, 44)
