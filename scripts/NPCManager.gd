@@ -165,7 +165,11 @@ func _spawn_background_npcs() -> void:
 		npc._retarget(true)
 
 # ── Helpers ────────────────────────────────────────────────
+## World position of the street door for `door_name`. A room inside a building
+## (a flat in the apartments, say) resolves to that building's door, so a
+## villager can live or be scheduled there like anywhere else.
 func _door_pos(door_name: String) -> Vector2:
+	door_name = InteriorRegistry.street_door_of(door_name)
 	if _doors != null:
 		var door : Node2D = _doors.get_node_or_null(door_name)
 		if door != null:

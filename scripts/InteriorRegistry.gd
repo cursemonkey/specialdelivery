@@ -9,8 +9,18 @@ const DEFAULT_SIZE : Vector2 = Vector2(520, 360)
 
 var _defs : Dictionary = {}   # building_id -> InteriorDefinition
 
+## Rooms that aren't door markers themselves (a flat upstairs, a house's
+## garage) -> the street door of the building they're in.
+var _street_door : Dictionary = {}
+
+## Rooms only the player may use once bought: each player home's bed room and
+## its garage or back yard. Villagers mustn't live or be scheduled in these.
+var _reserved : Dictionary = {}   # room id -> true
+
 func _ready() -> void:
 	_register_overrides()
+	for home_id in GameManager.PLAYER_HOME_IDS:
+		_reserved[home_room(home_id)] = true
 
 func get_definition(building_id: String) -> InteriorDefinition:
 	if _defs.has(building_id):
@@ -72,10 +82,23 @@ func _register_overrides() -> void:
 ##   Floor 2   a hallway with flats 201–204
 ##   Floor 3   a hallway with flats 301–304; 301 is the one the player can buy
 ## Only the lobby has a street door ("Apartments" is the door marker), so every
-## other room is reached through it. The building id stays "Apartments" for the
+## other room is reached through it. Villagers can live in any flat but 301:
+## give them a home_anchor such as "Apartments_203" (see street_door_of). The building id stays "Apartments" for the
 ## home choice, saves and the map; the bed is in APARTMENT_HOME_ROOM.
 const APARTMENT_HOME_ROOM : String = "Apartments_301"
 const APARTMENT_SHAFT     : String = "Apartments"
+
+## The street door (a node under Main's "Doors") that `room_id` is reached
+## through. A door marker is its own street door; a room deeper inside a
+## building — "Apartments_203", "House84_Garage" — answers its building's.
+## This is what lets a villager live in a flat: NPCManager walks them to this
+## door, and they're shown indoors only in the room itself.
+func street_door_of(room_id: String) -> String:
+	return _street_door.get(room_id, room_id)
+
+## True for a room reserved to the player (see _reserved).
+func is_reserved_room(room_id: String) -> bool:
+	return _reserved.has(room_id)
 
 ## Elevator shaft id -> its stops, bottom to top, as {room, label}.
 var _elevators : Dictionary = {}
@@ -96,6 +119,7 @@ func _register_apartments() -> void:
 	basement.doors       = [InteriorDefinition.make_elevator(InteriorDefinition.SIDE_WEST)]
 	basement.elevator    = APARTMENT_SHAFT
 	_add(basement)
+	_street_door[basement.building_id] = "Apartments"
 
 	for floor_no in [2, 3]:
 		_register_apartment_floor(floor_no)
@@ -134,8 +158,10 @@ func _register_apartment_floor(floor_no: int) -> void:
 		flat.street_exit = false
 		flat.doors       = [InteriorDefinition.make_door(hall_id, "Hallway", InteriorDefinition.SIDE_SOUTH)]
 		_add(flat)
+		_street_door[flat_id] = "Apartments"
 	hall.doors = doors
 	_add(hall)
+	_street_door[hall_id] = "Apartments"
 
 ## The stops of the elevator `shaft`, bottom to top, as {room, label}.
 func elevator_stops(shaft: String) -> Array:
@@ -159,6 +185,8 @@ func _link_rooms(home_id: String, room_id: String, label: String, floor_style: S
 	room.doors       = [InteriorDefinition.make_door(home_id, "Indoors", InteriorDefinition.SIDE_WEST)]
 	room.floor_style = floor_style
 	_add(room)
+	_street_door[room_id] = home_id
+	_reserved[room_id]    = true
 
 func _make(id: String, size: Vector2, scene: PackedScene = null) -> InteriorDefinition:
 	var d : InteriorDefinition = InteriorDefinition.new()

@@ -93,6 +93,7 @@ func cats_inside(building_id: String) -> Array:
 	return out
 
 func _anchor_pos(door_name: String) -> Vector2:
+	door_name = InteriorRegistry.street_door_of(door_name)   # a flat -> its building
 	if _doors != null:
 		var door : Node2D = _doors.get_node_or_null(door_name) as Node2D
 		if door != null:

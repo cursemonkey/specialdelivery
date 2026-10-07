@@ -188,14 +188,30 @@ const ITEMS : Dictionary = {
 	},
 	# Bike parts. Made at the home workbench rather than bought; using one
 	# (E while holding it) bolts it onto the bike. See GameManager.fit_bike_part.
+	# No shop stocks them, so `price` is what one is worth: the recipe's
+	# materials ($40 at Aidan's) plus a bit for the work. Bill resells at that
+	# and buys back at RESALE_FRACTION of it, so crafting to sell only breaks
+	# even — it isn't a money machine.
 	"storage_bucket": {
 		"id":       "storage_bucket",
 		"name":     "Storage Bucket",
 		"icon":     "🪣",
-		"price":    0,
+		"price":    60,
 		"energy":   0,
 		"portions": 1,
 		"bike_part": true,
+	},
+	# Appliances and electronics, from the hardware store. Not food:
+	# `appliance` marks them inedible. Nothing uses them yet beyond carrying,
+	# gifting and selling on to Bill.
+	"computer": {
+		"id":        "computer",
+		"name":      "Computer",
+		"icon":      "💻",
+		"price":     7500,
+		"energy":    0,
+		"portions":  1,
+		"appliance": true,
 	},
 }
 
@@ -226,6 +242,35 @@ func farm_stock(season: int) -> Array:
 
 ## Ids in the order Aidan offers them at the garage.
 const GARAGE_STOCK : Array = ["scrap", "bolts"]
+
+# ── Bill's junk yard ───────────────────────────────────────
+## What Bill pays for anything the player sells him, as a share of its retail
+## price. He's the only buyer in town.
+const RESALE_FRACTION : float = 2.0 / 3.0
+
+## What Bill pays for `portions` portions of `id`: the share of the retail
+## price that many portions make up (a loaf is five portions, so three left of
+## one is worth 3/5 of a loaf), at RESALE_FRACTION, rounded down.
+func resale_value(id: String, portion_count: int) -> int:
+	var per_purchase : int = maxi(portions(id), 1)
+	return int(floor(float(price(id)) * RESALE_FRACTION * float(portion_count) / float(per_purchase)))
+
+## The one thing Bill has turned up for sale on `day`: any item in the whole
+## catalogue, picked at random. Seeded by the day so it stays the same all day
+## and across a save/reload, rather than re-rolling each visit.
+func junk_find_for_day(day: int) -> String:
+	var ids : Array = ITEMS.keys()
+	ids.sort()   # dictionary order isn't something to rely on for a seed
+	var rng : RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = hash("junk_find_%d" % day)
+	return str(ids[rng.randi_range(0, ids.size() - 1)])
+
+## Ids in the order Wendell offers them at the hardware store.
+const HARDWARE_STOCK : Array = ["computer"]
+
+## True for appliances and electronics, which can be carried but not eaten.
+func is_appliance(id: String) -> bool:
+	return bool(get_item(id).get("appliance", false))
 
 ## True for workshop materials, which sit in the bag but can't be eaten.
 func is_material(id: String) -> bool:
@@ -304,7 +349,7 @@ func portions(id: String) -> int:
 ## the button's icon instead.
 func shop_label(id: String) -> String:
 	var prefix : String = "" if has_sprite(id) else icon(id) + " "
-	if is_material(id) or is_ingredient(id):
+	if is_material(id) or is_ingredient(id) or is_bike_part(id) or is_appliance(id):
 		return "%s%s — $%d" % [prefix, display_name(id), price(id)]
 	var p : int = portions(id)
 	var suffix : String = "" if p <= 1 else " × %d" % p

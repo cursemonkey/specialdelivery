@@ -33,6 +33,9 @@ const MECHANIC_ID        := "Mechanic"     # Aidan only sells from behind this o
 const MECHANIC_ID_NPC    := "aidan"        # runs the garage counter
 const FARM_ID            := "Farm"         # Marsha sells eggs from her desk in here
 const FARM_SELLER_ID     := "marsha_campbell"
+const HARDWARE_ID        := "Hardware"     # Wendell only sells from behind this counter
+const HARDWARE_SELLER_ID := "wendell_price"
+const JUNK_DEALER_ID     := "bill"   # trades in the junk yard, out in the open
 
 # 8-direction bike textures ordered E, SE, S, SW, W, NW, N, NE
 # (index = int(fposmod(deg + 22.5, 360) / 45))
@@ -263,6 +266,14 @@ func _try_dialogue() -> void:
 		elif shop_panel != null and nearest_npc.id == FARM_SELLER_ID and _at_farm() \
 				and NPCRegistry.marsha_selling_now():
 			after = func() -> void: shop_panel.open(shop_panel.FARM)
+		# Wendell sells appliances and electronics, but only in the store.
+		elif shop_panel != null and nearest_npc.id == HARDWARE_SELLER_ID and _at_hardware():
+			after = func() -> void: shop_panel.open(shop_panel.HARDWARE)
+		# Bill trades out in the junk yard during his hours — buying and selling.
+		# The yard has no building, so it's being outdoors that counts.
+		elif shop_panel != null and nearest_npc.id == JUNK_DEALER_ID and not in_interior \
+				and NPCRegistry.bill_at_yard_now():
+			after = func() -> void: shop_panel.open(shop_panel.JUNKYARD)
 		dialogue_box.open_blocks(nearest_npc.get_dialogue_blocks(), after)
 		return
 	# Otherwise, enter the building whose door we're standing at — but only on
@@ -383,6 +394,10 @@ func _eat_held() -> void:
 	if ItemRegistry.is_ingredient(id):
 		GameManager.show_message("%s %s isn't something to eat on its own." % [ItemRegistry.icon(id), ItemRegistry.display_name(id)])
 		return
+	# Appliances: carried, gifted or sold, never eaten.
+	if ItemRegistry.is_appliance(id):
+		GameManager.show_message("%s You can't eat a %s." % [ItemRegistry.icon(id), ItemRegistry.display_name(id).to_lower()])
+		return
 	# Workshop materials can be carried and gifted, but not eaten.
 	if ItemRegistry.is_material(id):
 		GameManager.show_message("🔧 %s isn't edible — it's for repairs." % ItemRegistry.display_name(id))
@@ -409,6 +424,10 @@ func _at_grocery() -> bool:
 ## Aidan's counter is open for business.
 func _at_mechanic() -> bool:
 	return in_interior and interior_manager != null and interior_manager.current_building_id == MECHANIC_ID
+
+## True while the player is inside the hardware store.
+func _at_hardware() -> bool:
+	return in_interior and interior_manager != null and interior_manager.current_building_id == HARDWARE_ID
 
 ## True while the player is inside the Campbell farmhouse.
 func _at_farm() -> bool:

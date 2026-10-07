@@ -783,6 +783,43 @@ func spend_cash(amount: int) -> bool:
 	cash_changed.emit(cash)
 	return true
 
+## Cash from selling to Bill at the junk yard. Like refund_cash it leaves
+## `day_cash` alone: that tracks delivery earnings, and selling groceries back
+## mustn't count towards the all-delivered bonus.
+func receive_sale(amount: int) -> void:
+	if amount <= 0:
+		return
+	cash += amount
+	cash_changed.emit(cash)
+
+## Sell the whole stack in bag `slot` to Bill. Returns what he paid, or -1 if
+## the slot is empty.
+func sell_slot(slot: int) -> int:
+	if slot < 0 or slot >= inventory.size():
+		return -1
+	var s : Variant = inventory[slot]
+	if not (s is Dictionary):
+		return -1
+	var value : int = ItemRegistry.resale_value(str(s.get("id", "")), int(s.get("portions", 0)))
+	inventory[slot] = null
+	inventory_changed.emit()
+	receive_sale(value)
+	return value
+
+## Bill's find of the day (ItemRegistry.junk_find_for_day). He only has the
+## one, so once bought it's gone until tomorrow: junk_find_bought_day records
+## the day it went, and is saved so a reload can't restock him.
+var junk_find_bought_day : int = 0
+
+func junk_find_today() -> String:
+	return ItemRegistry.junk_find_for_day(day)
+
+func junk_find_available() -> bool:
+	return junk_find_bought_day != day
+
+func mark_junk_find_bought() -> void:
+	junk_find_bought_day = day
+
 ## Undo a spend_cash (e.g. a purchase that couldn't be completed). Mirrors
 ## spend_cash so `day_cash` stays untouched in both directions.
 func refund_cash(amount: int) -> void:
@@ -924,6 +961,7 @@ func save_game(slot: int = -1) -> void:
 		"inventory": _inventory_to_save(),
 		"friendship": _friendship_to_save(),
 		"held_item": held_item,
+		"junk_find_bought_day": junk_find_bought_day,
 	}
 	var file : FileAccess = FileAccess.open(_slot_path(slot), FileAccess.WRITE)
 	if file == null:
@@ -988,6 +1026,7 @@ func load_game(slot: int) -> bool:
 	var held : String = str(parsed.get("held_item", ""))
 	held_item = held if ItemRegistry.has(held) else ""
 	held_item_changed.emit(held_item)
+	junk_find_bought_day = int(parsed.get("junk_find_bought_day", 0))
 	cash_changed.emit(cash)
 	day_changed.emit(day)
 	hp_changed.emit(hp)
@@ -1054,5 +1093,6 @@ func reset() -> void:
 	_clear_inventory()
 	friendship.clear()
 	held_item = ""
+	junk_find_bought_day = 0
 	for k in stats.keys():
 		stats[k] = 0

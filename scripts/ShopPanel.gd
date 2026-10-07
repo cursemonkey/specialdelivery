@@ -8,6 +8,9 @@ extends CanvasLayer
 ##   • Marsha's desk     — Campbell farm produce, changing with the season
 ##   • Aidan's garage    — materials, plus one-off vehicle upgrades that go
 ##     onto the bike rather than into the bag
+##   • Wendell's hardware store — appliances and electronics
+##   • Bill's junk yard  — one random find a day, and the only place that buys:
+##     anything in the bag, at ItemRegistry.RESALE_FRACTION of its price
 ##
 ## Built in code to match SleepPrompt, so no scene wiring is needed.
 
@@ -17,6 +20,8 @@ signal closed()
 const GROCERY : String = "grocery"
 const GARAGE  : String = "garage"
 const FARM    : String = "farm"
+const JUNKYARD : String = "junkyard"
+const HARDWARE : String = "hardware"
 
 ## Aidan's one-off upgrades. Each is bought once, costs cash, and modifies the
 ## vehicle instead of taking an inventory slot:
@@ -28,6 +33,7 @@ const FARM    : String = "farm"
 ##   note    — confirmation line
 const UPGRADE_STORAGE : String = "storage"
 const UPGRADE_SCOOTER : String = "scooter"
+const SCOOTER_PRICE   : int    = 15000
 
 const PANEL_BG     : Color = Color(0.12, 0.12, 0.16, 0.96)
 const PANEL_BORDER : Color = Color(0.55, 0.60, 0.75)
@@ -111,17 +117,28 @@ func open(shop: String = GROCERY) -> void:
 	match shop:
 		GARAGE: _title.text = "🔧 Aidan's Garage"
 		FARM:   _title.text = "🥚 Campbell Farm — Marsha's Desk (%s)" % TimeManager.season_name()
+		JUNKYARD: _title.text = "♻️ Bill's Junk Yard"
+		HARDWARE: _title.text = "🔌 Price's Hardware & Electronics"
 		_:      _title.text = "🧺 Nayra's Groceries"
 	_build_rows()
 	_refresh()
-	if not _buttons.is_empty():
-		_buttons[0].button.grab_focus()
+	_focus_first()
+
+func _focus_first() -> void:
+	for entry in _buttons:
+		var btn : Button = entry.button
+		if not btn.disabled:
+			btn.grab_focus()
+			return
 
 ## Item ids this counter stocks.
 func _stock() -> Array:
 	match _shop:
 		GARAGE: return ItemRegistry.GARAGE_STOCK
 		FARM:   return ItemRegistry.farm_stock(TimeManager.season)
+		JUNKYARD:
+			return [GameManager.junk_find_today()] if GameManager.junk_find_available() else []
+		HARDWARE: return ItemRegistry.HARDWARE_STOCK
 	return ItemRegistry.SHOP_STOCK
 
 ## The upgrades on offer here, minus any the player already owns.
@@ -139,8 +156,8 @@ func _upgrades() -> Array:
 	if not gm.has_scooter():
 		out.append({
 			"id":    UPGRADE_SCOOTER,
-			"label": "🛵 Scooter — $15,000  (+1 package, faster)",
-			"price": 15000,
+			"label": "🛵 Scooter — $%s  (+1 package, faster)" % _thousands(SCOOTER_PRICE),
+			"price": SCOOTER_PRICE,
 		})
 	return out
 
@@ -149,6 +166,10 @@ func _build_rows() -> void:
 	for c in _rows.get_children():
 		c.queue_free()
 	_buttons.clear()
+	if _shop == JUNKYARD:
+		_add_heading("Today's find")
+		if not GameManager.junk_find_available():
+			_add_heading("  Sold — he'll have dug up something else by tomorrow.")
 	for id in _stock():
 		var btn : Button = Button.new()
 		btn.text = ItemRegistry.shop_label(id)
@@ -169,6 +190,36 @@ func _build_rows() -> void:
 		ub.pressed.connect(_buy_upgrade.bind(str(u.id)))
 		_rows.add_child(ub)
 		_buttons.append({"id": str(u.id), "button": ub, "upgrade": true, "price": int(u.price)})
+	if _shop == JUNKYARD:
+		_build_sell_rows()
+
+## Bill buys anything: one button per stack in the bag, selling the whole stack.
+func _build_sell_rows() -> void:
+	_add_heading("Sell from your bag (he pays %d%% of the shop price)" % roundi(ItemRegistry.RESALE_FRACTION * 100.0))
+	var any : bool = false
+	for i in GameManager.inventory.size():
+		var s : Variant = GameManager.inventory[i]
+		if not (s is Dictionary):
+			continue
+		any = true
+		var id    : String = str(s.get("id", ""))
+		var count : int    = int(s.get("portions", 0))
+		var value : int    = ItemRegistry.resale_value(id, count)
+		var btn : Button = Button.new()
+		btn.text = "Sell %s %s ×%d — $%d" % [ItemRegistry.icon(id), ItemRegistry.display_name(id), count, value]
+		btn.custom_minimum_size = Vector2(320, 32)
+		btn.pressed.connect(_sell.bind(i))
+		_rows.add_child(btn)
+		_buttons.append({"id": id, "button": btn, "upgrade": false, "sell": true, "price": 0})
+	if not any:
+		_add_heading("  Your bag's empty.")
+
+func _add_heading(text: String) -> void:
+	var lbl : Label = Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.add_theme_color_override("font_color", TEXT_DIM)
+	_rows.add_child(lbl)
 
 ## Grey out anything the player can't currently afford, and show the free-slot
 ## count so a full bag is visible before they click. Upgrades don't need a slot,
@@ -183,6 +234,8 @@ func _refresh() -> void:
 	for entry in _buttons:
 		var btn : Button = entry.button
 		var afford : bool = GameManager.cash >= int(entry.price)
+		if bool(entry.get("sell", false)):
+			continue   # selling never costs anything
 		if bool(entry.upgrade):
 			btn.disabled = not afford
 		else:
@@ -209,7 +262,28 @@ func _buy(id: String) -> void:
 		_say("No room in your bag for that.", TEXT_WARN)
 		return
 	_say("Bought %s. %s" % [ItemRegistry.display_name(id), _thanks()], TEXT_GOOD)
+	if _shop == JUNKYARD:
+		# He only had the one, and it's now in the bag he's offering to buy from.
+		GameManager.mark_junk_find_bought()
+		_build_rows()
+		_focus_first()
 	_refresh()
+
+## Sell bag `slot`'s whole stack to Bill.
+func _sell(slot: int) -> void:
+	if not _awaiting:
+		return
+	var s : Variant = GameManager.inventory[slot] if slot < GameManager.inventory.size() else null
+	if not (s is Dictionary):
+		return
+	var name_text : String = ItemRegistry.display_name(str(s.get("id", "")))
+	var paid : int = GameManager.sell_slot(slot)
+	if paid < 0:
+		return
+	_say("Sold %s for $%d. \"I'll find a home for it.\"" % [name_text, paid], TEXT_GOOD)
+	_build_rows()
+	_refresh()
+	_focus_first()
 
 ## Vehicle upgrades: cash only, applied straight to the bike. The row list is
 ## rebuilt afterwards so a one-off purchase disappears.
@@ -245,7 +319,18 @@ func _thanks() -> String:
 	match _shop:
 		GARAGE: return "\"Nice one.\""
 		FARM:   return "\"Laid this morning, love. Mind you don't crack 'em on that bike.\""
+		JUNKYARD: return "\"Good as new. Near enough.\""
+		HARDWARE: return "\"Thirty-day warranty. I'll honour it for sixty.\""
 	return "\"Thank you — take care out there.\""
+
+## 15000 -> "15,000".
+func _thousands(n: int) -> String:
+	var digits : String = str(n)
+	var out    : String = ""
+	while digits.length() > 3:
+		out    = "," + digits.substr(digits.length() - 3) + out
+		digits = digits.substr(0, digits.length() - 3)
+	return digits + out
 
 func _say(text: String, color: Color) -> void:
 	_status.text = text

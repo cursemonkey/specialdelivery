@@ -15,20 +15,24 @@ var _defs : Dictionary = {}   # id -> NPCDefinition
 
 func _ready() -> void:
 	_register_all()
-	_check_player_homes()
+	# Deferred: InteriorRegistry, which knows the reserved rooms, is the next
+	# autoload and isn't ready yet.
+	_check_player_homes.call_deferred()
 
-## The four homes offered to the player are reserved (GameManager.PLAYER_HOME_IDS):
-## nobody else lives there, so whichever one is bought is the player's alone.
+## The player's home is reserved (InteriorRegistry.is_reserved_room): nobody
+## else lives in the house, or in flat 301 if it's the apartments, so whichever
+## one is bought is the player's alone. The rest of the apartment block — the
+## lobby and the other flats — is shared, and villagers can live there.
 ## Nothing enforces that in the data, so this shouts during development if a
-## villager is given one as a home or is scheduled to go inside one — far easier
-## to catch here than to notice a flatmate months later.
+## villager is given a reserved room as a home or is scheduled to go inside
+## one — far easier to catch here than to notice a flatmate months later.
 func _check_player_homes() -> void:
 	for def in _defs.values():
-		if GameManager.is_player_home(def.home_anchor):
+		if InteriorRegistry.is_reserved_room(def.home_anchor):
 			push_warning("NPCRegistry: '%s' lives in %s, which is reserved for the player."
 				% [def.id, def.home_anchor])
 		for entry in def.schedule:
-			if entry.interior and GameManager.is_player_home(entry.anchor):
+			if entry.interior and InteriorRegistry.is_reserved_room(entry.anchor):
 				push_warning("NPCRegistry: '%s' is scheduled inside %s, which is reserved for the player."
 					% [def.id, entry.anchor])
 
@@ -109,6 +113,9 @@ func _register_cast() -> void:
 	_register_nayra()
 	_register_marco()
 	_register_aidan()
+	_register_bill()
+	_register_wendell_price()
+	_register_olivia_price()
 	_register_elias_thorne()
 	_register_silas_thorne()
 	_register_junia_thorne()
@@ -228,6 +235,114 @@ func _register_rosie_finch() -> void:
 	def.loved_gifts = ["blueberry_pie"]
 	def.liked_gifts = ["butter", "flour", "strawberries"]
 	def.disliked_gifts = ["scrap"]
+	_add(def)
+
+## Wendell Price — runs the hardware store, which he's been quietly turning
+## into an electronics shop: the nails and paint are still at the front, but
+## the back is all the new stock he can't stop talking about. Open Monday to
+## Saturday, 9am–6pm; Sunday afternoons he volunteers at the library, keeping
+## its old computers alive — the library his wife Olivia runs (see
+## _register_olivia_price). They live together in Townhouse25. Earnest, a bit
+## of a gadget evangelist, and the town's go-to for anything with a plug.
+## (House3 is nearer the store but is left free: it's the likely real home for
+## Aidan and Bill — see AIDAN_HOME.)
+const WENDELL_HOME : String = "Townhouse25"
+
+func _register_wendell_price() -> void:
+	const SUN : int = 0
+	var open_days : Array[int] = [1, 2, 3, 4, 5, 6]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "wendell_price"
+	def.display_name = "Wendell Price"
+	def.home_anchor  = WENDELL_HOME
+	def.shirt_color  = Color("#c0392b")   # red store apron
+	def.pants_color  = Color("#3a4a5a")   # navy chinos
+	def.hair_color   = Color("#2b2522")   # near-black, neatly parted
+	def.skin_color   = Color("#c68a5e")
+	# First match wins, so the store and library come before the home fallback.
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours(open_days, 9.0, 18.0, "Hardware", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([SUN], 13.0, 16.0, "Library", Vector2(0, 40), -1, true),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, WENDELL_HOME, Vector2(0, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers: the sales pitch, then the shop's reinvention, then why
+	# he really cares about it.
+	def.dialogue_lines = [
+		# Stranger — the pitch, never quite switched off.
+		DialogueLine.make("Welcome to Price's! Hammers at the front, the future at the back.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Only one computer in stock right now. One's all this town needs to get started.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("If it plugs in, I sell it. If it doesn't, I probably still sell it.", DialogueLine.CALM, 0),
+		# Acquaintance — the shop he's turning it into.
+		DialogueLine.make("Dad sold nails here for forty years. I'm keeping the nails. Mostly.", DialogueLine.CALM, 2),
+		DialogueLine.make("Ordered a television for the window. The whole street's going to stop and stare.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Bill at the yard brings me dead radios. Half of them only need a fuse.", DialogueLine.HAPPY, 2),
+		# Friend — the library and the town.
+		DialogueLine.make("Sundays I fix the library computers. They're older than Junia Thorne.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Olivia runs the library. I sell the future, she guards the past. It works.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Some folk think a computer's a waste of money in a town this size. Some folk.", DialogueLine.MAD, 5),
+		DialogueLine.make("A delivery business with a computer? You'd have routes planned before breakfast.", DialogueLine.CALM, 5),
+		# Close friend — what it's actually about.
+		DialogueLine.make("I just don't want this town to get left behind. Is that silly?", DialogueLine.SAD, 8),
+		DialogueLine.make("You're the only one who lets me finish explaining a gadget. Besides Olivia. Thank you.", DialogueLine.HAPPY, 8),
+		DialogueLine.make("If you ever need anything wired up, you come to me first. Not a question.", DialogueLine.CALM, 8),
+	]
+	# Gifts: a bag of bolts is never wasted in a hardware store; jam on the
+	# keyboard is how computers die.
+	def.loved_gifts = ["bolts"]
+	def.liked_gifts = ["scrap", "bread", "milk"]
+	def.disliked_gifts = ["jam"]
+	_add(def)
+
+## Olivia Price — Wendell's wife, the town librarian. Runs the library Monday to
+## Friday, 10am–8pm, and doesn't set foot in it at weekends: that's when Wendell
+## takes his screwdrivers to its computers, and she'd rather not watch. Weekends
+## she's at home. Precise, dry and warmer than she lets on; she fondly tolerates
+## Wendell's gadgets and lends out books like she's matchmaking.
+func _register_olivia_price() -> void:
+	var open_days : Array[int] = [1, 2, 3, 4, 5]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "olivia_price"
+	def.display_name = "Olivia Price"
+	def.home_anchor  = WENDELL_HOME
+	def.shirt_color  = Color("#5b6e8c")   # slate cardigan
+	def.pants_color  = Color("#3a3340")   # charcoal skirt
+	def.hair_color   = Color("#8a5a3a")   # auburn, pinned up
+	def.skin_color   = Color("#e3b48c")
+	var sched : Array[NPCScheduleEntry] = [
+		# Weekdays: the library, opening to close.
+		NPCScheduleEntry.make_hours(open_days, 10.0, 20.0, "Library", Vector2(-40, 40), -1, true),
+		# Everything else, weekends included: home with Wendell.
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, WENDELL_HOME, Vector2(20, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers: the stern librarian, then the books and Wendell, then
+	# what the library means to her.
+	def.dialogue_lines = [
+		# Stranger — quiet voice, firm rules.
+		DialogueLine.make("Welcome to the library. Indoor voices, please. Yes, that one too.", DialogueLine.CALM, 0),
+		DialogueLine.make("Open ten till eight, Monday to Friday. Weekends the books get their rest.", DialogueLine.CALM, 0),
+		DialogueLine.make("You'll want a library card. Everyone wants a library card eventually.", DialogueLine.HAPPY, 0),
+		# Acquaintance — books, and the man she married.
+		DialogueLine.make("I've a book for you. I don't know which yet. Come back Thursday.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Wendell's selling computers now. I married a man who thinks paper is a phase.", DialogueLine.CALM, 2),
+		DialogueLine.make("Someone returned a cookbook with jam on every page. I have suspicions.", DialogueLine.MAD, 2),
+		# Friend — the regulars and the cat.
+		DialogueLine.make("Dewey sleeps in the history section. He's read nothing, but he's very well informed.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Junia Thorne reads three books a week. I keep a shelf back just for her.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("Wendell fixes our computers on Sundays. I stay home. Marriage is knowing when.", DialogueLine.CALM, 5),
+		# Close friend — why she does it.
+		DialogueLine.make("A town that keeps its library keeps its memory. I take that seriously.", DialogueLine.CALM, 8),
+		DialogueLine.make("Wendell worries the town's being left behind. I worry it'll forget what it was.", DialogueLine.SAD, 8),
+		DialogueLine.make("I'd lend you any book in the building. Even the ones I don't lend.", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: tea and toast between shelves; nothing sticky near the books, and
+	# scrap metal is Wendell's department.
+	def.loved_gifts = ["milk"]
+	def.liked_gifts = ["bread", "blueberry_pie", "strawberries"]
+	def.disliked_gifts = ["jam", "scrap"]
 	_add(def)
 
 ## Teri Sanders — serves at the pub five nights a week (Wednesday to Sunday,
@@ -508,9 +623,13 @@ func _register_noah() -> void:
 ## is at church on Sunday mornings. Lives in a small house on the west side, a
 ## short walk up the road. Grew up around his father's junk yard, which is where
 ## he picked up the trade — he mentions the old man often. Plain-spoken and
-## unbothered.
-## TODO: his father is referenced in dialogue but not yet in the cast; when the
-## junk yard NPC is added, link them (shared surname / schedule visits).
+## unbothered. Lives with his dad, Bill (see _register_bill).
+##
+## AIDAN_HOME is shared by father and son. NOTE: "House4" has no matching node
+## under Main's "Doors" (the map has House3 and House40), so it resolves to the
+## world origin — change it here once the right house is picked and both move.
+const AIDAN_HOME : String = "House4"
+
 func _register_aidan() -> void:
 	# Mon(1) Tue(2) Wed(3) Thu(4) Fri(5) — Saturday runs shorter hours, closed Sunday.
 	const SUN : int = 0
@@ -520,7 +639,7 @@ func _register_aidan() -> void:
 	var def : NPCDefinition = NPCDefinition.new()
 	def.id           = "aidan"
 	def.display_name = "Aidan"
-	def.home_anchor  = "House4"           # west side, up the road from the shop
+	def.home_anchor  = AIDAN_HOME         # west side, up the road from the shop
 	def.shirt_color  = Color("#4a6b8a")   # oil-stained blue coveralls
 	def.pants_color  = Color("#3b4450")
 	def.hair_color   = Color("#4a3527")
@@ -543,7 +662,7 @@ func _register_aidan() -> void:
 		# Weekdays: in the mechanic shop from 11am until he shuts at 8pm.
 		NPCScheduleEntry.make_hours(work_days, 11.0, 20.0, "Mechanic", Vector2(0, 40), -1, true),
 		# Everything else: home on the west side.
-		NPCScheduleEntry.make_hours([], 0.0, 24.0, "House4", Vector2(0, 20), -1, true),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, AIDAN_HOME, Vector2(0, 20), -1, true),
 	]
 	def.schedule = sched
 	def.random_dialogue = true
@@ -573,6 +692,70 @@ func _register_aidan() -> void:
 	def.loved_gifts = ["scrap"]
 	def.liked_gifts = ["bolts", "bread"]
 	def.disliked_gifts = ["milk"]
+	_add(def)
+
+## Bill — Aidan's dad, who runs the junk yard. Out in the yard every day: 8am to
+## 6pm through the week, 11am to 4pm at weekends. The yard has no buildings yet,
+## so he wanders anywhere on its grass. Talk to him while he's there to trade:
+## he has one thing he's dug up for sale each day, and he's the only one in
+## town who'll buy anything back (ShopPanel.JUNKYARD). Lives with Aidan.
+## Gruff, slow-talking, and quietly very proud of his son.
+const BILL_YARD_ZONES    : Array[String] = ["JunkyardGrass", "JunkyardGrass2"]
+const BILL_WEEKDAY_HOURS : Vector2 = Vector2(8.0, 18.0)
+const BILL_WEEKEND_HOURS : Vector2 = Vector2(11.0, 16.0)
+
+## True while Bill is scheduled to be working the yard — when his counter opens.
+func bill_at_yard_now() -> bool:
+	var weekend : bool    = TimeManager.weekday == 0 or TimeManager.weekday == 6
+	var hours   : Vector2 = BILL_WEEKEND_HOURS if weekend else BILL_WEEKDAY_HOURS
+	return TimeManager.hour >= hours.x and TimeManager.hour < hours.y
+
+func _register_bill() -> void:
+	var weekdays : Array[int] = [1, 2, 3, 4, 5]
+	var weekends : Array[int] = [6, 0]
+	var def : NPCDefinition = NPCDefinition.new()
+	def.id           = "bill"
+	def.display_name = "Bill"
+	def.home_anchor  = AIDAN_HOME
+	def.shirt_color  = Color("#7a6a3a")   # faded olive work shirt
+	def.pants_color  = Color("#4a4038")   # dirt-brown work trousers
+	def.hair_color   = Color("#b8b4ac")   # grey
+	def.skin_color   = Color("#d9a077")   # Aidan's colouring
+	# First match wins: the yard first, home the rest of the time. The yard
+	# entries are outdoors and wander its grass; the "Mechanic" anchor is just a
+	# real door for the route there, since the zones pick where he stands.
+	var sched : Array[NPCScheduleEntry] = [
+		NPCScheduleEntry.make_hours(weekdays, BILL_WEEKDAY_HOURS.x, BILL_WEEKDAY_HOURS.y, "Mechanic") \
+				.wandering_in(BILL_YARD_ZONES),
+		NPCScheduleEntry.make_hours(weekends, BILL_WEEKEND_HOURS.x, BILL_WEEKEND_HOURS.y, "Mechanic") \
+				.wandering_in(BILL_YARD_ZONES),
+		NPCScheduleEntry.make_hours([], 0.0, 24.0, AIDAN_HOME, Vector2(20, 20), -1, true),
+	]
+	def.schedule = sched
+	def.random_dialogue = true
+	# Friendship tiers: the haggler, then the yard and what's in it, then Aidan.
+	def.dialogue_lines = [
+		# Stranger — terse, already pricing you up.
+		DialogueLine.make("Name's Bill. Everything's for sale. Including the dog, some days.", DialogueLine.CALM, 0),
+		DialogueLine.make("Got something to sell? I'll give you a fair price. Fair-ish.", DialogueLine.HAPPY, 0),
+		DialogueLine.make("Mind the rusty bits. That's most of the bits.", DialogueLine.CALM, 0),
+		# Acquaintance — the yard.
+		DialogueLine.make("Folk throw out things that only needed a bolt. I'm the bolt.", DialogueLine.HAPPY, 2),
+		DialogueLine.make("Found a whole pie in a skip once. Still warm. Didn't ask.", DialogueLine.SURPRISED, 2),
+		DialogueLine.make("Weekends I keep short hours. Man's got to rest his back.", DialogueLine.CALM, 2),
+		# Friend — the boy.
+		DialogueLine.make("You know my lad, Aidan? Runs the garage. Learned it all out here.", DialogueLine.HAPPY, 5),
+		DialogueLine.make("He fixes things proper. I just fix them till they stop complaining.", DialogueLine.CALM, 5),
+		DialogueLine.make("Boy works too hard. Gets that from his mother, God rest her.", DialogueLine.SAD, 5),
+		# Close friend — the soft part he keeps buried.
+		DialogueLine.make("Never told him I'm proud of him. Reckon he knows. You think he knows?", DialogueLine.SAD, 8),
+		DialogueLine.make("When I'm gone, the yard's his. Hope he sells it. Hope he doesn't.", DialogueLine.CALM, 8),
+		DialogueLine.make("You've got an eye for what's worth keeping. Rare, that.", DialogueLine.HAPPY, 8),
+	]
+	# Gifts: a bag of bolts is the finest present going; greens are rabbit food.
+	def.loved_gifts = ["bolts"]
+	def.liked_gifts = ["scrap", "meat_pie", "jam"]
+	def.disliked_gifts = ["fiddleheads"]
 	_add(def)
 
 ## Marco — the baker. Opens the cafe Tuesday to Saturday, starting his day at
